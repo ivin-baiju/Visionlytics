@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Streamlit
+.streamlit/credentials.toml
+
+# macOS
+.DS_Store
+
+# Data / Models (optional, but good to ignore large model files if they are huge)
+# YOLOv8 models are ~22MB and 6MB. We can include them or ignore them. Let's not ignore them so the app works.
+# But we can ignore logs, outputs
+outputs/
+*.log
