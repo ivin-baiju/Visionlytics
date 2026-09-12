@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -21,10 +21,14 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install dependencies
-        run: python -m pip install -r requirements.txt
+      # The tracking test only needs the lightweight numerical/CV stack.
+      # Avoid installing the full YOLO + Streamlit runtime in CI.
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install numpy scipy opencv-python-headless
 
-      - name: Run tests
+      - name: Run tracking tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: python tests/test_tracking.py
