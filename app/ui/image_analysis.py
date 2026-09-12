@@ -73,6 +73,19 @@ def render_image_analysis():
         st.info("Upload an image to start crowd analysis.", icon=":material/upload_file:")
         return
 
+    # ── ROI Crop Controls ────────────────────────────────────────────
+    with st.expander("Region of Interest (ROI) Cropping", expanded=False):
+        st.write("Crop the image before analysis to ignore irrelevant areas (e.g., sky, walls).")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            crop_top = st.slider("Crop Top %", 0, 50, 0)
+        with c2:
+            crop_bottom = st.slider("Crop Bottom %", 0, 50, 0)
+        with c3:
+            crop_left = st.slider("Crop Left %", 0, 50, 0)
+        with c4:
+            crop_right = st.slider("Crop Right %", 0, 50, 0)
+
     # Load image
     image_bytes = uploaded_file.read()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
@@ -80,6 +93,20 @@ def render_image_analysis():
 
     # Convert RGB to BGR for OpenCV / YOLO processing
     frame_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+    
+    # Apply ROI Crop
+    h, w = frame_bgr.shape[:2]
+    t_crop = int(h * (crop_top / 100.0))
+    b_crop = int(h * (1 - crop_bottom / 100.0))
+    l_crop = int(w * (crop_left / 100.0))
+    r_crop = int(w * (1 - crop_right / 100.0))
+    
+    if b_crop > t_crop and r_crop > l_crop:
+        frame_bgr = frame_bgr[t_crop:b_crop, l_crop:r_crop]
+    else:
+        st.error("Invalid crop dimensions!")
+        return
+        
     img_h, img_w = frame_bgr.shape[:2]
 
     # ── Detection & Analysis ─────────────────────────────────────────

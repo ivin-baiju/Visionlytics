@@ -77,16 +77,21 @@ class PersonDetector:
         self._model = None
 
     def _load_model(self):
-        """Lazily load the YOLOv8s model on first use."""
+        """Lazily load the YOLOv8s model on first use, preferring ONNX for speed."""
         if self._model is None:
             from ultralytics import YOLO
             import os
             
             PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            model_path = os.path.join(PROJECT_ROOT, "yolov8s.pt")
+            onnx_path = os.path.join(PROJECT_ROOT, "yolov8s.onnx")
+            pt_path = os.path.join(PROJECT_ROOT, "yolov8s.pt")
             
-            # YOLOv8s is the small variant — offers much higher accuracy than nano while remaining fast
-            self._model = YOLO(model_path)
+            if os.path.exists(onnx_path):
+                # Using ONNX format
+                self._model = YOLO(onnx_path, task='detect')
+            else:
+                # YOLOv8s is the small variant — offers much higher accuracy than nano while remaining fast
+                self._model = YOLO(pt_path)
         return self._model
 
     def detect(self, image: np.ndarray) -> List[Detection]:
@@ -134,6 +139,67 @@ class PersonDetector:
                     detections.append(Detection(
                         bbox=(int(x1), int(y1), int(x2), int(y2)),
                         confidence=conf,
+                        class_id=0,
+                        class_name="person",
+                        attributes={}
+                    ))
+
+        return detections
+
+    def track(self, image: np.ndarray, persist: bool = True) -> List[Detection]:
+        """
+        Detect and track people in an image using ByteTrack.
+        
+        Args:
+            image: Input image.
+            persist: Whether to persist tracks across frames.
+
+        Returns:
+            List of Detection objects with person_id populated.
+        """
+        if image is None or image.size == 0:
+            return []
+
+        model = self._load_model()
+
+        import sys
+        if sys.platform == "darwin":
+            device = "cpu"
+        else:
+            import torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        results = model.track(
+            source=image,
+            conf=self.confidence_threshold,
+            classes=[self.PERSON_CLASS_ID],
+            imgsz=self.max_image_size,
+            device=device,
+            tracker="bytetrack.yaml",
+            persist=persist,
+            verbose=False,
+        )
+
+        detections = []
+        if results and len(results) > 0:
+            result = results[0]
+            if result.boxes is not None and len(result.boxes) > 0:
+                boxes = result.boxes
+                for i in range(len(boxes)):
+                    x1, y1, x2, y2 = boxes.xyxy[i].cpu().numpy().astype(int)
+                    conf = float(boxes.conf[i].cpu().numpy())
+                    
+                    person_id = None
+                    if boxes.id is not None:
+                        person_id = int(boxes.id[i].cpu().numpy())
+
+                    detections.append(Detection(
+                        bbox=(int(x1), int(y1), int(x2), int(y2)),
+                        confidence=conf,
+                        class_id=0,
+                        class_name="person",
+                        person_id=person_id,
+                        attributes={}
                     ))
 
         return detections

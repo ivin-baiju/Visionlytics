@@ -25,7 +25,6 @@ from app.components.charts import (
     density_distribution_pie,
 )
 from computer_vision.heatmap import generate_heatmap
-from computer_vision.tracking import CentroidTracker
 from app.resources import get_detector, get_extractor, get_predictor
 from app.database import save_analysis_record
 
@@ -95,11 +94,23 @@ def render_video_analysis():
     with col_meta3:
         st.caption(f"**Duration:** {duration_sec:.1f} seconds")
 
+    # ── ROI Crop Controls ────────────────────────────────────────────
+    with st.expander("Region of Interest (ROI) Cropping", expanded=False):
+        st.write("Crop the video to ignore irrelevant areas.")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            crop_top = st.slider("Crop Top %", 0, 50, 0)
+        with c2:
+            crop_bottom = st.slider("Crop Bottom %", 0, 50, 0)
+        with c3:
+            crop_left = st.slider("Crop Left %", 0, 50, 0)
+        with c4:
+            crop_right = st.slider("Crop Right %", 0, 50, 0)
+
     if st.button("Start Video Analysis", icon=":material/play_arrow:", type="primary"):
         detector = get_detector(confidence_threshold=conf_threshold)
         extractor = get_extractor()
         predictor = get_predictor()
-        tracker = CentroidTracker(max_disappeared=15) if enable_tracking else None
 
         progress_bar = st.progress(0.0)
         status_text = st.empty()
@@ -122,13 +133,26 @@ def render_video_analysis():
             if not ret:
                 break
 
+            # Apply ROI Crop
+            h, w = frame.shape[:2]
+            t_crop = int(h * (crop_top / 100.0))
+            b_crop = int(h * (1 - crop_bottom / 100.0))
+            l_crop = int(w * (crop_left / 100.0))
+            r_crop = int(w * (1 - crop_right / 100.0))
+            
+            if b_crop > t_crop and r_crop > l_crop:
+                frame = frame[t_crop:b_crop, l_crop:r_crop]
+            else:
+                st.error("Invalid crop dimensions!")
+                break
+
             if frame_idx % sample_interval == 0:
                 h, w = frame.shape[:2]
-                detections = detector.detect(frame)
-
-                # Tracking
-                if tracker is not None:
-                    detections = tracker.update(detections, (h, w))
+                # Person Detection & Tracking
+                if enable_tracking:
+                    detections = detector.track(frame, persist=True)
+                else:
+                    detections = detector.detect(frame)
 
                 # Features & Prediction
                 features = extractor.extract(detections, (h, w))

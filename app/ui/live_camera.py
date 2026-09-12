@@ -32,7 +32,7 @@ def render_live_camera():
     )
 
     # ── Controls ─────────────────────────────────────────────────────
-    col_c1, col_c2, col_c3 = st.columns(3)
+    col_c1, col_c2, col_c3, col_c4 = st.columns(4)
     with col_c1:
         camera_id = st.number_input("Camera Device Index", min_value=0, max_value=5, value=0, step=1)
     with col_c2:
@@ -43,6 +43,8 @@ def render_live_camera():
             ["Bounding Boxes", "Heatmap", "Combined (Boxes + Heatmap)"],
             index=0,
         )
+    with col_c4:
+        enable_tracking = st.toggle("Enable Tracking", value=True)
 
     col_btn1, col_btn2 = st.columns([1, 4])
     with col_btn1:
@@ -131,7 +133,13 @@ def render_live_camera():
             avg_fps = np.mean(fps_history)
 
             h, w = frame.shape[:2]
-            detections = detector.detect(frame)
+
+            # Person Detection & Tracking
+            if enable_tracking:
+                detections = detector.track(frame, persist=True)
+            else:
+                detections = detector.detect(frame)
+
             features = extractor.extract(detections, (h, w))
             density_label, conf = predictor.predict(features)
 
