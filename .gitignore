@@ -4,21 +4,22 @@ __pycache__/
 *$py.class
 *.so
 
-# Virtual environment
+# Virtual environments
 .venv/
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
 
-# Environment variables
+# Environment / secrets
 .env
-.env.local
+.env.*
+!.env.example
 
 # IDEs
 .idea/
 .vscode/
 *.swp
+*.swo
 
 # Streamlit
 .streamlit/credentials.toml
@@ -26,15 +27,18 @@ venv.bak/
 # macOS
 .DS_Store
 
-# Data / Models
-# YOLOv8 weights are large (~22MB) — keep them tracked so the app works out of the box.
-# But ignore training artifacts and temporary outputs.
+# Runtime output
 outputs/
 *.log
-
-# Trained ML model artifacts (regenerated via train.py)
-models/*.joblib
-
-# Temporary files
 *.tmp
 *.temp
+
+# Generated ML artifacts
+models/*.joblib
+
+# Test / tooling caches
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
