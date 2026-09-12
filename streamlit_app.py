@@ -1,3 +1,7 @@
 """Snowflake Streamlit entrypoint for Visionlytics."""
 
-from app.main import *
+import streamlit as st
+
+from app.main import main
+
+main()
