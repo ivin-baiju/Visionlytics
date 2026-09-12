@@ -5,7 +5,6 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.63-red?style=flat-square)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)](https://www.python.org/)
 [![YOLOv8](https://img.shields.io/badge/YOLOv8s-Computer%20Vision-green?style=flat-square)](https://docs.ultralytics.com/)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square)](LICENSE)
 
 ## Overview
 
