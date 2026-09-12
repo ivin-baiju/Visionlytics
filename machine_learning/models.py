@@ -120,7 +120,8 @@ def get_models() -> Dict[str, Any]:
         #   Optimized for better boundary resolution on imbalanced subsets.
         "SVM": CalibratedClassifierCV(
             SVC(kernel="rbf", C=2.0, gamma="scale", class_weight="balanced", random_state=42),
-            ensemble=False
+            ensemble=False,
+            n_jobs=-1
         ),
 
         # ── 6. Gradient Boosting ────────────────────────────────────
@@ -142,11 +143,12 @@ def get_models() -> Dict[str, Any]:
         #   Produces a highly stable model that leverages the strengths of all 3.
         "Voting Ensemble": VotingClassifier(
             estimators=[
-                ("rf", RandomForestClassifier(n_estimators=150, max_depth=15, min_samples_leaf=2, class_weight="balanced", random_state=42)),
+                ("rf", RandomForestClassifier(n_estimators=150, max_depth=15, min_samples_leaf=2, class_weight="balanced", random_state=42, n_jobs=-1)),
                 ("gb", GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42)),
-                ("svm", CalibratedClassifierCV(SVC(kernel="rbf", C=2.0, class_weight="balanced", random_state=42), ensemble=False)),
+                ("svm", CalibratedClassifierCV(SVC(kernel="rbf", C=2.0, class_weight="balanced", random_state=42), ensemble=False, n_jobs=-1)),
             ],
-            voting="soft"
+            voting="soft",
+            n_jobs=-1
         ),
     }
 

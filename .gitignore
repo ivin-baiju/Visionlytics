@@ -26,8 +26,15 @@ venv.bak/
 # macOS
 .DS_Store
 
-# Data / Models (optional, but good to ignore large model files if they are huge)
-# YOLOv8 models are ~22MB and 6MB. We can include them or ignore them. Let's not ignore them so the app works.
-# But we can ignore logs, outputs
+# Data / Models
+# YOLOv8 weights are large (~22MB) — keep them tracked so the app works out of the box.
+# But ignore training artifacts and temporary outputs.
 outputs/
 *.log
+
+# Trained ML model artifacts (regenerated via train.py)
+models/*.joblib
+
+# Temporary files
+*.tmp
+*.temp

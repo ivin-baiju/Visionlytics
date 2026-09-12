@@ -25,6 +25,7 @@ if PROJECT_ROOT not in sys.path:
 
 from app.components.styles import get_custom_css, header_html, status_card_html
 from app.components.icons import BRAND_LOGO_SVG
+from app.resources import get_detector, get_extractor, get_predictor
 
 # ── Page Configuration ───────────────────────────────────────────────────────
 
@@ -37,32 +38,6 @@ st.set_page_config(
 
 # Inject custom CSS
 st.markdown(get_custom_css(), unsafe_allow_html=True)
-
-
-# ── Cached Initializers ─────────────────────────────────────────────────────
-
-@st.cache_resource
-def get_detector():
-    """Load person detector once and cache across sessions."""
-    from computer_vision.person_detection import PersonDetector
-    return PersonDetector(confidence_threshold=0.3)
-
-
-@st.cache_resource
-def get_predictor():
-    """Load ML predictor once and cache across sessions."""
-    from machine_learning.predict import CrowdPredictor
-    predictor = CrowdPredictor()
-    if predictor.is_loaded:
-        return predictor
-    return None
-
-
-@st.cache_resource
-def get_feature_extractor():
-    """Load feature extractor once and cache across sessions."""
-    from computer_vision.feature_extraction import FeatureExtractor
-    return FeatureExtractor()
 
 
 # ── Navigation ───────────────────────────────────────────────────────────────

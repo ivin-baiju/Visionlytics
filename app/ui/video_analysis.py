@@ -24,10 +24,8 @@ from app.components.charts import (
     people_count_over_time,
     density_distribution_pie,
 )
-from computer_vision.person_detection import PersonDetector
-from computer_vision.feature_extraction import FeatureExtractor
 from computer_vision.tracking import CentroidTracker
-from machine_learning.predict import CrowdPredictor
+from app.resources import get_detector, get_extractor, get_predictor
 
 
 def render_video_analysis():
@@ -76,8 +74,10 @@ def render_video_analysis():
         return
 
     # Save uploaded video to temporary file
-    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    _, ext = os.path.splitext(uploaded_video.name)
+    tfile = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
     tfile.write(uploaded_video.read())
+    tfile.close()
     video_path = tfile.name
 
     cap = cv2.VideoCapture(video_path)
@@ -94,9 +94,9 @@ def render_video_analysis():
         st.caption(f"**Duration:** {duration_sec:.1f} seconds")
 
     if st.button("Start Video Analysis", icon=":material/play_arrow:", type="primary"):
-        detector = PersonDetector(confidence_threshold=conf_threshold)
-        extractor = FeatureExtractor()
-        predictor = CrowdPredictor()
+        detector = get_detector(confidence_threshold=conf_threshold)
+        extractor = get_extractor()
+        predictor = get_predictor()
         tracker = CentroidTracker(max_disappeared=15) if enable_tracking else None
 
         progress_bar = st.progress(0.0)
@@ -126,7 +126,7 @@ def render_video_analysis():
 
                 # Tracking
                 if tracker is not None:
-                    detections = tracker.update(detections)
+                    detections = tracker.update(detections, (h, w))
 
                 # Features & Prediction
                 features = extractor.extract(detections, (h, w))
@@ -139,7 +139,7 @@ def render_video_analysis():
                 confidences.append(conf)
 
                 # Visual overlay
-                annotated = detector.draw_detections(frame.copy(), detections)
+                annotated = detector.draw_detections(frame.copy(), detections, density_level=density_label)
                 if tracker is not None:
                     for det in detections:
                         if det.person_id is not None:
@@ -204,6 +204,22 @@ def render_video_analysis():
             }
             peak_density = max(class_counts, key=class_counts.get)
             peak_color = DENSITY_COLORS.get(peak_density, "#ffffff")
+
+            # Update session state for dashboard
+            analysis_record = {
+                "people_count": avg_people,
+                "density": peak_density,
+                "occupancy_ratio": features.get("occupancy_ratio", 0),
+                "confidence": np.mean(confidences),
+                "top_region_count": features.get("top_region_count", 0),
+                "middle_region_count": features.get("middle_region_count", 0),
+                "bottom_region_count": features.get("bottom_region_count", 0),
+                "timestamp": time.time(),
+            }
+            st.session_state["last_analysis"] = analysis_record
+            if "analysis_history" not in st.session_state:
+                st.session_state["analysis_history"] = []
+            st.session_state["analysis_history"].append(analysis_record)
 
             c1, c2, c3, c4 = st.columns(4)
             with c1:

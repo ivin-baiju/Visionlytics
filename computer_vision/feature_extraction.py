@@ -103,9 +103,16 @@ class FeatureExtractor:
         areas = np.array([det.area for det in detections])       # shape (n,)
 
         # ── Feature 2: Occupancy Ratio ───────────────────────────────────
-        # Fraction of frame area covered by all bounding boxes (may overlap)
-        total_bbox_area = sum(areas)
-        occupancy_ratio = min(total_bbox_area / frame_area, 1.0)
+        # Fraction of frame area covered by all bounding boxes (geometric union)
+        mask = np.zeros((frame_height, frame_width), dtype=np.uint8)
+        for det in detections:
+            x1, y1, x2, y2 = map(int, det.bbox)
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(frame_width, x2), min(frame_height, y2)
+            mask[y1:y2, x1:x2] = 1
+            
+        covered_area = np.count_nonzero(mask)
+        occupancy_ratio = covered_area / frame_area
 
         # ── Feature 3: Average Person Area ───────────────────────────────
         # Mean bounding box area as a fraction of the total frame area

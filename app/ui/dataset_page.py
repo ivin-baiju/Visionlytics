@@ -36,13 +36,27 @@ def render_dataset_page():
     )
 
     # ── Dataset Controls ─────────────────────────────────────────────
-    col_ctrl1, col_ctrl2 = st.columns([1, 3])
-    with col_ctrl1:
-        regenerate = st.button("Regenerate Dataset (1500 Samples)", icon=":material/refresh:")
+    with st.expander("Dataset Generation Controls", icon=":material/settings:"):
+        col_ctrl1, col_ctrl2, col_ctrl3 = st.columns(3)
+        with col_ctrl1:
+            n_per_class = st.number_input(
+                "Samples per class",
+                min_value=100, max_value=50000, value=500, step=100,
+                help="LOW, MEDIUM, and HIGH classes will each have this many samples."
+            )
+        with col_ctrl2:
+            confirm_overwrite = st.checkbox(
+                "Confirm Overwrite",
+                help="Check this box to confirm overwriting the existing dataset."
+            )
+        with col_ctrl3:
+            st.write("") # Spacer
+            st.write("") # Spacer
+            regenerate = st.button("Regenerate Dataset", icon=":material/refresh:", type="primary" if confirm_overwrite else "secondary", disabled=not confirm_overwrite and os.path.exists(DATASET_PATH))
 
-    if regenerate or not os.path.exists(DATASET_PATH):
-        with st.spinner("Generating calibrated synthetic crowd dataset..."):
-            df = generate_dataset(n_per_class=500, output_path=DATASET_PATH)
+    if not os.path.exists(DATASET_PATH) or regenerate:
+        with st.spinner(f"Generating calibrated synthetic crowd dataset ({n_per_class * 3} samples)..."):
+            df = generate_dataset(n_per_class=n_per_class, output_path=DATASET_PATH)
             st.success("Dataset successfully generated and saved to disk!")
     else:
         try:

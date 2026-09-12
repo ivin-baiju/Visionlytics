@@ -26,27 +26,31 @@ from computer_vision.person_detection import PersonDetector
 from computer_vision.feature_extraction import FeatureExtractor
 
 
-def auto_label(people_count: int) -> str:
+def auto_label(features: dict) -> str:
     """
-    Automatically assign a density label based on people count.
-
-    Rules:
-        0–3 people  → LOW
-        4–10 people → MEDIUM
-        11+ people  → HIGH
+    Automatically assign a density label based on spatial features.
 
     Args:
-        people_count: Number of detected people.
+        features: Dictionary of extracted spatial features.
 
     Returns:
         Density label string.
     """
-    if people_count <= 3:
+    people_count = int(features.get("people_count", 0))
+    occupancy = float(features.get("occupancy_ratio", 0.0))
+    avg_dist = float(features.get("avg_distance", 1.0))
+
+    if people_count == 0:
         return "LOW"
-    elif people_count <= 10:
+
+    # High density if many people, high area coverage, or tightly packed
+    if people_count >= 15 or occupancy > 0.4 or (people_count >= 8 and avg_dist < 0.1):
+        return "HIGH"
+    # Medium density if moderate count, moderate coverage, or somewhat packed
+    elif people_count >= 6 or occupancy > 0.15 or (people_count >= 3 and avg_dist < 0.2):
         return "MEDIUM"
     else:
-        return "HIGH"
+        return "LOW"
 
 
 def process_images(
@@ -105,10 +109,10 @@ def process_images(
             detections = detector.detect(image)
 
             # Extract features
-            features = extractor.extract(detections, w, h)
+            features = extractor.extract(detections, (h, w))
 
             # Auto-label
-            features["density_label"] = auto_label(int(features["people_count"]))
+            features["density_label"] = auto_label(features)
             features["source_file"] = os.path.basename(img_path)
 
             rows.append(features)

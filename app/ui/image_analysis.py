@@ -22,11 +22,9 @@ from app.components.styles import (
 )
 from app.components.metrics import render_analysis_metrics, render_stats_table
 from app.components.charts import region_distribution_bar, attribute_bar_chart
-from computer_vision.person_detection import PersonDetector
-from computer_vision.feature_extraction import FeatureExtractor
 from computer_vision.heatmap import generate_heatmap
 from computer_vision.attributes import analyze_person_attributes
-from machine_learning.predict import CrowdPredictor
+from app.resources import get_detector, get_extractor, get_predictor
 
 
 def render_image_analysis():
@@ -84,9 +82,9 @@ def render_image_analysis():
     img_h, img_w = frame_bgr.shape[:2]
 
     # ── Detection & Analysis ─────────────────────────────────────────
-    detector = PersonDetector(confidence_threshold=conf_threshold)
-    extractor = FeatureExtractor()
-    predictor = CrowdPredictor()
+    detector = get_detector(confidence_threshold=conf_threshold)
+    extractor = get_extractor()
+    predictor = get_predictor()
 
     with st.spinner("Processing image and running ML inference..."):
         t0 = time.time()
@@ -112,9 +110,9 @@ def render_image_analysis():
             vis_bgr = generate_heatmap(frame_bgr, detections, intensity=0.6)
         elif vis_mode == "Combined (Boxes + Heatmap)":
             heat_bgr = generate_heatmap(frame_bgr, detections, intensity=0.5)
-            vis_bgr = detector.draw_detections(heat_bgr, detections)
+            vis_bgr = detector.draw_detections(heat_bgr, detections, density_level=density_label)
         else:
-            vis_bgr = detector.draw_detections(frame_bgr.copy(), detections)
+            vis_bgr = detector.draw_detections(frame_bgr.copy(), detections, density_level=density_label)
 
         vis_rgb = cv2.cvtColor(vis_bgr, cv2.COLOR_BGR2RGB)
 

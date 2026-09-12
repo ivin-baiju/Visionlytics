@@ -31,14 +31,15 @@ class CentroidTracker:
     Parameters:
         max_disappeared: Number of consecutive frames an object can be
                          missing before it is deregistered. Default is 30.
-        max_distance: Maximum distance (in pixels) for a centroid match.
-                      If the closest centroid is farther than this, the
-                      detection is registered as a new object. Default is 80.
+        max_distance_ratio: Maximum distance (as a fraction of the frame diagonal)
+                      for a centroid match. If the closest centroid is farther
+                      than this, the detection is registered as a new object.
+                      Default is 0.05 (5% of diagonal).
     """
 
-    def __init__(self, max_disappeared: int = 30, max_distance: float = 80.0):
+    def __init__(self, max_disappeared: int = 30, max_distance_ratio: float = 0.05):
         self.max_disappeared = max_disappeared
-        self.max_distance = max_distance
+        self.max_distance_ratio = max_distance_ratio
         self._next_id = 1
         self._objects: OrderedDict[int, np.ndarray] = OrderedDict()
         self._disappeared: OrderedDict[int, int] = OrderedDict()
@@ -61,12 +62,13 @@ class CentroidTracker:
         self._disappeared.clear()
         self._total_unique = 0
 
-    def update(self, detections: List[Detection]) -> List[Detection]:
+    def update(self, detections: List[Detection], frame_shape: Tuple[int, int]) -> List[Detection]:
         """
         Update tracker with new detections and assign person IDs.
 
         Args:
             detections: List of Detection objects from the current frame.
+            frame_shape: Tuple of (height, width) of the current frame.
 
         Returns:
             Updated list of Detection objects with person_id assigned.
@@ -102,12 +104,15 @@ class CentroidTracker:
         used_rows = set()
         used_cols = set()
 
+        frame_diagonal = np.sqrt(frame_shape[0]**2 + frame_shape[1]**2)
+        pixel_max_dist = self.max_distance_ratio * frame_diagonal
+
         for (row, col) in zip(rows, cols):
             if row in used_rows or col in used_cols:
                 continue
 
             # Only match if distance is within threshold
-            if dist_matrix[row, col] > self.max_distance:
+            if dist_matrix[row, col] > pixel_max_dist:
                 continue
 
             obj_id = object_ids[row]

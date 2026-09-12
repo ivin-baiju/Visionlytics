@@ -128,25 +128,19 @@ def preprocess_and_split(
     Returns:
         Tuple of (X_train, X_val, X_test, y_train, y_val, y_test, scaler, label_encoder)
     """
-    # ── Step 1: Handle missing values ────────────────────────────────────
+    # ── Step 0: Extract Features and Labels ──────────────────────────────
     X = df[FEATURE_COLUMNS].copy()
     y = df[LABEL_COLUMN].copy()
 
-    # Fill missing values with column medians
-    for col in FEATURE_COLUMNS:
-        if X[col].isnull().any():
-            median_val = X[col].median()
-            X[col].fillna(median_val, inplace=True)
-
-    # ── Step 2: Label encoding ───────────────────────────────────────────
+    # ── Step 1: Label encoding ───────────────────────────────────────────
     label_encoder = LabelEncoder()
     label_encoder.classes_ = np.array(LABEL_CLASSES)
     y_encoded = label_encoder.transform(y)
 
-    # ── Step 3: Stratified train/val/test split ──────────────────────────
+    # ── Step 2: Stratified train/val/test split ──────────────────────────
     # First split: separate test set
     X_temp, X_test, y_temp, y_test = train_test_split(
-        X.values, y_encoded,
+        X, y_encoded,
         test_size=test_size,
         random_state=random_state,
         stratify=y_encoded,
@@ -162,11 +156,26 @@ def preprocess_and_split(
         stratify=y_temp,
     )
 
+    # ── Step 3: Handle missing values without data leakage ───────────────
+    # Compute medians on training set ONLY
+    train_medians = X_train.median()
+    
+    # Apply to all sets
+    for col in FEATURE_COLUMNS:
+        X_train[col] = X_train[col].fillna(train_medians[col])
+        X_val[col] = X_val[col].fillna(train_medians[col])
+        X_test[col] = X_test[col].fillna(train_medians[col])
+
+    # Convert to numpy arrays for scaling
+    X_train_np = X_train.values
+    X_val_np = X_val.values
+    X_test_np = X_test.values
+
     # ── Step 4: Feature scaling (fit on TRAINING data only) ──────────────
     scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)  # Fit + transform on train
-    X_val = scaler.transform(X_val)           # Transform only on validation
-    X_test = scaler.transform(X_test)         # Transform only on test
+    X_train = scaler.fit_transform(X_train_np)  # Fit + transform on train
+    X_val = scaler.transform(X_val_np)           # Transform only on validation
+    X_test = scaler.transform(X_test_np)         # Transform only on test
 
     # Save the scaler for use during prediction
     if save_scaler:

@@ -73,15 +73,21 @@ def render_ml_models():
         training_times = results["training_times"]
         trained_models = results["models"]
     else:
-        # Load dataset & evaluate saved models on validation set
+        # Load results from disk
+        results_path = os.path.join(MODELS_DIR, "evaluation_results.joblib")
+        if not os.path.exists(results_path):
+            st.info("No saved evaluation metrics found. Click **'Train All 7 Models'** above to train on the crowd dataset.")
+            return
+            
         try:
-            df = load_dataset()
-            X_train, X_val, X_test, y_train, y_val, y_test, scaler, le = preprocess_and_split(df)
-
+            results = joblib.load(results_path)
+            val_metrics = results["val_metrics"]
+            test_metrics = results.get("test_metrics", {})
+            best_model_name = results["best_model_name"]
+            training_times = results["training_times"]
+            
+            # Load models for feature importance and other uses
             trained_models = {}
-            val_metrics = {}
-            training_times = {}
-
             model_files = {
                 "Logistic Regression": "logistic_regression.joblib",
                 "KNN": "knn.joblib",
@@ -91,19 +97,13 @@ def render_ml_models():
                 "Gradient Boosting": "gradient_boosting.joblib",
                 "Voting Ensemble": "voting_ensemble.joblib",
             }
-
             for name, fname in model_files.items():
                 mpath = os.path.join(MODELS_DIR, fname)
                 if os.path.exists(mpath):
-                    m = joblib.load(mpath)
-                    trained_models[name] = m
-                    val_metrics[name] = evaluate_model(m, X_val, y_val, LABEL_CLASSES)
-                    training_times[name] = 0.05
-
-            meta = joblib.load(best_meta_path)
-            best_model_name = meta.get("name", "Random Forest")
+                    trained_models[name] = joblib.load(mpath)
+                    
         except Exception as e:
-            st.error(f"Error loading models: {e}. Please click 'Train All 7 Models'.")
+            st.error(f"Error loading models or results: {e}. Please click 'Train All 7 Models'.")
             return
 
     # ── Best Model Highlight Banner ──────────────────────────────────
@@ -153,21 +153,41 @@ def render_ml_models():
 
     st.markdown("---")
 
-    # ── Confusion Matrices ───────────────────────────────────────────
-    st.subheader("Confusion Matrices (Validation Set)", icon=":material/grid_on:")
-    model_names = list(val_metrics.keys())
-    tabs = st.tabs(model_names)
+    # ── Confusion Matrices & Test Results ────────────────────────────
+    st.subheader("Detailed Model Evaluation", icon=":material/grid_on:")
+    
+    eval_tabs = st.tabs(["Validation Set", "Test Set (Unseen Data)"])
+    
+    with eval_tabs[0]:
+        model_names = list(val_metrics.keys())
+        val_sub_tabs = st.tabs(model_names)
+        
+        for idx, name in enumerate(model_names):
+            with val_sub_tabs[idx]:
+                col_cm, col_rep = st.columns([1, 1])
+                with col_cm:
+                    cm = val_metrics[name]["confusion_matrix"]
+                    fig_cm = confusion_matrix_heatmap(cm, LABEL_CLASSES, title=f"Val CM: {name}")
+                    st.plotly_chart(fig_cm, width="stretch")
+                with col_rep:
+                    st.markdown("##### Validation Classification Report")
+                    st.code(val_metrics[name]["classification_report"], language="text")
 
-    for idx, name in enumerate(model_names):
-        with tabs[idx]:
-            col_cm, col_rep = st.columns([1, 1])
-            with col_cm:
-                cm = val_metrics[name]["confusion_matrix"]
-                fig_cm = confusion_matrix_heatmap(cm, LABEL_CLASSES, title=f"Confusion Matrix: {name}")
-                st.plotly_chart(fig_cm, width="stretch")
-            with col_rep:
-                st.markdown("##### Classification Report")
-                st.code(val_metrics[name]["classification_report"], language="text")
+    with eval_tabs[1]:
+        if "test_metrics" in locals() and test_metrics:
+            test_sub_tabs = st.tabs(model_names)
+            for idx, name in enumerate(model_names):
+                with test_sub_tabs[idx]:
+                    col_cm, col_rep = st.columns([1, 1])
+                    with col_cm:
+                        cm = test_metrics[name]["confusion_matrix"]
+                        fig_cm = confusion_matrix_heatmap(cm, LABEL_CLASSES, title=f"Test CM: {name}")
+                        st.plotly_chart(fig_cm, width="stretch")
+                    with col_rep:
+                        st.markdown("##### Test Classification Report")
+                        st.code(test_metrics[name]["classification_report"], language="text")
+        else:
+            st.info("Test set metrics not available. Please retrain models to generate them.")
 
     st.markdown("---")
 

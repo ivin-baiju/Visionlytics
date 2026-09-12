@@ -3,7 +3,7 @@
 
 ![Visionlytics Banner](https://img.shields.io/badge/VISIONLYTICS-Crowd%20Analytics-636ee6?style=for-the-badge)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)
-![YOLOv8](https://img.shields.io/badge/YOLOv8-Nano-green?style=flat-square)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-Small-green?style=flat-square)
 ![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-orange?style=flat-square)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-red?style=flat-square)
 
@@ -33,21 +33,23 @@ There is a critical need for an interpretable, statistically grounded system tha
 ---
 
 ## 3. Objectives
-1. **Multi-Modal Perception**: Seamlessly detect persons in images, video streams, and live camera feeds using YOLOv8n.
+1. **Multi-Modal Perception**: Seamlessly detect persons in images, video streams, and live camera feeds using YOLOv8s.
 2. **Spatial Feature Engineering**: Derive a 10-dimensional spatial descriptor vector capturing density, dispersion, nearest-neighbor proximity, and frame partitioning.
-3. **Statistical Modeling**: Train and validate 5 foundational ML classifiers:
+3. **Statistical Modeling**: Train and validate 7 foundational ML classifiers:
    - Multinomial Logistic Regression
    - K-Nearest Neighbors (KNN)
    - Decision Trees (CART)
    - Random Forest Ensembles
    - Support Vector Machines (SVM with RBF Kernel)
+   - Gradient Boosting
+   - Voting Ensemble
 4. **Experimental Rigor**: Enforce strict data partitioning (70% Train, 15% Validation, 15% Held-Out Test) and isolated feature standardization.
 5. **Interactive UI**: Deliver a modern, dark-themed Streamlit web interface with real-time bounding boxes, heatmaps, interactive charts, and model benchmarking dashboards.
 
 ---
 
 ## 4. Technologies Used
-- **Computer Vision**: `ultralytics` (YOLOv8n), `opencv-python-headless`, `Pillow`
+- **Computer Vision**: `ultralytics` (YOLOv8s), `opencv-python-headless`, `Pillow`
 - **Statistical Machine Learning**: `scikit-learn`, `numpy`, `pandas`, `joblib`
 - **Visualization & Dashboard**: `streamlit`, `plotly`, `matplotlib`, `seaborn`
 - **Environment & Build**: Python 3.10+ virtual environment
@@ -57,14 +59,14 @@ There is a critical need for an interpretable, statistically grounded system tha
 ## 5. System Architecture
 ```mermaid
 graph TD
-    A["Visual Input<br/>(Image / Video / Webcam)"] --> B["YOLOv8n Person Detector<br/>(Confidence >= 0.3)"]
+    A["Visual Input<br/>(Image / Video / Webcam)"] --> B["YOLOv8s Person Detector<br/>(Confidence >= 0.3)"]
     B --> C["Person Bounding Boxes<br/>[x1, y1, x2, y2, conf]"]
     
     C --> D["Spatial Feature Extractor<br/>(10 Geometric Features)"]
     C --> E["Visual Analytics<br/>(Heatmap / Centroid Tracker / Attributes)"]
     
     D --> F["Feature Standardization<br/>(StandardScaler - Fit on Train Only)"]
-    F --> G["Statistical Classifiers<br/>(LR, KNN, Tree, RF, SVM)"]
+    F --> G["Statistical Classifiers<br/>(LR, KNN, Tree, RF, SVM, GB, Ensemble)"]
     
     G --> H["Crowd Density Prediction<br/>(LOW / MEDIUM / HIGH)"]
     G --> I["Class Probabilities & Confidence"]
@@ -78,7 +80,7 @@ graph TD
 
 ## 6. Computer Vision Pipeline
 1. **Frame Ingestion**: Frames are standardized into RGB color format with dimension tracking $(H, W)$.
-2. **YOLOv8n Object Detection**: Fast inference on CPU/GPU filtering specifically for COCO class index `0` (`person`).
+2. **YOLOv8s Object Detection**: Fast inference on CPU/GPU filtering specifically for COCO class index `0` (`person`).
 3. **Bounding Box Normalization**: Bounding coordinates are transformed into both absolute pixel space and frame-normalized units.
 4. **Centroid Tracking**: For continuous video, Euclidean distance matching between frame centroids enables persistent trajectory and individual identification.
 5. **Spatial Heatmaps**: Gaussian 2D distributions are rendered around person centers and overlaid via alpha blending ($\alpha = 0.6$) across a cold-to-hot colormap.
@@ -121,7 +123,7 @@ Features exhibit rich covariance structures:
 ---
 
 ## 10. Machine Learning Algorithms
-The platform implements 5 distinct classification paradigms:
+The platform implements 7 distinct classification paradigms:
 
 1. **Multinomial Logistic Regression**:
    - Convex optimization via L-BFGS solver with L2 regularization.
@@ -136,8 +138,14 @@ The platform implements 5 distinct classification paradigms:
    - Ensemble bagging with randomized feature subsets at each split.
    - Generates Gini importance rankings for all 10 spatial features.
 5. **Support Vector Machine (SVM)**:
-   - Radial Basis Function kernel ($C=1.0, \gamma=\text{'scale'}$) maximizing margin separation.
+   - Radial Basis Function kernel ($C=2.0, \gamma=\text{'scale'}$) maximizing margin separation.
    - Enables calibrated probability estimates via Platt scaling.
+6. **Gradient Boosting**:
+   - Sequential ensemble method that builds trees iteratively to correct prior errors.
+   - Robust to complex non-linear relationships.
+7. **Voting Ensemble**:
+   - Combines Random Forest, Gradient Boosting, and SVM using soft voting.
+   - Creates a highly stable super-model maximizing overall F1-score.
 
 ---
 
@@ -169,7 +177,7 @@ On the 1,500-sample benchmark dataset:
 ---
 
 ## 14. Limitations
-- **Occlusion in Extreme Density**: In extremely dense stampedes or protests ($>100$ people/frame), bounding box overlap may cause YOLOv8n to underestimate head counts without a dedicated crowd density regression head.
+- **Occlusion in Extreme Density**: In extremely dense stampedes or protests ($>100$ people/frame), bounding box overlap may cause YOLOv8s to underestimate head counts without a dedicated crowd density regression head.
 - **Camera Elevation Sensitivity**: Perspective angles (top-down vs eye-level) influence bounding box areas and occupancy ratios.
 - **Attribute Approximations**: Hair and clothing colors rely on heuristic HSV color histograms on bounding box crops, sensitive to extreme lighting changes.
 
@@ -186,8 +194,9 @@ On the 1,500-sample benchmark dataset:
 ## 16. Installation Instructions
 
 ```bash
-# Clone or navigate to the repository
-cd /Users/ivinbaiju/Unisht/Visionlytics
+# Clone the repository
+git clone https://github.com/ivin-baiju/Visionlytics.git
+cd Visionlytics
 
 # Create and activate Python virtual environment
 python3 -m venv .venv
@@ -195,6 +204,8 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+> **Note on Webcam Support:** The project uses `opencv-python-headless` by default to avoid GUI library conflicts in server environments. If you encounter issues with the Live Camera on your local machine, you may need to install the full version: `pip uninstall opencv-python-headless && pip install opencv-python`.
 ```
 
 ---
@@ -206,7 +217,7 @@ pip install -r requirements.txt
 # Generate the initial dataset (1500 samples)
 python3 -c "from dataset.generate_dataset import generate_dataset; generate_dataset()"
 
-# Train all 5 ML models and select the champion model
+# Train all 7 ML models and select the champion model
 python3 machine_learning/train.py
 ```
 

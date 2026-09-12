@@ -77,11 +77,16 @@ class PersonDetector:
         self._model = None
 
     def _load_model(self):
-        """Lazily load the YOLOv8n model on first use."""
+        """Lazily load the YOLOv8s model on first use."""
         if self._model is None:
             from ultralytics import YOLO
+            import os
+            
+            PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            model_path = os.path.join(PROJECT_ROOT, "yolov8s.pt")
+            
             # YOLOv8s is the small variant — offers much higher accuracy than nano while remaining fast
-            self._model = YOLO("yolov8s.pt")
+            self._model = YOLO(model_path)
         return self._model
 
     def detect(self, image: np.ndarray) -> List[Detection]:
@@ -99,13 +104,20 @@ class PersonDetector:
 
         model = self._load_model()
 
+        import sys
+        if sys.platform == "darwin":
+            device = "cpu"  # Force CPU to prevent MPS threading segfaults on Mac
+        else:
+            import torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
         # Resize if the image is too large (preserves aspect ratio internally)
         results = model.predict(
             source=image,
             conf=self.confidence_threshold,
             classes=[self.PERSON_CLASS_ID],  # Only detect people
             imgsz=self.max_image_size,
-            device="cpu",  # Force CPU to prevent MPS threading segfaults on Mac
+            device=device,
             verbose=False,
         )
 

@@ -17,10 +17,8 @@ from app.components.styles import (
     DENSITY_COLORS,
 )
 from app.components.metrics import render_analysis_metrics
-from computer_vision.person_detection import PersonDetector
-from computer_vision.feature_extraction import FeatureExtractor
 from computer_vision.heatmap import generate_heatmap
-from machine_learning.predict import CrowdPredictor
+from app.resources import get_detector, get_extractor, get_predictor
 
 
 def render_live_camera():
@@ -60,20 +58,36 @@ def render_live_camera():
                 cv_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
                 h, w = cv_img.shape[:2]
 
-                detector = PersonDetector(confidence_threshold=conf_threshold)
-                extractor = FeatureExtractor()
-                predictor = CrowdPredictor()
+                detector = get_detector(confidence_threshold=conf_threshold)
+                extractor = get_extractor()
+                predictor = get_predictor()
 
                 detections = detector.detect(cv_img)
                 features = extractor.extract(detections, (h, w))
                 density_label, conf = predictor.predict(features)
 
-                annotated = detector.draw_detections(cv_img.copy(), detections)
+                annotated = detector.draw_detections(cv_img.copy(), detections, density_level=density_label)
                 annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
 
                 st.markdown("---")
                 render_analysis_metrics(features, density_label, conf)
                 st.image(annotated_rgb, caption=f"Analyzed Snapshot: {density_label} Density", width="stretch")
+                
+                # Update session state for dashboard
+                analysis_record = {
+                    "people_count": features["people_count"],
+                    "density": density_label,
+                    "occupancy_ratio": features["occupancy_ratio"],
+                    "confidence": conf,
+                    "top_region_count": features["top_region_count"],
+                    "middle_region_count": features["middle_region_count"],
+                    "bottom_region_count": features["bottom_region_count"],
+                    "timestamp": time.time(),
+                }
+                st.session_state["last_analysis"] = analysis_record
+                if "analysis_history" not in st.session_state:
+                    st.session_state["analysis_history"] = []
+                st.session_state["analysis_history"].append(analysis_record)
         return
 
     # ── Live Video Loop ──────────────────────────────────────────────
@@ -87,9 +101,9 @@ def render_live_camera():
         )
         return
 
-    detector = PersonDetector(confidence_threshold=conf_threshold)
-    extractor = FeatureExtractor()
-    predictor = CrowdPredictor()
+    detector = get_detector(confidence_threshold=conf_threshold)
+    extractor = get_extractor()
+    predictor = get_predictor()
 
     feed_col, metrics_col = st.columns([3, 1])
     feed_placeholder = feed_col.empty()
@@ -123,9 +137,9 @@ def render_live_camera():
                 vis_frame = generate_heatmap(frame, detections, intensity=0.6)
             elif vis_mode == "Combined (Boxes + Heatmap)":
                 heat = generate_heatmap(frame, detections, intensity=0.5)
-                vis_frame = detector.draw_detections(heat, detections)
+                vis_frame = detector.draw_detections(heat, detections, density_level=density_label)
             else:
-                vis_frame = detector.draw_detections(frame.copy(), detections)
+                vis_frame = detector.draw_detections(frame.copy(), detections, density_level=density_label)
 
             # Render FPS on frame
             cv2.putText(
@@ -140,6 +154,18 @@ def render_live_camera():
 
             frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
             feed_placeholder.image(frame_rgb, channels="RGB", width="stretch")
+
+            # Update session state for dashboard
+            st.session_state["last_analysis"] = {
+                "people_count": features["people_count"],
+                "density": density_label,
+                "occupancy_ratio": features["occupancy_ratio"],
+                "confidence": conf,
+                "top_region_count": features["top_region_count"],
+                "middle_region_count": features["middle_region_count"],
+                "bottom_region_count": features["bottom_region_count"],
+                "timestamp": time.time(),
+            }
 
             density_color = DENSITY_COLORS.get(density_label, "#ffffff")
             metrics_placeholder.markdown(f"""

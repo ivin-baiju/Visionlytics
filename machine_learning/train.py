@@ -186,6 +186,16 @@ def train_all_models(
     for name, model in trained_models.items():
         test_metrics[name] = evaluate_model(model, X_test, y_test, LABEL_CLASSES)
 
+    # Save all evaluation metrics to disk
+    results_path = os.path.join(MODELS_DIR, "evaluation_results.joblib")
+    joblib.dump({
+        "val_metrics": all_metrics,
+        "test_metrics": test_metrics,
+        "training_times": training_times,
+        "best_model_name": best_model_name,
+        "data_info": data_info,
+    }, results_path)
+
     return {
         "models": trained_models,
         "val_metrics": all_metrics,
