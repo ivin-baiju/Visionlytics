@@ -19,6 +19,7 @@ from app.components.styles import (
 from app.components.metrics import render_analysis_metrics
 from computer_vision.heatmap import generate_heatmap
 from app.resources import get_detector, get_extractor, get_predictor
+from app.database import save_analysis_record
 
 
 def render_live_camera():
@@ -73,21 +74,23 @@ def render_live_camera():
                 render_analysis_metrics(features, density_label, conf)
                 st.image(annotated_rgb, caption=f"Analyzed Snapshot: {density_label} Density", width="stretch")
                 
-                # Update session state for dashboard
+                # Save to SQLite database
+                save_analysis_record(
+                    source_type="Live Camera",
+                    features=features,
+                    density_label=density_label,
+                    confidence=conf
+                )
+                
+                # Update session state for current view
                 analysis_record = {
                     "people_count": features["people_count"],
                     "density": density_label,
                     "occupancy_ratio": features["occupancy_ratio"],
                     "confidence": conf,
-                    "top_region_count": features["top_region_count"],
-                    "middle_region_count": features["middle_region_count"],
-                    "bottom_region_count": features["bottom_region_count"],
                     "timestamp": time.time(),
                 }
                 st.session_state["last_analysis"] = analysis_record
-                if "analysis_history" not in st.session_state:
-                    st.session_state["analysis_history"] = []
-                st.session_state["analysis_history"].append(analysis_record)
         return
 
     # ── Live Video Loop ──────────────────────────────────────────────
@@ -155,15 +158,21 @@ def render_live_camera():
             frame_rgb = cv2.cvtColor(vis_frame, cv2.COLOR_BGR2RGB)
             feed_placeholder.image(frame_rgb, channels="RGB", width="stretch")
 
+            # Save to SQLite occasionally (e.g. once every ~30 frames) to avoid DB spam
+            if int(curr_time) % 2 == 0:
+                save_analysis_record(
+                    source_type="Live Camera",
+                    features=features,
+                    density_label=density_label,
+                    confidence=conf
+                )
+
             # Update session state for dashboard
             st.session_state["last_analysis"] = {
                 "people_count": features["people_count"],
                 "density": density_label,
                 "occupancy_ratio": features["occupancy_ratio"],
                 "confidence": conf,
-                "top_region_count": features["top_region_count"],
-                "middle_region_count": features["middle_region_count"],
-                "bottom_region_count": features["bottom_region_count"],
                 "timestamp": time.time(),
             }
 

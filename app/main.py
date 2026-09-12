@@ -26,6 +26,7 @@ if PROJECT_ROOT not in sys.path:
 from app.components.styles import get_custom_css, header_html, status_card_html
 from app.components.icons import BRAND_LOGO_SVG
 from app.resources import get_detector, get_extractor, get_predictor
+from app.database import init_db
 
 # ── Page Configuration ───────────────────────────────────────────────────────
 
@@ -35,6 +36,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Initialize the persistent SQLite database
+init_db()
 
 # Inject custom CSS
 st.markdown(get_custom_css(), unsafe_allow_html=True)

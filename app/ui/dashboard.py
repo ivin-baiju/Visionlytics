@@ -22,7 +22,11 @@ from app.components.icons import (
     ICON_FEATURE_ENGINEERING,
     ICON_MACHINE_LEARNING,
 )
-from app.components.charts import density_distribution_pie, region_distribution_bar
+from app.components.charts import (
+    people_count_over_time,
+    density_distribution_pie,
+)
+from app.database import get_recent_history
 
 
 def render_dashboard():
@@ -70,9 +74,20 @@ def render_dashboard():
     st.markdown("---")
 
     # ── Latest Analysis Summary ────────────────────────────────────
+    history = get_recent_history(limit=50)
+    
     if "last_analysis" in st.session_state:
-        st.subheader("Latest Analysis", icon=":material/insights:")
         analysis = st.session_state["last_analysis"]
+    elif history:
+        analysis = history[0]
+        # map db column to what dashboard expects
+        if "density_label" in analysis and "density" not in analysis:
+            analysis["density"] = analysis["density_label"]
+    else:
+        analysis = None
+
+    if analysis:
+        st.subheader("Latest Analysis", icon=":material/insights:")
 
         col1, col2, col3, col4 = st.columns(4)
 
@@ -115,25 +130,24 @@ def render_dashboard():
 
         with col_a:
             # Density distribution (if we have history)
-            if "analysis_history" in st.session_state:
-                history = st.session_state["analysis_history"]
+            history = get_recent_history(limit=50)
+            if history:
                 counts = {}
                 for h in history:
-                    d = h.get("density", "N/A")
+                    d = h.get("density_label", "N/A")
                     counts[d] = counts.get(d, 0) + 1
                 fig = density_distribution_pie(counts)
                 st.plotly_chart(fig, width="stretch")
 
         with col_b:
-            # Regional distribution
-            if "last_analysis" in st.session_state:
-                a = st.session_state["last_analysis"]
-                fig = region_distribution_bar(
-                    int(a.get("top_region_count", 0)),
-                    int(a.get("middle_region_count", 0)),
-                    int(a.get("bottom_region_count", 0)),
+            # Regional distribution (fallback to basic metrics since regions aren't in last_analysis anymore)
+            if history:
+                df = pd.DataFrame(history)
+                fig_line = people_count_over_time(
+                    df['people_count'].tolist(),
+                    range(len(df))
                 )
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig_line, width="stretch")
 
     else:
         # No analysis yet — welcome message

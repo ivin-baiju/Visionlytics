@@ -25,6 +25,7 @@ from app.components.charts import region_distribution_bar, attribute_bar_chart
 from computer_vision.heatmap import generate_heatmap
 from computer_vision.attributes import analyze_person_attributes
 from app.resources import get_detector, get_extractor, get_predictor
+from app.database import save_analysis_record
 
 
 def render_image_analysis():
@@ -116,21 +117,23 @@ def render_image_analysis():
 
         vis_rgb = cv2.cvtColor(vis_bgr, cv2.COLOR_BGR2RGB)
 
-    # Update session state for dashboard
-    analysis_record = {
-        "people_count": features["people_count"],
-        "density": density_label,
-        "occupancy_ratio": features["occupancy_ratio"],
-        "confidence": ml_confidence,
-        "top_region_count": features["top_region_count"],
-        "middle_region_count": features["middle_region_count"],
-        "bottom_region_count": features["bottom_region_count"],
-        "timestamp": time.time(),
-    }
-    st.session_state["last_analysis"] = analysis_record
-    if "analysis_history" not in st.session_state:
-        st.session_state["analysis_history"] = []
-    st.session_state["analysis_history"].append(analysis_record)
+        # Save to SQLite database
+        save_analysis_record(
+            source_type="Image",
+            features=features,
+            density_label=density_label,
+            confidence=ml_confidence
+        )
+
+        # Update session state for current view
+        analysis_record = {
+            "people_count": features["people_count"],
+            "density": density_label,
+            "occupancy_ratio": features["occupancy_ratio"],
+            "confidence": ml_confidence,
+            "timestamp": time.time(),
+        }
+        st.session_state["last_analysis"] = analysis_record
 
     # ── Display Results ──────────────────────────────────────────────
     st.markdown("---")

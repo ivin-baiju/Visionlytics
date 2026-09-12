@@ -24,8 +24,10 @@ from app.components.charts import (
     people_count_over_time,
     density_distribution_pie,
 )
+from computer_vision.heatmap import generate_heatmap
 from computer_vision.tracking import CentroidTracker
 from app.resources import get_detector, get_extractor, get_predictor
+from app.database import save_analysis_record
 
 
 def render_video_analysis():
@@ -112,7 +114,7 @@ def render_video_analysis():
         confidences = []
 
         frame_idx = 0
-        processed_count = 0
+        frame_count = 0
         t_start = time.time()
 
         while cap.isOpened():
@@ -171,7 +173,26 @@ def render_video_analysis():
                 </div>
                 """, unsafe_allow_html=True)
 
-                processed_count += 1
+                # Update session state for current view
+                analysis_record = {
+                    "people_count": features["people_count"],
+                    "density": density_label,
+                    "occupancy_ratio": features["occupancy_ratio"],
+                    "confidence": conf,
+                    "timestamp": time.time(),
+                }
+                st.session_state["last_analysis"] = analysis_record
+                
+                # Save to SQLite
+                if frame_count % 30 == 0:  # Save 1 frame every second approx to DB
+                    save_analysis_record(
+                        source_type="Video",
+                        features=features,
+                        density_label=density_label,
+                        confidence=conf
+                    )
+
+                frame_count += 1
 
             frame_idx += 1
             if total_frames > 0:
@@ -185,7 +206,7 @@ def render_video_analysis():
             pass
 
         elapsed = time.time() - t_start
-        status_text.success(f"Analysis complete! Processed {processed_count} frames in {elapsed:.1f}s.")
+        status_text.success(f"Analysis complete! Processed {frame_count} frames in {elapsed:.1f}s.")
 
         if len(timestamps) > 0:
             st.markdown("---")
@@ -204,22 +225,6 @@ def render_video_analysis():
             }
             peak_density = max(class_counts, key=class_counts.get)
             peak_color = DENSITY_COLORS.get(peak_density, "#ffffff")
-
-            # Update session state for dashboard
-            analysis_record = {
-                "people_count": avg_people,
-                "density": peak_density,
-                "occupancy_ratio": features.get("occupancy_ratio", 0),
-                "confidence": np.mean(confidences),
-                "top_region_count": features.get("top_region_count", 0),
-                "middle_region_count": features.get("middle_region_count", 0),
-                "bottom_region_count": features.get("bottom_region_count", 0),
-                "timestamp": time.time(),
-            }
-            st.session_state["last_analysis"] = analysis_record
-            if "analysis_history" not in st.session_state:
-                st.session_state["analysis_history"] = []
-            st.session_state["analysis_history"].append(analysis_record)
 
             c1, c2, c3, c4 = st.columns(4)
             with c1:
