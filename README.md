@@ -2,6 +2,7 @@
 
 **Intelligent Visual Crowd Analytics** — a Streamlit computer-vision and statistical machine-learning platform for estimating crowd density from images, video, and camera input.
 
+[![Version](https://img.shields.io/badge/Version-1.0-636ee6?style=flat-square)](VERSION_1.0.md)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.63-red?style=flat-square)](https://streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)](https://www.python.org/)
 [![YOLOv8](https://img.shields.io/badge/YOLOv8s-Computer%20Vision-green?style=flat-square)](https://docs.ultralytics.com/)
@@ -59,7 +60,7 @@ Visionlytics/
 ├── requirements.txt         # Python dependencies
 ├── .gitignore
 ├── README.md
-└── VERSION_0.5.md
+└── VERSION_1.0.md
 ```
 
 ## Installation
@@ -143,19 +144,23 @@ Runtime-generated files such as SQLite history and logs are written to `outputs/
 
 ## Testing
 
-Run the tracked test directly:
+Run the tracking tests directly:
 
 ```bash
 python tests/test_tracking.py
 ```
 
-GitHub Actions runs the same test on Python 3.11 for pushes and pull requests to `main`.
+GitHub Actions runs the lightweight tracking test on Python 3.11 for pushes and pull requests to `main`.
 
-## Notes
+## Deployment
 
-- The primary detector is **YOLOv8s** (`yolov8s.onnx`, with `yolov8s.pt` as fallback).
-- `models/*.joblib` is ignored for newly generated training artifacts; already tracked runtime models remain available to the application.
-- Snowflake and Docker-specific deployment files are intentionally not part of the cleaned Streamlit repository.
+For Streamlit hosting, use the repository root with `app/main.py` as the application entrypoint.
+
+The repository intentionally excludes Snowflake and Docker deployment configuration from the supported 1.0 runtime path.
+
+## Version 1.0
+
+Version 1.0 is the cleaned Streamlit-focused release with repository simplification, detector hardening, improved runtime checks, and a lightweight CI pipeline. See [`VERSION_1.0.md`](VERSION_1.0.md) for the release notes.
 
 ## Project status
 
