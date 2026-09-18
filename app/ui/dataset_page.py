@@ -7,29 +7,29 @@ and dataset regeneration controls.
 """
 
 import os
-import pandas as pd
+
 import streamlit as st
 
-from app.components.styles import header_html, metric_card_html
 from app.components.charts import (
     class_distribution_bar,
     feature_correlation_heatmap,
     feature_distribution_histogram,
     scatter_feature_vs_density,
 )
+from app.components.styles import header_html, metric_card_html
+from dataset.generate_dataset import generate_dataset
 from machine_learning.preprocessing import (
-    load_dataset,
     DATASET_PATH,
     FEATURE_COLUMNS,
     LABEL_CLASSES,
+    load_dataset,
 )
-from dataset.generate_dataset import generate_dataset
 
 
 def render_dataset_page():
     """Render the Dataset Exploration page."""
     st.markdown(header_html(), unsafe_allow_html=True)
-    st.header("Dataset Exploration & Analytics", icon=":material/dataset:")
+    st.header("Dataset exploration & analytics", icon=":material/dataset:")
     st.markdown(
         "Inspect the training dataset, examine feature distributions, "
         "verify class balance, and study spatial correlation patterns."
@@ -69,14 +69,14 @@ def render_dataset_page():
     st.markdown("---")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(metric_card_html("Total Samples", f"{len(df):,}", "#636ee6"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Total Samples", f"{len(df):,}", "#4A7DFF"), unsafe_allow_html=True)
     with c2:
-        st.markdown(metric_card_html("Feature Count", f"{len(FEATURE_COLUMNS)}", "#a29bfe"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Feature Count", f"{len(FEATURE_COLUMNS)}", "#A78BFA"), unsafe_allow_html=True)
     with c3:
-        st.markdown(metric_card_html("Classes", f"{len(LABEL_CLASSES)}", "#00b894"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Classes", f"{len(LABEL_CLASSES)}", "#2ECDA7"), unsafe_allow_html=True)
     with c4:
         missing_count = int(df.isnull().sum().sum())
-        st.markdown(metric_card_html("Missing Values", f"{missing_count}", "#ffeaa7"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Missing Values", f"{missing_count}", "#FFB347"), unsafe_allow_html=True)
 
     # ── Dataset Table & Download ─────────────────────────────────────
     st.markdown("---")

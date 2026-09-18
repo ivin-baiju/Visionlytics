@@ -7,14 +7,15 @@ for the Semester 3 Statistical Machine Learning project.
 """
 
 import streamlit as st
+
+from app.components.icons import ICON_OBJECTIVES, ICON_TARGET
 from app.components.styles import header_html
-from app.components.icons import ICON_TARGET, ICON_OBJECTIVES
 
 
 def render_about():
     """Render the About & Documentation page."""
     st.markdown(header_html(), unsafe_allow_html=True)
-    st.header("About VISIONLYTICS", icon=":material/info:")
+    st.header("About Visionlytics", icon=":material/info:")
     st.markdown(
         "**VISIONLYTICS: Intelligent Visual Crowd Analytics** is a comprehensive "
         "Computer Vision and Statistical Machine Learning project engineered for "
@@ -28,11 +29,11 @@ def render_about():
     with col_proj:
         st.markdown(f"""
         <div class="section-container">
-            <h3 style="margin-top:0; color:#636ee6; display:flex; align-items:center; gap:0.6rem;">
+            <h3 style="margin-top:0; color:#4A7DFF; display:flex; align-items:center; gap:0.6rem;">
                 {ICON_TARGET}
-                <span>Project Purpose</span>
+                <span>Project purpose</span>
             </h3>
-            <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+            <p style="color: #5a6578; font-size: 0.9rem;">
                 Traditional computer vision demonstrations often rely solely on pretrained
                 black-box models. <strong>VISIONLYTICS</strong> bridges modern Computer Vision
                 and classical <strong>Statistical Machine Learning</strong> by using object detection
@@ -45,11 +46,11 @@ def render_about():
     with col_obj:
         st.markdown(f"""
         <div class="section-container">
-            <h3 style="margin-top:0; color:#00b894; display:flex; align-items:center; gap:0.6rem;">
+            <h3 style="margin-top:0; color:#2ECDA7; display:flex; align-items:center; gap:0.6rem;">
                 {ICON_OBJECTIVES}
-                <span>Key Objectives</span>
+                <span>Key objectives</span>
             </h3>
-            <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+            <p style="color: #5a6578; font-size: 0.9rem;">
                 • Real-time person detection across images, video files, and webcam streams.<br>
                 • Extraction of 10 calibrated spatial, geometric, and regional crowd features.<br>
                 • Training, validation, and empirical comparison of 7 classical ML algorithms.<br>
@@ -62,7 +63,7 @@ def render_about():
     st.markdown("---")
 
     # ── Feature Engineering Section ──────────────────────────────────
-    st.subheader("Feature Engineering (10 Spatial Attributes)", icon=":material/square_foot:")
+    st.subheader("Feature engineering (10 spatial attributes)", icon=":material/square_foot:")
     st.markdown("""
     The system extracts a **10-dimensional feature vector** $\\mathbf{x} \\in \\mathbb{R}^{10}$
     for each video frame or static image:
@@ -86,7 +87,7 @@ def render_about():
     st.markdown("---")
 
     # ── ML Algorithms Section ────────────────────────────────────────
-    st.subheader("Statistical Machine Learning Algorithms", icon=":material/neurology:")
+    st.subheader("Statistical machine learning algorithms", icon=":material/neurology:")
 
     c_ml1, c_ml2 = st.columns(2)
 
@@ -134,7 +135,7 @@ def render_about():
     st.markdown("---")
 
     # ── Methodological Rigor & Data Leakage Prevention ───────────────
-    st.subheader("Experimental Rigor & Leakage Prevention", icon=":material/verified_user:")
+    st.subheader("Experimental rigor & leakage prevention", icon=":material/verified_user:")
     st.markdown(r"""
     In accordance with statistical best practices:
     - **Stratified Partitioning**: The dataset is split into **70% Training**, **15% Validation**, and **15% Held-Out Testing** with class proportion preservation.
@@ -145,7 +146,7 @@ def render_about():
     st.markdown("---")
 
     # ── Privacy and Ethical Standards ────────────────────────────────
-    st.subheader("Privacy, Ethics & Governance", icon=":material/security:")
+    st.subheader("Privacy, ethics & governance", icon=":material/security:")
     st.markdown("""
     <div class="info-box">
         <strong>Privacy by Design:</strong>
@@ -160,10 +161,10 @@ def render_about():
     st.markdown("---")
 
     # ── Technology Stack ─────────────────────────────────────────────
-    st.subheader("Technology Stack", icon=":material/terminal:")
+    st.subheader("Technology stack", icon=":material/terminal:")
     st.markdown("""
     - **Computer Vision**: Ultralytics YOLOv8s, OpenCV, Pillow
     - **Statistical ML**: Scikit-Learn (7 Classifiers + Ensemble), NumPy, Pandas, Joblib
     - **Visualization**: Plotly Interactive Charts, Matplotlib, Seaborn
-    - **Application**: Streamlit, Custom Dark UI Design System
+    - **Application**: Streamlit, Custom Glassmorphism Design System
     """)

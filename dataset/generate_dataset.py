@@ -19,10 +19,9 @@ this with real data using the dataset_from_images.py tool.
 """
 
 import os
+
 import numpy as np
 import pandas as pd
-from typing import Optional
-
 
 # Feature column names matching the FeatureExtractor output
 FEATURE_COLUMNS = [
@@ -41,7 +40,7 @@ FEATURE_COLUMNS = [
 
 def generate_dataset(
     n_per_class: int = 500,
-    output_path: Optional[str] = None,
+    output_path: str | None = None,
     random_state: int = 42,
 ) -> pd.DataFrame:
     """

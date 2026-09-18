@@ -7,25 +7,25 @@ occupancy metrics, and FPS tracking.
 """
 
 import time
+
 import cv2
 import numpy as np
 import streamlit as st
 
-from app.components.styles import (
-    header_html,
-    metric_card_html,
-    DENSITY_COLORS,
-)
 from app.components.metrics import render_analysis_metrics
-from computer_vision.heatmap import generate_heatmap
-from app.resources import get_detector, get_extractor, get_predictor
+from app.components.styles import (
+    DENSITY_COLORS,
+    header_html,
+)
 from app.database import save_analysis_record
+from app.resources import get_detector, get_extractor, get_predictor
+from computer_vision.heatmap import generate_heatmap
 
 
 def render_live_camera():
     """Render the Live Camera page."""
     st.markdown(header_html(), unsafe_allow_html=True)
-    st.header("Live Camera Analytics", icon=":material/videocam:")
+    st.header("Live camera analytics", icon=":material/videocam:")
     st.markdown(
         "Stream live video from your local webcam to perform real-time person detection, "
         "spatial feature extraction, and instant crowd density inference."
@@ -46,7 +46,7 @@ def render_live_camera():
     with col_c4:
         enable_tracking = st.toggle("Enable Tracking", value=True)
 
-    col_btn1, col_btn2 = st.columns([1, 4])
+    col_btn1, _col_btn2 = st.columns([1, 4])
     with col_btn1:
         run_camera = st.toggle("Start Live Feed", value=False)
 
@@ -192,11 +192,11 @@ def render_live_camera():
                 "timestamp": time.time(),
             }
 
-            density_color = DENSITY_COLORS.get(density_label, "#ffffff")
+            density_color = DENSITY_COLORS.get(density_label, "#1a2340")
             metrics_placeholder.markdown(f"""
             <div class="metric-card">
                 <div class="metric-label">People Detected</div>
-                <div class="metric-value" style="color: #636ee6;">{features['people_count']}</div>
+                <div class="metric-value" style="color: #4A7DFF;">{features['people_count']}</div>
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Crowd Density</div>
@@ -204,15 +204,15 @@ def render_live_camera():
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Occupancy</div>
-                <div class="metric-value" style="color: #a29bfe;">{features['occupancy_ratio']*100:.1f}%</div>
+                <div class="metric-value" style="color: #A78BFA;">{features['occupancy_ratio']*100:.1f}%</div>
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Model Confidence</div>
-                <div class="metric-value" style="color: #ffeaa7;">{conf*100:.1f}%</div>
+                <div class="metric-value" style="color: #FFB347;">{conf*100:.1f}%</div>
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Stream Rate</div>
-                <div class="metric-value" style="color: #00b894;">{avg_fps:.1f} FPS</div>
+                <div class="metric-value" style="color: #2ECDA7;">{avg_fps:.1f} FPS</div>
             </div>
             """, unsafe_allow_html=True)
 

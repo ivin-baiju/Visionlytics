@@ -7,25 +7,26 @@ metric summaries, system status indicators, and architecture overview.
 
 import pandas as pd
 import streamlit as st
+
+from app.components.charts import (
+    density_distribution_pie,
+    people_count_over_time,
+)
+from app.components.icons import (
+    ICON_COMPUTER_VISION,
+    ICON_FEATURE_ENGINEERING,
+    ICON_IMAGE_ANALYSIS,
+    ICON_LIVE_CAMERA,
+    ICON_MACHINE_LEARNING,
+    ICON_VIDEO_ANALYSIS,
+)
 from app.components.styles import (
+    DENSITY_COLORS,
+    arch_card_html,
+    feature_card_html,
     header_html,
     metric_card_html,
     status_card_html,
-    feature_card_html,
-    arch_card_html,
-    DENSITY_COLORS,
-)
-from app.components.icons import (
-    ICON_IMAGE_ANALYSIS,
-    ICON_VIDEO_ANALYSIS,
-    ICON_LIVE_CAMERA,
-    ICON_COMPUTER_VISION,
-    ICON_FEATURE_ENGINEERING,
-    ICON_MACHINE_LEARNING,
-)
-from app.components.charts import (
-    people_count_over_time,
-    density_distribution_pie,
 )
 from app.database import get_recent_history
 
@@ -35,7 +36,7 @@ def render_dashboard():
     st.markdown(header_html(), unsafe_allow_html=True)
 
     # ── Quick Start Section ─────────────────────────────────────────
-    st.subheader("Quick Start", icon=":material/rocket_launch:")
+    st.subheader("Quick start", icon=":material/rocket_launch:")
 
     col1, col2, col3 = st.columns(3)
 
@@ -45,7 +46,7 @@ def render_dashboard():
                 ICON_IMAGE_ANALYSIS,
                 "Image Analysis",
                 "Upload a photo to detect people and analyze crowd density with spatial heatmaps",
-                "#636ee6",
+                "#4A7DFF",
             ),
             unsafe_allow_html=True,
         )
@@ -56,7 +57,7 @@ def render_dashboard():
                 ICON_VIDEO_ANALYSIS,
                 "Video Analysis",
                 "Upload a video to track people and view density changes over time",
-                "#a29bfe",
+                "#A78BFA",
             ),
             unsafe_allow_html=True,
         )
@@ -67,7 +68,7 @@ def render_dashboard():
                 ICON_LIVE_CAMERA,
                 "Live Camera",
                 "Real-time crowd analysis using your webcam feed with instant density classification",
-                "#00b894",
+                "#2ECDA7",
             ),
             unsafe_allow_html=True,
         )
@@ -88,7 +89,7 @@ def render_dashboard():
         analysis = None
 
     if analysis:
-        st.subheader("Latest Analysis", icon=":material/insights:")
+        st.subheader("Latest analysis", icon=":material/insights:")
 
         col1, col2, col3, col4 = st.columns(4)
 
@@ -97,14 +98,14 @@ def render_dashboard():
                 metric_card_html(
                     "People Detected",
                     str(int(analysis.get("people_count", 0))),
-                    "#636ee6",
+                    "#4A7DFF",
                 ),
                 unsafe_allow_html=True,
             )
 
         with col2:
             density = analysis.get("density", "N/A")
-            color = DENSITY_COLORS.get(density, "#ffffff")
+            color = DENSITY_COLORS.get(density, "#1a2340")
             st.markdown(
                 metric_card_html("Crowd Density", density, color),
                 unsafe_allow_html=True,
@@ -113,14 +114,14 @@ def render_dashboard():
         with col3:
             occ = analysis.get("occupancy_ratio", 0)
             st.markdown(
-                metric_card_html("Occupancy", f"{occ*100:.1f}%", "#a29bfe"),
+                metric_card_html("Occupancy", f"{occ*100:.1f}%", "#A78BFA"),
                 unsafe_allow_html=True,
             )
 
         with col4:
             conf = analysis.get("confidence", 0)
             st.markdown(
-                metric_card_html("Confidence", f"{conf*100:.1f}%", "#ffeaa7"),
+                metric_card_html("Confidence", f"{conf*100:.1f}%", "#FFB347"),
                 unsafe_allow_html=True,
             )
 
@@ -141,7 +142,7 @@ def render_dashboard():
                 st.plotly_chart(fig, width="stretch")
 
         with col_b:
-            # Regional distribution (fallback to basic metrics since regions aren't in last_analysis anymore)
+            # Regional distribution
             if history:
                 df = pd.DataFrame(history)
                 fig_line = people_count_over_time(
@@ -157,14 +158,14 @@ def render_dashboard():
         <div class="info-box">
             <strong>Welcome to Visionlytics!</strong><br>
             No analysis has been performed yet. Use the sidebar to navigate to
-            <strong>Image Analysis</strong>, <strong>Video Analysis</strong>, or
-            <strong>Live Camera</strong> to get started.
+            <strong>Image analysis</strong>, <strong>Video analysis</strong>, or
+            <strong>Live camera</strong> to get started.
         </div>
         """, unsafe_allow_html=True)
 
     # ── System Status Panel ─────────────────────────────────────────
     st.markdown("---")
-    st.subheader("System Status", icon=":material/tune:")
+    st.subheader("System status", icon=":material/tune:")
     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
     with col_s1:
         st.markdown(status_card_html("Core Backend", "Online"), unsafe_allow_html=True)
@@ -177,7 +178,7 @@ def render_dashboard():
 
     # ── System Architecture ─────────────────────────────────────────
     st.markdown("---")
-    st.subheader("System Architecture", icon=":material/account_tree:")
+    st.subheader("System architecture", icon=":material/account_tree:")
 
     col1, col2, col3 = st.columns(3)
 
@@ -193,7 +194,7 @@ def render_dashboard():
                     "Centroid-based Tracking",
                     "Visual Attribute Estimation",
                 ],
-                "#636ee6",
+                "#4A7DFF",
             ),
             unsafe_allow_html=True,
         )
@@ -210,7 +211,7 @@ def render_dashboard():
                     "Frame Occupancy Density",
                     "10 Features Total",
                 ],
-                "#a29bfe",
+                "#A78BFA",
             ),
             unsafe_allow_html=True,
         )
@@ -227,7 +228,7 @@ def render_dashboard():
                     "Gradient Boosting",
                     "Voting Ensemble (Meta-learner)",
                 ],
-                "#00b894",
+                "#2ECDA7",
             ),
             unsafe_allow_html=True,
         )

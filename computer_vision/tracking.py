@@ -16,9 +16,9 @@ This is a lightweight tracker suitable for a student project — it does not
 use complex methods like Kalman filters or deep association.
 """
 
-import numpy as np
 from collections import OrderedDict
-from typing import List, Tuple, Dict
+
+import numpy as np
 from scipy.spatial.distance import cdist
 
 from computer_vision.person_detection import Detection
@@ -62,7 +62,7 @@ class CentroidTracker:
         self._disappeared.clear()
         self._total_unique = 0
 
-    def update(self, detections: List[Detection], frame_shape: Tuple[int, int]) -> List[Detection]:
+    def update(self, detections: list[Detection], frame_shape: tuple[int, int]) -> list[Detection]:
         """
         Update tracker with new detections and assign person IDs.
 

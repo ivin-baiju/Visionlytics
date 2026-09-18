@@ -11,16 +11,16 @@ Color mapping:
     Red    → High concentration
 """
 
+
 import cv2
 import numpy as np
-from typing import List
 
 from computer_vision.person_detection import Detection
 
 
 def generate_heatmap(
     image: np.ndarray,
-    detections: List[Detection],
+    detections: list[Detection],
     intensity: float = 0.6,
     radius: int = 80,
 ) -> np.ndarray:
@@ -88,7 +88,7 @@ def generate_heatmap(
 def generate_standalone_heatmap(
     width: int,
     height: int,
-    detections: List[Detection],
+    detections: list[Detection],
     radius: int = 80,
 ) -> np.ndarray:
     """

@@ -1,11 +1,13 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import unittest
-import numpy as np
-from computer_vision.tracking import CentroidTracker
+
 from computer_vision.person_detection import Detection
+from computer_vision.tracking import CentroidTracker
+
 
 class TestCentroidTracker(unittest.TestCase):
     def setUp(self):

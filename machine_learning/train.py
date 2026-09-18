@@ -19,32 +19,31 @@ All models are serialized using joblib for fast loading during prediction.
 import os
 import sys
 import time
-import numpy as np
-import pandas as pd
+
 import joblib
-from typing import Dict, Tuple, Optional
-from sklearn.model_selection import cross_val_score, StratifiedKFold
+import numpy as np
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 # Ensure project root is on sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from machine_learning.evaluation import evaluate_model
+from machine_learning.models import get_models
 from machine_learning.preprocessing import (
-    load_dataset,
-    preprocess_and_split,
-    MODELS_DIR,
     FEATURE_COLUMNS,
     LABEL_CLASSES,
+    MODELS_DIR,
+    load_dataset,
+    preprocess_and_split,
 )
-from machine_learning.models import get_models
-from machine_learning.evaluation import evaluate_model, compare_models
 
 
 def train_all_models(
-    dataset_path: Optional[str] = None,
+    dataset_path: str | None = None,
     verbose: bool = True,
-) -> Dict:
+) -> dict:
     """
     Train all ML models on the crowd density dataset.
 
@@ -210,9 +209,9 @@ def train_all_models(
 
 
 def retrain_on_full(
-    dataset_path: Optional[str] = None,
-    model_name: Optional[str] = None,
-) -> Dict:
+    dataset_path: str | None = None,
+    model_name: str | None = None,
+) -> dict:
     """
     Retrain a specific model (or the best) on train+validation data,
     then evaluate on the held-out test set for final reporting.
@@ -229,7 +228,7 @@ def retrain_on_full(
         Dictionary with the retrained model and test metrics.
     """
     df = load_dataset(dataset_path)
-    X_train, X_val, X_test, y_train, y_val, y_test, scaler, le = \
+    X_train, X_val, X_test, y_train, y_val, y_test, _scaler, _le = \
         preprocess_and_split(df, save_scaler=True)
 
     # Combine train + validation

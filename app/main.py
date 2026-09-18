@@ -10,6 +10,7 @@ Run with:
 
 import os
 import sys
+
 import streamlit as st
 
 # ── macOS Segmentation Fault Workaround ──────────────────────────────
@@ -23,10 +24,10 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from app.components.styles import get_custom_css, header_html, status_card_html
 from app.components.icons import BRAND_LOGO_SVG
-from app.resources import get_detector, get_extractor, get_predictor
+from app.components.styles import get_custom_css
 from app.database import init_db
+from app.resources import get_predictor
 
 # ── Page Configuration ───────────────────────────────────────────────────────
 
@@ -48,10 +49,10 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 
 PAGES = {
     ":material/dashboard: Dashboard": "dashboard",
-    ":material/image: Image Analysis": "image_analysis",
-    ":material/movie: Video Analysis": "video_analysis",
-    ":material/videocam: Live Camera": "live_camera",
-    ":material/psychology: ML Models": "ml_models",
+    ":material/image: Image analysis": "image_analysis",
+    ":material/movie: Video analysis": "video_analysis",
+    ":material/videocam: Live camera": "live_camera",
+    ":material/psychology: ML models": "ml_models",
     ":material/dataset: Dataset": "dataset_page",
     ":material/info: About": "about",
 }
@@ -84,7 +85,7 @@ def main():
         if predictor is not None:
             st.markdown("""
             <div class="model-status">
-                <div class="status-indicator" style="color: #00b894;">
+                <div class="status-indicator" style="color: #2ECDA7;">
                     <span class="status-dot"></span>
                     Model Loaded
                 </div>
@@ -94,8 +95,8 @@ def main():
         else:
             st.markdown("""
             <div class="model-status">
-                <div class="status-indicator" style="color: #f39c12;">
-                    <span class="status-dot" style="background: #f39c12; box-shadow: 0 0 8px rgba(243,156,18,0.5);"></span>
+                <div class="status-indicator" style="color: #FFB347;">
+                    <span class="status-dot" style="background: #FFB347; box-shadow: 0 0 6px rgba(255,179,71,0.4);"></span>
                     No Model
                 </div>
                 <div class="status-detail">Train models to enable predictions</div>

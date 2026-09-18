@@ -12,18 +12,18 @@ The script can auto-label based on people count, or you can provide
 labels manually.
 """
 
+import argparse
 import os
 import sys
-import argparse
+
 import cv2
 import pandas as pd
-from typing import Optional
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from computer_vision.person_detection import PersonDetector
 from computer_vision.feature_extraction import FeatureExtractor
+from computer_vision.person_detection import PersonDetector
 
 
 def auto_label(features: dict) -> str:
@@ -55,7 +55,7 @@ def auto_label(features: dict) -> str:
 
 def process_images(
     input_dir: str,
-    output_path: Optional[str] = None,
+    output_path: str | None = None,
     append: bool = True,
     confidence: float = 0.3,
 ) -> pd.DataFrame:

@@ -13,32 +13,30 @@ all 7 Statistical Machine Learning models on the crowd dataset:
 """
 
 import os
+
 import joblib
 import pandas as pd
 import streamlit as st
 
-from app.components.styles import header_html, metric_card_html
 from app.components.charts import (
-    model_comparison_bar,
     confusion_matrix_heatmap,
     feature_importance_bar,
+    model_comparison_bar,
     training_time_bar,
 )
+from app.components.styles import header_html, metric_card_html
 from machine_learning.preprocessing import (
-    load_dataset,
-    preprocess_and_split,
-    MODELS_DIR,
     FEATURE_COLUMNS,
     LABEL_CLASSES,
+    MODELS_DIR,
 )
 from machine_learning.train import train_all_models
-from machine_learning.evaluation import evaluate_model, compare_models
 
 
 def render_ml_models():
     """Render the ML Models evaluation and training page."""
     st.markdown(header_html(), unsafe_allow_html=True)
-    st.header("Statistical Machine Learning Models", icon=":material/psychology:")
+    st.header("Statistical machine learning models", icon=":material/psychology:")
     st.markdown(
         "Train, benchmark, and compare 7 classical ML classification algorithms "
         "on the extracted spatial crowd features."
@@ -115,11 +113,11 @@ def render_ml_models():
 
     col_b1, col_b2, col_b3 = st.columns(3)
     with col_b1:
-        st.markdown(metric_card_html("Best Model", best_model_name, "#00b894"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Best Model", best_model_name, "#2ECDA7"), unsafe_allow_html=True)
     with col_b2:
-        st.markdown(metric_card_html("F1-Score (Weighted)", f"{best_f1:.4f}", "#636ee6"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("F1-Score (Weighted)", f"{best_f1:.4f}", "#4A7DFF"), unsafe_allow_html=True)
     with col_b3:
-        st.markdown(metric_card_html("Accuracy", f"{best_acc * 100:.2f}%", "#ffeaa7"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Accuracy", f"{best_acc * 100:.2f}%", "#FFB347"), unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -143,7 +141,7 @@ def render_ml_models():
     with col_tbl:
         st.markdown("##### Detailed Metric Table")
         st.dataframe(
-            comp_df.style.highlight_max(subset=["Accuracy", "Precision", "Recall", "F1-Score"], color="#2ecc71"),
+            comp_df.style.highlight_max(subset=["Accuracy", "Precision", "Recall", "F1-Score"], color="#2ECDA7"),
             width="stretch",
             height=260,
         )

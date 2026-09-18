@@ -14,13 +14,12 @@ Key ML Concepts Demonstrated:
 """
 
 import os
+
+import joblib
 import numpy as np
 import pandas as pd
-from typing import Tuple, Optional, Dict
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-import joblib
-
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -47,7 +46,7 @@ DATASET_PATH = os.path.join(BASE_DIR, "dataset", "crowd_dataset.csv")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 
-def load_dataset(path: Optional[str] = None) -> pd.DataFrame:
+def load_dataset(path: str | None = None) -> pd.DataFrame:
     """
     Load the crowd density dataset from CSV.
 
@@ -80,7 +79,7 @@ def load_dataset(path: Optional[str] = None) -> pd.DataFrame:
     return df
 
 
-def check_data_quality(df: pd.DataFrame) -> Dict:
+def check_data_quality(df: pd.DataFrame) -> dict:
     """
     Check data quality and report issues.
 
@@ -104,7 +103,7 @@ def preprocess_and_split(
     val_size: float = 0.15,
     random_state: int = 42,
     save_scaler: bool = True,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, StandardScaler, LabelEncoder]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, StandardScaler, LabelEncoder]:
     """
     Preprocess the dataset and split into train/validation/test sets.
 
@@ -188,7 +187,7 @@ def preprocess_and_split(
     return X_train, X_val, X_test, y_train, y_val, y_test, scaler, label_encoder
 
 
-def scale_features(features: Dict[str, float], scaler: Optional[StandardScaler] = None) -> np.ndarray:
+def scale_features(features: dict[str, float], scaler: StandardScaler | None = None) -> np.ndarray:
     """
     Scale a single feature vector for prediction.
 

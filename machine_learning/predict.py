@@ -12,9 +12,8 @@ Usage:
 
 import os
 import sys
-import numpy as np
+
 import joblib
-from typing import Dict, Tuple, Optional
 
 # Ensure project root is on sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,10 +21,9 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from machine_learning.preprocessing import (
-    scale_features,
-    MODELS_DIR,
-    FEATURE_COLUMNS,
     LABEL_CLASSES,
+    MODELS_DIR,
+    scale_features,
 )
 
 
@@ -39,7 +37,7 @@ class CrowdPredictor:
     The predictor can also load a specific model by name.
     """
 
-    def __init__(self, model_name: Optional[str] = None):
+    def __init__(self, model_name: str | None = None):
         """
         Initialize the predictor.
 
@@ -94,7 +92,7 @@ class CrowdPredictor:
         model_path = os.path.join(MODELS_DIR, "best_model.joblib")
         return os.path.exists(model_path)
 
-    def predict(self, features: Dict[str, float]) -> Tuple[str, float]:
+    def predict(self, features: dict[str, float]) -> tuple[str, float]:
         """
         Predict crowd density label and confidence.
 
@@ -127,7 +125,7 @@ class CrowdPredictor:
 
         return label, confidence
 
-    def predict_proba(self, features: Dict[str, float]) -> Dict[str, float]:
+    def predict_proba(self, features: dict[str, float]) -> dict[str, float]:
         """
         Get probability distribution over all density classes.
 

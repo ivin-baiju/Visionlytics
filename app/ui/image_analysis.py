@@ -8,30 +8,29 @@ visual and statistical analytics.
 
 import io
 import time
+
 import cv2
 import numpy as np
-import pandas as pd
-from PIL import Image
 import streamlit as st
+from PIL import Image
 
+from app.components.charts import attribute_bar_chart, region_distribution_bar
+from app.components.metrics import render_analysis_metrics, render_stats_table
 from app.components.styles import (
+    DENSITY_COLORS,
     header_html,
     metric_card_html,
-    density_badge_html,
-    DENSITY_COLORS,
 )
-from app.components.metrics import render_analysis_metrics, render_stats_table
-from app.components.charts import region_distribution_bar, attribute_bar_chart
-from computer_vision.heatmap import generate_heatmap
-from computer_vision.attributes import analyze_person_attributes
-from app.resources import get_detector, get_extractor, get_predictor
 from app.database import save_analysis_record
+from app.resources import get_detector, get_extractor, get_predictor
+from computer_vision.attributes import analyze_person_attributes
+from computer_vision.heatmap import generate_heatmap
 
 
 def render_image_analysis():
     """Render the Image Analysis page."""
     st.markdown(header_html(), unsafe_allow_html=True)
-    st.header("Image Analysis", icon=":material/image:")
+    st.header("Image analysis", icon=":material/image:")
     st.markdown(
         "Upload a photo to detect people, extract spatial features, "
         "and predict crowd density using trained ML algorithms."
@@ -263,7 +262,7 @@ def render_image_analysis():
 
             st.markdown("""
             <div class="info-box" style="font-size: 0.8rem;">
-                <strong style="color: #f39c12;">Note:</strong> Hair and clothing colors are estimated via HSV color histogram
+                <strong style="color: #FFB347;">Note:</strong> Hair and clothing colors are estimated via HSV color histogram
                 analysis on detected person bounding boxes. Apparent sex is marked as UNKNOWN in accordance
                 with privacy and ethical AI standards.
             </div>

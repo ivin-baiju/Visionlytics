@@ -2,67 +2,65 @@
 Chart Components for Visionlytics Dashboard.
 
 Reusable Plotly chart builders for visualizing crowd analytics,
-model performance, and dataset statistics.
+model performance, and dataset statistics. Uses a light, premium
+color palette with clean white backgrounds and soft gradients.
 """
+
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
-from typing import List, Dict, Optional
-
 
 # ── Common Theme ─────────────────────────────────────────────────────────────
 
-PLOTLY_TEMPLATE = "plotly_dark"
+PLOTLY_TEMPLATE = "plotly_white"
 BG_COLOR = "rgba(0,0,0,0)"
-GRID_COLOR = "rgba(255,255,255,0.06)"
-FONT_COLOR = "rgba(255,255,255,0.8)"
-DENSITY_COLORS_MAP = {"LOW": "#00b894", "MEDIUM": "#f39c12", "HIGH": "#e74c3c"}
-ACCENT_COLORS = ["#636ee6", "#00b894", "#f39c12", "#e74c3c", "#a29bfe"]
+GRID_COLOR = "rgba(74, 125, 255, 0.06)"
+FONT_COLOR = "#3a4560"
+DENSITY_COLORS_MAP = {"LOW": "#2ECDA7", "MEDIUM": "#FFB347", "HIGH": "#FF6B6B"}
+ACCENT_COLORS = ["#4A7DFF", "#2ECDA7", "#FFB347", "#FF6B6B", "#A78BFA"]
 
 
 def _base_layout(title: str = "", height: int = 400) -> dict:
     """Return common Plotly layout settings."""
-    return dict(
-        template=PLOTLY_TEMPLATE,
-        paper_bgcolor=BG_COLOR,
-        plot_bgcolor=BG_COLOR,
-        font=dict(family="Inter", color=FONT_COLOR),
-        title=dict(text=title, font=dict(size=16, color="#ffffff")),
-        height=height,
-        margin=dict(l=40, r=20, t=50, b=40),
-        xaxis=dict(gridcolor=GRID_COLOR, zerolinecolor=GRID_COLOR),
-        yaxis=dict(gridcolor=GRID_COLOR, zerolinecolor=GRID_COLOR),
-    )
+    return {
+        "template": PLOTLY_TEMPLATE,
+        "paper_bgcolor": BG_COLOR,
+        "plot_bgcolor": BG_COLOR,
+        "font": {"family": "Inter", "color": FONT_COLOR},
+        "title": {"text": title, "font": {"size": 16, "color": "#1a2340"}},
+        "height": height,
+        "margin": {"l": 40, "r": 20, "t": 50, "b": 40},
+        "xaxis": {"gridcolor": GRID_COLOR, "zerolinecolor": GRID_COLOR},
+        "yaxis": {"gridcolor": GRID_COLOR, "zerolinecolor": GRID_COLOR},
+    }
 
 
 # ── Crowd Analytics Charts ───────────────────────────────────────────────────
 
-def density_distribution_pie(class_counts: Dict[str, int]) -> go.Figure:
+def density_distribution_pie(class_counts: dict[str, int]) -> go.Figure:
     """Pie chart showing crowd density class distribution."""
     labels = list(class_counts.keys())
     values = list(class_counts.values())
-    colors = [DENSITY_COLORS_MAP.get(l, "#636ee6") for l in labels]
+    colors = [DENSITY_COLORS_MAP.get(l, "#4A7DFF") for l in labels]
 
     fig = go.Figure(data=[go.Pie(
         labels=labels,
         values=values,
         hole=0.45,
-        marker=dict(colors=colors, line=dict(color="#1a1a2e", width=2)),
+        marker={"colors": colors, "line": {"color": "#ffffff", "width": 2}},
         textinfo="label+percent",
-        textfont=dict(size=13),
+        textfont={"size": 13},
     )])
     fig.update_layout(**_base_layout("Density Distribution", 350))
     return fig
 
 
-def density_over_time(timestamps: List[float], densities: List[str]) -> go.Figure:
+def density_over_time(timestamps: list[float], densities: list[str]) -> go.Figure:
     """Line chart showing crowd density changes over time."""
-    # Convert density labels to numeric for plotting
     density_map = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
     density_nums = [density_map.get(d, 0) for d in densities]
-    colors = [DENSITY_COLORS_MAP.get(d, "#636ee6") for d in densities]
+    colors = [DENSITY_COLORS_MAP.get(d, "#4A7DFF") for d in densities]
 
     fig = go.Figure()
 
@@ -70,25 +68,25 @@ def density_over_time(timestamps: List[float], densities: List[str]) -> go.Figur
         x=timestamps,
         y=density_nums,
         mode="lines+markers",
-        line=dict(color="#636ee6", width=2),
-        marker=dict(color=colors, size=6, line=dict(width=1, color="#1a1a2e")),
+        line={"color": "#4A7DFF", "width": 2},
+        marker={"color": colors, "size": 6, "line": {"width": 1, "color": "#ffffff"}},
         hovertemplate="Time: %{x:.1f}s<br>Density: %{text}<extra></extra>",
         text=densities,
     ))
 
     layout = _base_layout("Crowd Density Over Time", 350)
-    layout["yaxis"] = dict(
-        tickvals=[1, 2, 3],
-        ticktext=["LOW", "MEDIUM", "HIGH"],
-        gridcolor=GRID_COLOR,
-        range=[0.5, 3.5],
-    )
+    layout["yaxis"] = {
+        "tickvals": [1, 2, 3],
+        "ticktext": ["LOW", "MEDIUM", "HIGH"],
+        "gridcolor": GRID_COLOR,
+        "range": [0.5, 3.5],
+    }
     layout["xaxis"]["title"] = "Time (seconds)"
     fig.update_layout(**layout)
     return fig
 
 
-def people_count_over_time(timestamps: List[float], counts: List[int]) -> go.Figure:
+def people_count_over_time(timestamps: list[float], counts: list[int]) -> go.Figure:
     """Area chart showing people count over time."""
     fig = go.Figure()
 
@@ -96,8 +94,8 @@ def people_count_over_time(timestamps: List[float], counts: List[int]) -> go.Fig
         x=timestamps,
         y=counts,
         fill="tozeroy",
-        fillcolor="rgba(99, 110, 230, 0.2)",
-        line=dict(color="#636ee6", width=2),
+        fillcolor="rgba(74, 125, 255, 0.12)",
+        line={"color": "#4A7DFF", "width": 2},
         mode="lines",
     ))
 
@@ -113,7 +111,7 @@ def region_distribution_bar(top: int, middle: int, bottom: int) -> go.Figure:
     fig = go.Figure(data=[go.Bar(
         x=["Top", "Middle", "Bottom"],
         y=[top, middle, bottom],
-        marker_color=["#636ee6", "#a29bfe", "#00b894"],
+        marker_color=["#4A7DFF", "#A78BFA", "#2ECDA7"],
         text=[top, middle, bottom],
         textposition="auto",
     )])
@@ -150,20 +148,19 @@ def model_comparison_bar(comparison_df: pd.DataFrame) -> go.Figure:
     layout["xaxis"]["title"] = "Model"
     layout["yaxis"]["title"] = "Score"
     layout["yaxis"]["range"] = [0, 1.05]
-    layout["legend"] = dict(orientation="h", y=1.12, x=0.5, xanchor="center")
+    layout["legend"] = {"orientation": "h", "y": 1.12, "x": 0.5, "xanchor": "center"}
     fig.update_layout(**layout)
     return fig
 
 
 def confusion_matrix_heatmap(
-    cm: List[List[int]],
-    class_names: List[str],
+    cm: list[list[int]],
+    class_names: list[str],
     title: str = "Confusion Matrix",
 ) -> go.Figure:
     """Heatmap visualization of a confusion matrix."""
     cm_array = np.array(cm)
 
-    # Annotate with both count and percentage
     total = cm_array.sum()
     annotations = []
     for i in range(len(class_names)):
@@ -180,7 +177,7 @@ def confusion_matrix_heatmap(
         y=class_names,
         text=annotations,
         texttemplate="%{text}",
-        colorscale=[[0, "#1a1a2e"], [0.5, "#302b63"], [1, "#636ee6"]],
+        colorscale=[[0, "#eef3fb"], [0.5, "#6B9FFF"], [1, "#4A7DFF"]],
         showscale=False,
     ))
 
@@ -193,11 +190,10 @@ def confusion_matrix_heatmap(
 
 
 def feature_importance_bar(
-    feature_names: List[str],
-    importances: List[float],
+    feature_names: list[str],
+    importances: list[float],
 ) -> go.Figure:
     """Horizontal bar chart of feature importances."""
-    # Sort by importance
     sorted_idx = np.argsort(importances)
     sorted_names = [feature_names[i] for i in sorted_idx]
     sorted_vals = [importances[i] for i in sorted_idx]
@@ -206,10 +202,10 @@ def feature_importance_bar(
         x=sorted_vals,
         y=sorted_names,
         orientation="h",
-        marker=dict(
-            color=sorted_vals,
-            colorscale=[[0, "#302b63"], [1, "#636ee6"]],
-        ),
+        marker={
+            "color": sorted_vals,
+            "colorscale": [[0, "#eef3fb"], [1, "#4A7DFF"]],
+        },
         text=[f"{v:.4f}" for v in sorted_vals],
         textposition="auto",
     )])
@@ -220,7 +216,7 @@ def feature_importance_bar(
     return fig
 
 
-def training_time_bar(training_times: Dict[str, float]) -> go.Figure:
+def training_time_bar(training_times: dict[str, float]) -> go.Figure:
     """Bar chart comparing model training times."""
     names = list(training_times.keys())
     times = list(training_times.values())
@@ -241,7 +237,7 @@ def training_time_bar(training_times: Dict[str, float]) -> go.Figure:
 
 # ── Dataset Exploration Charts ───────────────────────────────────────────────
 
-def feature_correlation_heatmap(df: pd.DataFrame, feature_cols: List[str]) -> go.Figure:
+def feature_correlation_heatmap(df: pd.DataFrame, feature_cols: list[str]) -> go.Figure:
     """Heatmap of feature correlations."""
     corr = df[feature_cols].corr()
 
@@ -249,11 +245,11 @@ def feature_correlation_heatmap(df: pd.DataFrame, feature_cols: List[str]) -> go
         z=corr.values,
         x=[c.replace("_", " ").title()[:15] for c in corr.columns],
         y=[c.replace("_", " ").title()[:15] for c in corr.index],
-        colorscale=[[0, "#e74c3c"], [0.5, "#1a1a2e"], [1, "#00b894"]],
+        colorscale=[[0, "#FF6B6B"], [0.5, "#f8faff"], [1, "#2ECDA7"]],
         zmid=0,
         text=np.round(corr.values, 2),
         texttemplate="%{text}",
-        textfont=dict(size=9),
+        textfont={"size": 9},
     ))
 
     layout = _base_layout("Feature Correlation Matrix", 500)
@@ -284,16 +280,16 @@ def feature_distribution_histogram(
     layout["barmode"] = "overlay"
     layout["xaxis"]["title"] = title
     layout["yaxis"]["title"] = "Count"
-    layout["legend"] = dict(orientation="h", y=1.12, x=0.5, xanchor="center")
+    layout["legend"] = {"orientation": "h", "y": 1.12, "x": 0.5, "xanchor": "center"}
     fig.update_layout(**layout)
     return fig
 
 
-def class_distribution_bar(class_counts: Dict[str, int]) -> go.Figure:
+def class_distribution_bar(class_counts: dict[str, int]) -> go.Figure:
     """Bar chart of class label distribution in the dataset."""
     labels = list(class_counts.keys())
     counts = list(class_counts.values())
-    colors = [DENSITY_COLORS_MAP.get(l, "#636ee6") for l in labels]
+    colors = [DENSITY_COLORS_MAP.get(l, "#4A7DFF") for l in labels]
 
     fig = go.Figure(data=[go.Bar(
         x=labels,
@@ -327,7 +323,7 @@ def scatter_feature_vs_density(
                 y=subset[feature_y],
                 mode="markers",
                 name=label,
-                marker=dict(color=color, size=5, opacity=0.6),
+                marker={"color": color, "size": 5, "opacity": 0.6},
             ))
 
     x_title = feature_x.replace("_", " ").title()
@@ -335,12 +331,12 @@ def scatter_feature_vs_density(
     layout = _base_layout(f"{x_title} vs {y_title}", 400)
     layout["xaxis"]["title"] = x_title
     layout["yaxis"]["title"] = y_title
-    layout["legend"] = dict(orientation="h", y=1.12, x=0.5, xanchor="center")
+    layout["legend"] = {"orientation": "h", "y": 1.12, "x": 0.5, "xanchor": "center"}
     fig.update_layout(**layout)
     return fig
 
 
-def attribute_bar_chart(attribute_counts: Dict[str, int], title: str) -> go.Figure:
+def attribute_bar_chart(attribute_counts: dict[str, int], title: str) -> go.Figure:
     """Bar chart of visual attribute distribution (hair color, clothing color)."""
     labels = list(attribute_counts.keys())
     counts = list(attribute_counts.values())
@@ -349,7 +345,7 @@ def attribute_bar_chart(attribute_counts: Dict[str, int], title: str) -> go.Figu
         x=labels,
         y=counts,
         marker_color=ACCENT_COLORS[:len(labels)] if len(labels) <= len(ACCENT_COLORS)
-                     else ["#636ee6"] * len(labels),
+                     else ["#4A7DFF"] * len(labels),
         text=counts,
         textposition="auto",
     )])

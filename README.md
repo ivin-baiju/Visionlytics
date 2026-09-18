@@ -1,3 +1,12 @@
+---
+title: Visionlytics
+emoji: 👁️
+colorFrom: blue
+colorTo: indigo
+sdk: streamlit
+app_file: app.py
+pinned: false
+---
 # VISIONLYTICS: Intelligent Visual Crowd Analytics
 ### Semester 3 Statistical Machine Learning Project
 

@@ -18,16 +18,17 @@ ML Concepts Demonstrated:
       contribute most to the decision.
 """
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Any, Optional
 from sklearn.metrics import (
     accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
     precision_score,
     recall_score,
-    f1_score,
-    confusion_matrix,
-    classification_report,
 )
 
 
@@ -35,8 +36,8 @@ def evaluate_model(
     model: Any,
     X_test: np.ndarray,
     y_test: np.ndarray,
-    class_names: List[str],
-) -> Dict:
+    class_names: list[str],
+) -> dict:
     """
     Evaluate a trained model on a test/validation set.
 
@@ -118,10 +119,10 @@ def evaluate_model(
 
 
 def compare_models(
-    models: Dict[str, Any],
+    models: dict[str, Any],
     X_test: np.ndarray,
     y_test: np.ndarray,
-    class_names: List[str],
+    class_names: list[str],
 ) -> pd.DataFrame:
     """
     Compare all models and return a summary DataFrame.
@@ -155,8 +156,8 @@ def compare_models(
 
 def get_feature_importance_df(
     model: Any,
-    feature_names: List[str],
-) -> Optional[pd.DataFrame]:
+    feature_names: list[str],
+) -> pd.DataFrame | None:
     """
     Extract feature importances from a model and return as a DataFrame.
 

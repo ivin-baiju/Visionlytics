@@ -21,8 +21,8 @@ The normalization is done relative to the frame diagonal so that features
 are comparable across different image resolutions.
 """
 
+
 import numpy as np
-from typing import List, Dict, Tuple, Optional, Union
 from scipy.spatial.distance import pdist
 
 from computer_vision.person_detection import Detection
@@ -56,10 +56,10 @@ class FeatureExtractor:
 
     def extract(
         self,
-        detections: List[Detection],
-        frame_width: Union[int, Tuple[int, int], List[int]],
-        frame_height: Optional[int] = None,
-    ) -> Dict[str, float]:
+        detections: list[Detection],
+        frame_width: int | tuple[int, int] | list[int],
+        frame_height: int | None = None,
+    ) -> dict[str, float]:
         """
         Extract all 10 features from a set of detections.
 
@@ -175,7 +175,7 @@ class FeatureExtractor:
         }
 
     @staticmethod
-    def features_to_display(features: Dict[str, float]) -> Dict[str, str]:
+    def features_to_display(features: dict[str, float]) -> dict[str, str]:
         """
         Format extracted features as human-readable strings for UI display.
 

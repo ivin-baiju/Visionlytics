@@ -21,16 +21,21 @@ ML Concepts Demonstrated:
     - Overfitting control via hyperparameters
 """
 
+from typing import Any
+
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    RandomForestClassifier,
+    VotingClassifier,
+)
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
 from sklearn.svm import SVC
-from sklearn.calibration import CalibratedClassifierCV
-from typing import Dict, Any
+from sklearn.tree import DecisionTreeClassifier
 
 
-def get_models() -> Dict[str, Any]:
+def get_models() -> dict[str, Any]:
     """
     Create and return all ML models with their configurations.
 
@@ -155,7 +160,7 @@ def get_models() -> Dict[str, Any]:
     return models
 
 
-def get_model_descriptions() -> Dict[str, str]:
+def get_model_descriptions() -> dict[str, str]:
     """
     Return human-readable descriptions of each model for the UI.
 

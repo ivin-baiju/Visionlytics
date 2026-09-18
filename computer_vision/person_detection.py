@@ -9,10 +9,10 @@ This module handles the computer vision detection step. The extracted bounding b
 are then passed to the feature extraction module for statistical analysis.
 """
 
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
-from dataclasses import dataclass, field
-from typing import List, Tuple, Optional
 
 
 @dataclass
@@ -27,12 +27,12 @@ class Detection:
         center: Center point (cx, cy) of the bounding box.
         area: Area of the bounding box in pixels.
     """
-    bbox: Tuple[int, int, int, int]  # (x1, y1, x2, y2)
+    bbox: tuple[int, int, int, int]  # (x1, y1, x2, y2)
     confidence: float
-    person_id: Optional[int] = None
+    person_id: int | None = None
 
     @property
-    def center(self) -> Tuple[float, float]:
+    def center(self) -> tuple[float, float]:
         """Calculate the center point of the bounding box."""
         x1, y1, x2, y2 = self.bbox
         return ((x1 + x2) / 2, (y1 + y2) / 2)
@@ -79,8 +79,9 @@ class PersonDetector:
     def _load_model(self):
         """Lazily load the YOLOv8s model on first use, preferring ONNX for speed."""
         if self._model is None:
-            from ultralytics import YOLO
             import os
+
+            from ultralytics import YOLO
             
             PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             onnx_path = os.path.join(PROJECT_ROOT, "yolov8s.onnx")
@@ -94,7 +95,7 @@ class PersonDetector:
                 self._model = YOLO(pt_path)
         return self._model
 
-    def detect(self, image: np.ndarray) -> List[Detection]:
+    def detect(self, image: np.ndarray) -> list[Detection]:
         """
         Detect people in an image.
 
@@ -143,7 +144,7 @@ class PersonDetector:
 
         return detections
 
-    def track(self, image: np.ndarray, persist: bool = True) -> List[Detection]:
+    def track(self, image: np.ndarray, persist: bool = True) -> list[Detection]:
         """
         Detect and track people in an image using ByteTrack.
         
@@ -204,7 +205,7 @@ class PersonDetector:
         density_level: str = "LOW",
         show_labels: bool = True,
         max_labels: int = 20,
-    ) -> Tuple[np.ndarray, List[Detection]]:
+    ) -> tuple[np.ndarray, list[Detection]]:
         """
         Detect people and draw bounding boxes on the image.
 
@@ -226,7 +227,7 @@ class PersonDetector:
     @staticmethod
     def draw_detections(
         image: np.ndarray,
-        detections: List[Detection],
+        detections: list[Detection],
         density_level: str = "LOW",
         show_labels: bool = True,
         max_labels: int = 20,
@@ -269,10 +270,9 @@ class PersonDetector:
             if show_labels and i < max_labels:
                 label_id = det.person_id if det.person_id is not None else (i + 1)
                 label = f"Person #{label_id}"
-                conf_text = f"{det.confidence:.0%}"
 
                 # Background rectangle for text
-                (text_w, text_h), baseline = cv2.getTextSize(
+                (text_w, text_h), _baseline = cv2.getTextSize(
                     label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1
                 )
                 cv2.rectangle(

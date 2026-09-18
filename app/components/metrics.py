@@ -6,10 +6,11 @@ and density indicators in the Streamlit UI.
 """
 
 import streamlit as st
+
 from app.components.styles import (
-    metric_card_html,
-    density_badge_html,
     DENSITY_COLORS,
+    density_badge_html,
+    metric_card_html,
 )
 
 
@@ -19,7 +20,7 @@ def render_metric_row(metrics: dict):
 
     Args:
         metrics: Dictionary mapping label → (value, color).
-                 Example: {"People": ("14", "#00b894")}
+                 Example: {"People": ("14", "#2ECDA7")}
     """
     cols = st.columns(len(metrics))
     for col, (label, (value, color)) in zip(cols, metrics.items()):
@@ -62,13 +63,13 @@ def render_analysis_metrics(features: dict, density: str, confidence: float):
         density: Predicted density label.
         confidence: Model confidence score (0-1).
     """
-    density_color = DENSITY_COLORS.get(density, "#ffffff")
+    density_color = DENSITY_COLORS.get(density, "#1a2340")
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.markdown(
-            metric_card_html("People Detected", str(int(features['people_count'])), "#636ee6"),
+            metric_card_html("People Detected", str(int(features['people_count'])), "#4A7DFF"),
             unsafe_allow_html=True,
         )
 
@@ -80,12 +81,12 @@ def render_analysis_metrics(features: dict, density: str, confidence: float):
 
     with col3:
         st.markdown(
-            metric_card_html("Occupancy", f"{features['occupancy_ratio']*100:.1f}%", "#a29bfe"),
+            metric_card_html("Occupancy", f"{features['occupancy_ratio']*100:.1f}%", "#A78BFA"),
             unsafe_allow_html=True,
         )
 
     with col4:
         st.markdown(
-            metric_card_html("Confidence", f"{confidence*100:.1f}%", "#ffeaa7"),
+            metric_card_html("Confidence", f"{confidence*100:.1f}%", "#FFB347"),
             unsafe_allow_html=True,
         )

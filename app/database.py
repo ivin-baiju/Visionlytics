@@ -1,8 +1,7 @@
-import sqlite3
-import os
 import json
-from typing import List, Dict, Any
-from datetime import datetime
+import os
+import sqlite3
+from typing import Any
 
 # Place the database in the outputs folder to ensure it doesn't clutter the root
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "outputs", "visionlytics.db")
@@ -30,7 +29,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-def save_analysis_record(source_type: str, features: Dict[str, Any], density_label: str, confidence: float):
+def save_analysis_record(source_type: str, features: dict[str, Any], density_label: str, confidence: float):
     """Save a single analysis record to the database."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -60,7 +59,7 @@ def save_analysis_record(source_type: str, features: Dict[str, Any], density_lab
     conn.commit()
     conn.close()
 
-def get_recent_history(limit: int = 100) -> List[Dict[str, Any]]:
+def get_recent_history(limit: int = 100) -> list[dict[str, Any]]:
     """Retrieve the most recent analysis records."""
     if not os.path.exists(DB_PATH):
         return []

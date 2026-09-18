@@ -14,13 +14,13 @@ These attributes are presented as secondary analytics and do NOT affect
 the primary crowd density classification.
 """
 
+from dataclasses import dataclass
+from typing import Any
+
 import cv2
 import numpy as np
-from typing import Dict, List, Optional, Tuple, Any
-from dataclasses import dataclass
 
 from computer_vision.person_detection import Detection
-
 
 # ── Color Category Definitions ────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ def estimate_person_attributes(
     if crop.size == 0 or crop.shape[0] < 10 or crop.shape[1] < 10:
         return PersonAttributes()
 
-    crop_h, crop_w = crop.shape[:2]
+    crop_h, _crop_w = crop.shape[:2]
 
     # ── Hair Color (top 25% of person crop) ──────────────────────────────
     hair_region = crop[0:int(crop_h * 0.25), :]
@@ -110,8 +110,8 @@ def estimate_person_attributes(
 
 def estimate_all_attributes(
     image: np.ndarray,
-    detections: List[Detection],
-) -> List[PersonAttributes]:
+    detections: list[Detection],
+) -> list[PersonAttributes]:
     """
     Estimate visual attributes for all detected people.
 
@@ -128,7 +128,7 @@ def estimate_all_attributes(
 def analyze_person_attributes(
     image: np.ndarray,
     bbox_or_detection: Any,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analyze visual attributes for a single person crop.
     Accepts either a Detection object, a dictionary, or a bbox tuple/list (x1, y1, x2, y2).
@@ -154,7 +154,7 @@ def analyze_person_attributes(
     }
 
 
-def get_attribute_summary(attributes: List[PersonAttributes]) -> Dict:
+def get_attribute_summary(attributes: list[PersonAttributes]) -> dict:
     """
     Aggregate attribute statistics across all detected people.
 
@@ -164,8 +164,8 @@ def get_attribute_summary(attributes: List[PersonAttributes]) -> Dict:
     if not attributes:
         return {"hair_colors": {}, "clothing_colors": {}}
 
-    hair_counts: Dict[str, int] = {}
-    clothing_counts: Dict[str, int] = {}
+    hair_counts: dict[str, int] = {}
+    clothing_counts: dict[str, int] = {}
 
     for attr in attributes:
         hair_counts[attr.hair_color] = hair_counts.get(attr.hair_color, 0) + 1
@@ -179,8 +179,8 @@ def get_attribute_summary(attributes: List[PersonAttributes]) -> Dict:
 
 def _estimate_color(
     region: np.ndarray,
-    color_map: Dict[str, List[Tuple]],
-) -> Tuple[str, float]:
+    color_map: dict[str, list[tuple]],
+) -> tuple[str, float]:
     """
     Estimate the dominant color in a region using HSV color-space analysis.
 

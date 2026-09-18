@@ -9,30 +9,30 @@ and view crowd metrics over time.
 import os
 import tempfile
 import time
+
 import cv2
 import numpy as np
 import pandas as pd
 import streamlit as st
 
-from app.components.styles import (
-    header_html,
-    metric_card_html,
-    DENSITY_COLORS,
-)
 from app.components.charts import (
+    density_distribution_pie,
     density_over_time,
     people_count_over_time,
-    density_distribution_pie,
 )
-from computer_vision.heatmap import generate_heatmap
-from app.resources import get_detector, get_extractor, get_predictor
+from app.components.styles import (
+    DENSITY_COLORS,
+    header_html,
+    metric_card_html,
+)
 from app.database import save_analysis_record
+from app.resources import get_detector, get_extractor, get_predictor
 
 
 def render_video_analysis():
     """Render the Video Analysis page."""
     st.markdown(header_html(), unsafe_allow_html=True)
-    st.header("Video Analysis", icon=":material/movie:")
+    st.header("Video analysis", icon=":material/movie:")
     st.markdown(
         "Upload a video file to perform automated frame-by-frame crowd tracking, "
         "density classification over time, and temporal analytics."
@@ -189,7 +189,7 @@ def render_video_analysis():
 
                 # Live metrics
                 active_tracks = sum(1 for det in detections if det.person_id is not None) if enable_tracking else 0
-                density_color = DENSITY_COLORS.get(density_label, "#ffffff")
+                density_color = DENSITY_COLORS.get(density_label, "#1a2340")
                 stats_placeholder.markdown(f"""
                 <div class="section-container">
                     <h4 style="margin-top:0;">Live Frame Stats</h4>
@@ -252,15 +252,15 @@ def render_video_analysis():
                 "HIGH": densities.count("HIGH"),
             }
             peak_density = max(class_counts, key=class_counts.get)
-            peak_color = DENSITY_COLORS.get(peak_density, "#ffffff")
+            peak_color = DENSITY_COLORS.get(peak_density, "#1a2340")
 
             c1, c2, c3, c4 = st.columns(4)
             with c1:
-                st.markdown(metric_card_html("Avg People", f"{avg_people:.1f}", "#636ee6"), unsafe_allow_html=True)
+                st.markdown(metric_card_html("Avg People", f"{avg_people:.1f}", "#4A7DFF"), unsafe_allow_html=True)
             with c2:
-                st.markdown(metric_card_html("Peak People", str(max_people), "#e74c3c"), unsafe_allow_html=True)
+                st.markdown(metric_card_html("Peak People", str(max_people), "#FF6B6B"), unsafe_allow_html=True)
             with c3:
-                st.markdown(metric_card_html("Min People", str(min_people), "#00b894"), unsafe_allow_html=True)
+                st.markdown(metric_card_html("Min People", str(min_people), "#2ECDA7"), unsafe_allow_html=True)
             with c4:
                 st.markdown(metric_card_html("Predominant Density", peak_density, peak_color), unsafe_allow_html=True)
 
