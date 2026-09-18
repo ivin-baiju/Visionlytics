@@ -1,20 +1,13 @@
----
-title: Visionlytics
-emoji: 👁️
-colorFrom: blue
-colorTo: indigo
-sdk: streamlit
-app_file: app.py
-pinned: false
----
 # VISIONLYTICS: Intelligent Visual Crowd Analytics
 ### Semester 3 Statistical Machine Learning Project
 
-![Visionlytics Banner](https://img.shields.io/badge/VISIONLYTICS-Crowd%20Analytics-636ee6?style=for-the-badge)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ivin-baiju/Visionlytics/blob/main/Visionlytics_Colab.ipynb)
+
+![Visionlytics Banner](https://img.shields.io/badge/VISIONLYTICS-Crowd%20Analytics-4A7DFF?style=for-the-badge)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)
-![YOLOv8](https://img.shields.io/badge/YOLOv8-Small-green?style=flat-square)
-![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-orange?style=flat-square)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-red?style=flat-square)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-Small-2ECDA7?style=flat-square)
+![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3%2B-FFB347?style=flat-square)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF6B6B?style=flat-square)
 
 ---
 
