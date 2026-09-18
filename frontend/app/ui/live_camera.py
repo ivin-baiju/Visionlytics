@@ -18,9 +18,8 @@ from app.components.styles import (
     DENSITY_COLORS,
     header_html,
 )
-from app.database import save_analysis_record
-from app.resources import get_detector, get_extractor, get_predictor
-from computer_vision.heatmap import generate_heatmap
+from frontend.app.api_client import analyze_frame_api
+from frontend.app.utils.draw import draw_boxes, draw_heatmap
 
 
 def render_live_camera():
@@ -111,13 +110,7 @@ def render_live_camera():
         )
         return
 
-    detector = get_detector(confidence_threshold=conf_threshold)
-    extractor = get_extractor()
-    predictor = get_predictor()
-
-    if predictor is None:
-        st.error("No ML model found. Please train models first on the **ML Models** page.", icon=":material/error:")
-        return
+    # Streamlit no longer loads ML models. FastAPI does.
 
     feed_col, metrics_col = st.columns([3, 1])
     feed_placeholder = feed_col.empty()
@@ -143,36 +136,25 @@ def render_live_camera():
                 fps_history.pop(0)
             avg_fps = np.mean(fps_history)
 
-            h, w = frame.shape[:2]
-
-            # Person Detection & Tracking
-            if enable_tracking:
-                detections = detector.track(frame, persist=True)
-            else:
-                detections = detector.detect(frame)
-
-            features = extractor.extract(detections, (h, w))
-            raw_probs = predictor.predict_proba(features)
-            prob_history.append(raw_probs)
-
-            avg_probs = {"LOW": 0.0, "MEDIUM": 0.0, "HIGH": 0.0}
-            for probs in prob_history:
-                for k in avg_probs:
-                    avg_probs[k] += probs[k]
-            for k in avg_probs:
-                avg_probs[k] /= len(prob_history)
-
-            density_label = max(avg_probs, key=avg_probs.get)
-            conf = avg_probs[density_label]
+            # Call FastAPI
+            api_response = analyze_frame_api(frame)
+            if api_response is None:
+                st.error("API disconnected.")
+                break
+                
+            density_label = api_response["density_label"]
+            conf = api_response["confidence"]
+            features = api_response["features"]
+            detections = api_response["detections"]
 
             # Visualization
             if vis_mode == "Heatmap":
-                vis_frame = generate_heatmap(frame, detections, intensity=0.6)
+                vis_frame = draw_heatmap(frame, detections)
             elif vis_mode == "Combined (Boxes + Heatmap)":
-                heat = generate_heatmap(frame, detections, intensity=0.5)
-                vis_frame = detector.draw_detections(heat, detections, density_level=density_label)
+                heat = draw_heatmap(frame, detections)
+                vis_frame = draw_boxes(heat, detections, density_label)
             else:
-                vis_frame = detector.draw_detections(frame.copy(), detections, density_level=density_label)
+                vis_frame = draw_boxes(frame.copy(), detections, density_label)
 
             # Render FPS on frame
             cv2.putText(

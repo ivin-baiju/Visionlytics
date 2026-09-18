@@ -52,7 +52,6 @@ PAGES = {
     ":material/image: Image analysis": "image_analysis",
     ":material/movie: Video analysis": "video_analysis",
     ":material/videocam: Live camera": "live_camera",
-    ":material/psychology: ML models": "ml_models",
     ":material/dataset: Dataset": "dataset_page",
     ":material/info: About": "about",
 }
@@ -80,16 +79,22 @@ def main():
 
         st.markdown("---")
 
-        # Model status indicator
-        predictor = get_predictor()
-        if predictor is not None:
+        # Model status indicator via FastAPI
+        import requests
+        try:
+            res = requests.get("http://localhost:8000/health", timeout=2)
+            api_up = res.status_code == 200
+        except Exception:
+            api_up = False
+            
+        if api_up:
             st.markdown("""
             <div class="model-status">
                 <div class="status-indicator" style="color: #2ECDA7;">
                     <span class="status-dot"></span>
-                    Model Loaded
+                    API Connected
                 </div>
-                <div class="status-detail">YOLOv8s + ML Pipeline Active</div>
+                <div class="status-detail">FastAPI Microservice Active</div>
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -97,9 +102,9 @@ def main():
             <div class="model-status">
                 <div class="status-indicator" style="color: #FFB347;">
                     <span class="status-dot" style="background: #FFB347; box-shadow: 0 0 6px rgba(255,179,71,0.4);"></span>
-                    No Model
+                    API Offline
                 </div>
-                <div class="status-detail">Train models to enable predictions</div>
+                <div class="status-detail">Is the backend running?</div>
             </div>
             """, unsafe_allow_html=True)
 

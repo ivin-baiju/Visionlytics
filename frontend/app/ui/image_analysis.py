@@ -21,10 +21,8 @@ from app.components.styles import (
     header_html,
     metric_card_html,
 )
-from app.database import save_analysis_record
-from app.resources import get_detector, get_extractor, get_predictor
-from computer_vision.attributes import analyze_person_attributes
-from computer_vision.heatmap import generate_heatmap
+from frontend.app.api_client import analyze_frame_api
+from frontend.app.utils.draw import draw_boxes, draw_heatmap
 
 
 def render_image_analysis():
@@ -109,51 +107,31 @@ def render_image_analysis():
     img_h, img_w = frame_bgr.shape[:2]
 
     # ── Detection & Analysis ─────────────────────────────────────────
-    detector = get_detector(confidence_threshold=conf_threshold)
-    extractor = get_extractor()
-    predictor = get_predictor()
-
-    if predictor is None:
-        st.error("No ML model found. Please train models first on the **ML Models** page.", icon=":material/error:")
-        return
+    # Streamlit no longer loads ML models. FastAPI does.
 
     with st.spinner("Processing image and running ML inference..."):
-        t0 = time.time()
-        detections = detector.detect(frame_bgr)
-        detection_time = (time.time() - t0) * 1000
-
-        # Extract features
-        features = extractor.extract(detections, (img_h, img_w))
-
-        # ML Prediction
-        density_label, ml_confidence = predictor.predict(features)
-        proba = predictor.predict_proba(features)
-
-        # Attribute analysis if enabled
+        api_response = analyze_frame_api(frame_bgr)
+        if api_response is None:
+            st.error("API offline.")
+            return
+            
+        density_label = api_response["density_label"]
+        ml_confidence = api_response["confidence"]
+        proba = api_response.get("probabilities", {"LOW":0, "MEDIUM":0, "HIGH":0})
+        features = api_response["features"]
+        detections = api_response["detections"]
         attributes_list = []
-        if enable_attributes and len(detections) > 0:
-            for d in detections:
-                attr = analyze_person_attributes(frame_bgr, d)
-                attributes_list.append(attr)
 
         # Prepare visualizations
         if vis_mode == "Heatmap":
-            vis_bgr = generate_heatmap(frame_bgr, detections, intensity=0.6)
+            vis_bgr = draw_heatmap(frame_bgr, detections)
         elif vis_mode == "Combined (Boxes + Heatmap)":
-            heat_bgr = generate_heatmap(frame_bgr, detections, intensity=0.5)
-            vis_bgr = detector.draw_detections(heat_bgr, detections, density_level=density_label)
+            heat_bgr = draw_heatmap(frame_bgr, detections)
+            vis_bgr = draw_boxes(heat_bgr, detections, density_label)
         else:
-            vis_bgr = detector.draw_detections(frame_bgr.copy(), detections, density_level=density_label)
+            vis_bgr = draw_boxes(frame_bgr.copy(), detections, density_label)
 
         vis_rgb = cv2.cvtColor(vis_bgr, cv2.COLOR_BGR2RGB)
-
-        # Save to SQLite database
-        save_analysis_record(
-            source_type="Image",
-            features=features,
-            density_label=density_label,
-            confidence=ml_confidence
-        )
 
         # Update session state for current view
         analysis_record = {
