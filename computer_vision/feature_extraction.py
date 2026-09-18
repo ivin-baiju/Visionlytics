@@ -148,8 +148,15 @@ class FeatureExtractor:
         middle_region_count = 0
         bottom_region_count = 0
 
+        weighted_people_count = 0.0
         for det in detections:
             cy = det.center[1]
+            # Perspective weighting: assume camera is looking slightly down.
+            # People near the top (cy -> 0) are further away and represent higher physical density.
+            # Weight = 1.0 (bottom) to 4.0 (top)
+            depth_weight = 1.0 + 3.0 * (1.0 - (cy / frame_height))
+            weighted_people_count += depth_weight
+
             if cy < third_h:
                 top_region_count += 1
             elif cy < 2 * third_h:
@@ -158,8 +165,8 @@ class FeatureExtractor:
                 bottom_region_count += 1
 
         # ── Feature 10: Frame Occupancy Density ──────────────────────────
-        # People count normalized by frame area (per 1000x1000 pixel block)
-        frame_occupancy_density = people_count / (frame_area / 1_000_000)
+        # Weighted people count normalized by frame area (per 1000x1000 pixel block)
+        frame_occupancy_density = weighted_people_count / (frame_area / 1_000_000)
 
         return {
             "people_count": float(people_count),

@@ -9,8 +9,11 @@ DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 def init_db():
     """Initialize the SQLite database and create tables if they don't exist."""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     cursor = conn.cursor()
+    
+    # Enable WAL mode for concurrent writes
+    cursor.execute('PRAGMA journal_mode=WAL;')
     
     # Create the analysis_history table
     cursor.execute('''
@@ -31,7 +34,7 @@ def init_db():
 
 def save_analysis_record(source_type: str, features: dict[str, Any], density_label: str, confidence: float):
     """Save a single analysis record to the database."""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     cursor = conn.cursor()
     
     # Remove large arrays if any, just keep basic stats for JSON
@@ -64,7 +67,7 @@ def get_recent_history(limit: int = 100) -> list[dict[str, Any]]:
     if not os.path.exists(DB_PATH):
         return []
         
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     

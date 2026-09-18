@@ -111,7 +111,7 @@ def get_models() -> dict[str, Any]:
             min_samples_leaf=2,
             class_weight="balanced",
             random_state=42,
-            n_jobs=-1,  # Use all CPU cores
+            n_jobs=2,  # Constrain cores to prevent memory exhaustion
         ),
 
         # ── 5. Support Vector Machine ───────────────────────────────
@@ -123,10 +123,13 @@ def get_models() -> dict[str, Any]:
         #   Enables predict_proba() for confidence scores.
         # Why C=2.0 and class_weight='balanced':
         #   Optimized for better boundary resolution on imbalanced subsets.
-        "SVM": CalibratedClassifierCV(
-            SVC(kernel="rbf", C=2.0, gamma="scale", class_weight="balanced", random_state=42),
-            ensemble=False,
-            n_jobs=-1
+        "SVM": SVC(
+            kernel="rbf", 
+            C=2.0, 
+            gamma="scale", 
+            class_weight="balanced", 
+            probability=True, 
+            random_state=42
         ),
 
         # ── 6. Gradient Boosting ────────────────────────────────────
@@ -148,12 +151,12 @@ def get_models() -> dict[str, Any]:
         #   Produces a highly stable model that leverages the strengths of all 3.
         "Voting Ensemble": VotingClassifier(
             estimators=[
-                ("rf", RandomForestClassifier(n_estimators=150, max_depth=15, min_samples_leaf=2, class_weight="balanced", random_state=42, n_jobs=-1)),
+                ("rf", RandomForestClassifier(n_estimators=150, max_depth=15, min_samples_leaf=2, class_weight="balanced", random_state=42, n_jobs=2)),
                 ("gb", GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=5, random_state=42)),
-                ("svm", CalibratedClassifierCV(SVC(kernel="rbf", C=2.0, class_weight="balanced", random_state=42), ensemble=False, n_jobs=-1)),
+                ("svm", SVC(kernel="rbf", C=2.0, class_weight="balanced", probability=True, random_state=42)),
             ],
             voting="soft",
-            n_jobs=-1
+            n_jobs=2
         ),
     }
 

@@ -61,7 +61,7 @@ def render_video_analysis():
             enable_tracking = st.checkbox(
                 "Enable Person Tracking",
                 value=True,
-                help="Assign persistent IDs to individuals across frames using CentroidTracker",
+                help="Assign persistent IDs to individuals across frames using ByteTrack",
             )
 
     uploaded_video = st.file_uploader(
@@ -167,6 +167,13 @@ def render_video_analysis():
                 people_counts.append(int(features["people_count"]))
                 densities.append(density_label)
                 confidences.append(conf)
+
+                # Cap lists to prevent browser memory exhaustion on long videos
+                MAX_POINTS = 1000
+                timestamps = timestamps[-MAX_POINTS:]
+                people_counts = people_counts[-MAX_POINTS:]
+                densities = densities[-MAX_POINTS:]
+                confidences = confidences[-MAX_POINTS:]
 
                 # Visual overlay
                 annotated = detector.draw_detections(frame.copy(), detections, density_level=density_label)
