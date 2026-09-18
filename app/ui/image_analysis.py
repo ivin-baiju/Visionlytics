@@ -114,6 +114,10 @@ def render_image_analysis():
     extractor = get_extractor()
     predictor = get_predictor()
 
+    if predictor is None:
+        st.error("No ML model found. Please train models first on the **ML Models** page.", icon=":material/error:")
+        return
+
     with st.spinner("Processing image and running ML inference..."):
         t0 = time.time()
         detections = detector.detect(frame_bgr)

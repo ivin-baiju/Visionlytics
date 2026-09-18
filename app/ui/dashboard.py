@@ -5,6 +5,7 @@ Displays a premium overview of the system with animated feature cards,
 metric summaries, system status indicators, and architecture overview.
 """
 
+import pandas as pd
 import streamlit as st
 from app.components.styles import (
     header_html,

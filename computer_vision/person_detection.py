@@ -139,9 +139,6 @@ class PersonDetector:
                     detections.append(Detection(
                         bbox=(int(x1), int(y1), int(x2), int(y2)),
                         confidence=conf,
-                        class_id=0,
-                        class_name="person",
-                        attributes={}
                     ))
 
         return detections
@@ -196,10 +193,7 @@ class PersonDetector:
                     detections.append(Detection(
                         bbox=(int(x1), int(y1), int(x2), int(y2)),
                         confidence=conf,
-                        class_id=0,
-                        class_name="person",
                         person_id=person_id,
-                        attributes={}
                     ))
 
         return detections

@@ -112,6 +112,10 @@ def render_video_analysis():
         extractor = get_extractor()
         predictor = get_predictor()
 
+        if predictor is None:
+            st.error("No ML model found. Please train models first on the **ML Models** page.", icon=":material/error:")
+            return
+
         progress_bar = st.progress(0.0)
         status_text = st.empty()
         preview_col, stats_col = st.columns([2, 1])
@@ -166,7 +170,7 @@ def render_video_analysis():
 
                 # Visual overlay
                 annotated = detector.draw_detections(frame.copy(), detections, density_level=density_label)
-                if tracker is not None:
+                if enable_tracking:
                     for det in detections:
                         if det.person_id is not None:
                             cx, cy = int(det.center[0]), int(det.center[1])
@@ -184,7 +188,7 @@ def render_video_analysis():
                 preview_placeholder.image(annotated_rgb, caption=f"Time: {cur_time:.1f}s | Frame {frame_idx}", width="stretch")
 
                 # Live metrics
-                active_tracks = sum(1 for det in detections if det.person_id is not None) if tracker is not None else 0
+                active_tracks = sum(1 for det in detections if det.person_id is not None) if enable_tracking else 0
                 density_color = DENSITY_COLORS.get(density_label, "#ffffff")
                 stats_placeholder.markdown(f"""
                 <div class="section-container">

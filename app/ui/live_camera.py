@@ -65,6 +65,10 @@ def render_live_camera():
                 extractor = get_extractor()
                 predictor = get_predictor()
 
+                if predictor is None:
+                    st.error("No ML model found. Please train models first on the **ML Models** page.", icon=":material/error:")
+                    return
+
                 detections = detector.detect(cv_img)
                 features = extractor.extract(detections, (h, w))
                 density_label, conf = predictor.predict(features)
@@ -109,6 +113,10 @@ def render_live_camera():
     detector = get_detector(confidence_threshold=conf_threshold)
     extractor = get_extractor()
     predictor = get_predictor()
+
+    if predictor is None:
+        st.error("No ML model found. Please train models first on the **ML Models** page.", icon=":material/error:")
+        return
 
     feed_col, metrics_col = st.columns([3, 1])
     feed_placeholder = feed_col.empty()
