@@ -1,0 +1,20 @@
+[project]
+name = "visionlytics-frontend"
+version = "1.0.0"
+description = "Visionlytics Streamlit Frontend"
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit>=1.30.0",
+    "requests>=2.31.0",
+    "opencv-python-headless>=4.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "plotly>=5.15.0",
+    "pillow>=10.0.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
