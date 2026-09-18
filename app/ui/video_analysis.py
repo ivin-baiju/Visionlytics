@@ -6,6 +6,7 @@ configurable interval, track people across frames, predict density per frame,
 and view crowd metrics over time.
 """
 
+import collections
 import os
 import tempfile
 import time
@@ -158,9 +159,21 @@ def render_video_analysis():
                 else:
                     detections = detector.detect(frame)
 
-                # Features & Prediction
+                # Features & Prediction with Temporal Smoothing
                 features = extractor.extract(detections, (h, w))
-                density_label, conf = predictor.predict(features)
+                raw_probs = predictor.predict_proba(features)
+                prob_history.append(raw_probs)
+                
+                # Average the probabilities across the buffer
+                avg_probs = {"LOW": 0.0, "MEDIUM": 0.0, "HIGH": 0.0}
+                for probs in prob_history:
+                    for k in avg_probs:
+                        avg_probs[k] += probs[k]
+                for k in avg_probs:
+                    avg_probs[k] /= len(prob_history)
+                
+                density_label = max(avg_probs, key=avg_probs.get)
+                conf = avg_probs[density_label]
 
                 cur_time = frame_idx / fps
                 timestamps.append(cur_time)

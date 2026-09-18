@@ -6,6 +6,7 @@ Displays real-time bounding boxes, live crowd density classification,
 occupancy metrics, and FPS tracking.
 """
 
+import collections
 import time
 
 import cv2
@@ -124,6 +125,8 @@ def render_live_camera():
 
     prev_time = time.time()
     fps_history = []
+    prob_history = collections.deque(maxlen=5)
+    prob_history = collections.deque(maxlen=5)
 
     try:
         while run_camera:
@@ -149,7 +152,18 @@ def render_live_camera():
                 detections = detector.detect(frame)
 
             features = extractor.extract(detections, (h, w))
-            density_label, conf = predictor.predict(features)
+            raw_probs = predictor.predict_proba(features)
+            prob_history.append(raw_probs)
+
+            avg_probs = {"LOW": 0.0, "MEDIUM": 0.0, "HIGH": 0.0}
+            for probs in prob_history:
+                for k in avg_probs:
+                    avg_probs[k] += probs[k]
+            for k in avg_probs:
+                avg_probs[k] /= len(prob_history)
+
+            density_label = max(avg_probs, key=avg_probs.get)
+            conf = avg_probs[density_label]
 
             # Visualization
             if vis_mode == "Heatmap":
