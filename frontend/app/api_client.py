@@ -2,7 +2,9 @@ import requests
 import cv2
 import numpy as np
 
-API_URL = "http://localhost:8000"
+import os
+
+API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 def analyze_frame_api(frame: np.ndarray):
     """Send a frame to the FastAPI backend for analysis."""

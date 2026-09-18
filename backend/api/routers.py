@@ -20,8 +20,17 @@ detector = PersonDetector(confidence_threshold=0.3)
 extractor = FeatureExtractor()
 predictor = CrowdPredictor()
 
+import os
+
 # Load CSRNet
-csrnet_model = CSRNet(load_weights=False)
+csrnet_weights_path = os.path.join(os.path.dirname(__file__), '..', 'computer_vision', 'csrnet_epoch_10.pth')
+if os.path.exists(csrnet_weights_path):
+    csrnet_model = CSRNet(load_weights=True)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    csrnet_model.load_state_dict(torch.load(csrnet_weights_path, map_location=device, weights_only=True))
+else:
+    csrnet_model = CSRNet(load_weights=False)
+    
 csrnet_model.eval()
 
 transform = transforms.Compose([
