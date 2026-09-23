@@ -1,5 +1,4 @@
 # VISIONLYTICS: Intelligent Visual Crowd Analytics
-### Semester 3 Statistical Machine Learning Project
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ivin-baiju/Visionlytics/blob/main/Visionlytics_Colab.ipynb)
 
