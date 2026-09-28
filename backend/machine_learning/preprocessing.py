@@ -43,7 +43,23 @@ LABEL_CLASSES = ["LOW", "MEDIUM", "HIGH"]
 # Default paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATASET_PATH = os.path.join(BASE_DIR, "dataset", "crowd_dataset.csv")
-MODELS_DIR = os.path.join(BASE_DIR, "models")
+
+def _resolve_models_dir() -> str:
+    """Resolve the directory containing trained ML model joblib artifacts."""
+    if "MODELS_DIR" in os.environ and os.path.isdir(os.environ["MODELS_DIR"]):
+        return os.path.abspath(os.environ["MODELS_DIR"])
+    candidates = [
+        os.path.join(BASE_DIR, "models"),
+        os.path.join(BASE_DIR, "..", "models"),
+    ]
+    for c in candidates:
+        if os.path.isdir(c) and os.path.exists(os.path.join(c, "best_model.joblib")):
+            return os.path.abspath(c)
+    # Default fallback
+    return os.path.abspath(candidates[1] if os.path.isdir(candidates[1]) else candidates[0])
+
+MODELS_DIR = _resolve_models_dir()
+
 
 
 def load_dataset(path: str | None = None) -> pd.DataFrame:

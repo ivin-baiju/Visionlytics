@@ -26,7 +26,9 @@ from app.components.styles import (
     header_html,
     metric_card_html,
 )
+from app.database import save_analysis_record
 from frontend.app.api_client import analyze_frame_api
+from frontend.app.utils.draw import draw_boxes
 
 
 def render_video_analysis():
@@ -170,14 +172,17 @@ def render_video_analysis():
                 confidences = confidences[-MAX_POINTS:]
 
                 # Visual overlay
-                annotated = detector.draw_detections(frame.copy(), detections, density_level=density_label)
+                annotated = draw_boxes(frame.copy(), detections, density_level=density_label)
                 if enable_tracking:
                     for det in detections:
-                        if det.person_id is not None:
-                            cx, cy = int(det.center[0]), int(det.center[1])
+                        person_id = det.get("person_id")
+                        if person_id is not None:
+                            bbox = det.get("bbox", [0, 0, 0, 0])
+                            cx = int((bbox[0] + bbox[2]) / 2)
+                            cy = int((bbox[1] + bbox[3]) / 2)
                             cv2.putText(
                                 annotated,
-                                f"ID {det.person_id}",
+                                f"ID {person_id}",
                                 (cx - 10, cy - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX,
                                 0.5,
@@ -189,7 +194,7 @@ def render_video_analysis():
                 preview_placeholder.image(annotated_rgb, caption=f"Time: {cur_time:.1f}s | Frame {frame_idx}", width="stretch")
 
                 # Live metrics
-                active_tracks = sum(1 for det in detections if det.person_id is not None) if enable_tracking else 0
+                active_tracks = sum(1 for det in detections if det.get("person_id") is not None) if enable_tracking else 0
                 density_color = DENSITY_COLORS.get(density_label, "#1a2340")
                 stats_placeholder.markdown(f"""
                 <div class="section-container">

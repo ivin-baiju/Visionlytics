@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -8,6 +6,9 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./models:/app/models:ro
+      - ./yolov8s.pt:/app/yolov8s.pt:ro
+      - ./yolov8s.onnx:/app/yolov8s.onnx:ro
       - ./firebase-adminsdk.json:/app/firebase-adminsdk.json:ro
     environment:
       - PYTHONUNBUFFERED=1

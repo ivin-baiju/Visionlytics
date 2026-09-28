@@ -18,6 +18,8 @@ from app.components.styles import (
     DENSITY_COLORS,
     header_html,
 )
+from app.database import save_analysis_record
+from app.resources import get_detector, get_extractor, get_predictor
 from frontend.app.api_client import analyze_frame_api
 from frontend.app.utils.draw import draw_boxes, draw_heatmap
 

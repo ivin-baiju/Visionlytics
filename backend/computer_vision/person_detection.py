@@ -82,16 +82,25 @@ class PersonDetector:
             import os
 
             from ultralytics import YOLO
-            
+
             PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            onnx_path = os.path.join(PROJECT_ROOT, "yolov8s.onnx")
-            pt_path = os.path.join(PROJECT_ROOT, "yolov8s.pt")
-            
-            if os.path.exists(onnx_path):
+            search_dirs = [PROJECT_ROOT, os.path.dirname(PROJECT_ROOT)]
+
+            onnx_path = None
+            pt_path = "yolov8s.pt"
+
+            for d in search_dirs:
+                cand_onnx = os.path.join(d, "yolov8s.onnx")
+                if os.path.exists(cand_onnx) and onnx_path is None:
+                    onnx_path = cand_onnx
+                cand_pt = os.path.join(d, "yolov8s.pt")
+                if os.path.exists(cand_pt):
+                    pt_path = cand_pt
+
+            if onnx_path and os.path.exists(onnx_path):
                 # Using ONNX format
                 self._model = YOLO(onnx_path, task='detect')
             else:
-                # YOLOv8s is the small variant — offers much higher accuracy than nano while remaining fast
                 self._model = YOLO(pt_path)
         return self._model
 

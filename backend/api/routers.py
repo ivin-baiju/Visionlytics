@@ -97,5 +97,6 @@ async def analyze_frame(file: UploadFile = File(...)):
         "probabilities": probs,
         "people_count": people_count,
         "detections": det_list,
-        "features": features
+        "features": features,
+        "model_name": predictor.model_name if predictor.is_loaded else "Heuristic Fallback",
     }
