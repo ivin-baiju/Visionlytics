@@ -1,0 +1,5 @@
+# Root requirements for Visionlytics (compatible with HF Spaces & local running)
+-e ./backend
+-e ./frontend
+ruff>=0.4.0
+pytest>=8.0.0
