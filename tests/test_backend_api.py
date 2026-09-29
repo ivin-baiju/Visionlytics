@@ -55,6 +55,8 @@ def test_analyze_frame_contract(client):
         "probabilities",
         "people_count",
         "detections",
+        "attributes",
+        "tracking",
         "features",
         "model_name",
     ):
@@ -63,6 +65,8 @@ def test_analyze_frame_contract(client):
     assert payload["density_label"] in {"LOW", "MEDIUM", "HIGH"}
     assert 0.0 <= float(payload["confidence"]) <= 1.0
     assert isinstance(payload["detections"], list)
+    assert isinstance(payload["attributes"], list)
+    assert payload["tracking"] is False
     assert payload["model_name"]
 
 
@@ -72,6 +76,135 @@ def test_analyze_frame_rejects_invalid_image(client):
         files={"file": ("bad.jpg", b"not-an-image", "image/jpeg")},
     )
     assert response.status_code == 400
+
+
+def test_analyze_frame_applies_confidence_override(client, monkeypatch):
+    """The request's `confidence` must reach the detector without mutating it."""
+    from api.routers import detector as real_detector
+
+    seen = {}
+
+    def fake_detect(image, confidence=None):
+        seen["confidence"] = confidence
+        seen["instance_default"] = real_detector.confidence_threshold
+        return []
+
+    monkeypatch.setattr(real_detector, "detect", fake_detect)
+
+    response = client.post(
+        "/analyze/frame",
+        params={"confidence": 0.75},
+        files={"file": ("frame.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+    assert response.status_code == 200
+    assert seen["confidence"] == 0.75
+    # Instance default is left untouched, so concurrent requests can't interfere.
+    assert seen["instance_default"] != 0.75
+    assert real_detector.confidence_threshold == seen["instance_default"]
+
+
+def test_analyze_frame_confidence_is_validated(client):
+    response = client.post(
+        "/analyze/frame",
+        params={"confidence": 5.0},
+        files={"file": ("frame.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+    assert response.status_code == 422
+
+
+def test_analyze_frame_tracking_populates_person_ids(client, monkeypatch):
+    """`track=true` must use ByteTrack and return person_id per detection."""
+    from api.routers import detector as real_detector
+    from computer_vision.person_detection import Detection
+
+    calls = {"track": 0, "detect": 0}
+
+    def fake_track(image, persist=True, confidence=None):
+        calls["track"] += 1
+        return [Detection(bbox=(5, 5, 40, 90), confidence=0.8, person_id=3)]
+
+    def fake_detect(image, confidence=None):
+        calls["detect"] += 1
+        return []
+
+    monkeypatch.setattr(real_detector, "track", fake_track)
+    monkeypatch.setattr(real_detector, "detect", fake_detect)
+
+    response = client.post(
+        "/analyze/frame",
+        params={"track": True},
+        files={"file": ("frame.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+    assert response.status_code == 200
+
+    payload = response.json()
+    assert payload["tracking"] is True
+    assert payload["detections"][0]["person_id"] == 3
+    assert calls == {"track": 1, "detect": 0}
+
+
+def test_analyze_frame_attributes_are_optional(client, monkeypatch):
+    """Attribute estimation is opt-in and returns one entry per detection."""
+    from api.routers import detector as real_detector
+    from computer_vision.person_detection import Detection
+
+    monkeypatch.setattr(
+        real_detector,
+        "detect",
+        lambda image, confidence=None: [
+            Detection(bbox=(10, 20, 80, 190), confidence=0.9),
+        ],
+    )
+
+    without = client.post(
+        "/analyze/frame",
+        files={"file": ("frame.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+    assert without.status_code == 200
+    assert without.json()["attributes"] == []
+
+    with_attrs = client.post(
+        "/analyze/frame",
+        params={"attributes": True},
+        files={"file": ("frame.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+    assert with_attrs.status_code == 200
+
+    attributes = with_attrs.json()["attributes"]
+    assert len(attributes) == 1
+    assert set(attributes[0]) == {
+        "hair_color",
+        "clothing_color",
+        "hair_confidence",
+        "clothing_confidence",
+        "apparent_sex",
+    }
+    assert attributes[0]["apparent_sex"] == "UNKNOWN"
+
+
+def test_csrnet_count_is_downscaled_and_rescaled(monkeypatch):
+    """CSRNet must not run at native resolution, but counts must match it.
+
+    Running the network on multi-megapixel frames took seconds per frame and
+    dominated video analysis latency.
+    """
+    from api import routers
+
+    seen = {}
+
+    def fake_estimate(tensor, model):
+        seen["shape"] = tuple(tensor.shape[-2:])
+        # Density sums scale with pixel area in the shipped checkpoint.
+        return tensor.shape[-2] * tensor.shape[-1]
+
+    monkeypatch.setattr(routers, "estimate_dense_crowd", fake_estimate)
+
+    frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+    count = routers._csrnet_count(frame)
+
+    assert max(seen["shape"]) == routers.CSRNET_MAX_SIDE
+    native_pixels = 720 * 1280
+    assert abs(count - native_pixels) / native_pixels < 0.02
 
 
 def test_analyze_frame_serializes_detections(client, monkeypatch):
@@ -88,7 +221,7 @@ def test_analyze_frame_serializes_detections(client, monkeypatch):
         Detection(bbox=(10, 20, 60, 180), confidence=0.91, person_id=7),
         Detection(bbox=(70, 30, 130, 190), confidence=0.77, person_id=None),
     ]
-    monkeypatch.setattr(real_detector, "detect", lambda frame: fake_detections)
+    monkeypatch.setattr(real_detector, "detect", lambda image, confidence=None: fake_detections)
 
     response = client.post(
         "/analyze/frame",
@@ -182,8 +315,13 @@ def test_feature_importance(client):
     assert all(isinstance(v, float) for v in payload["importances"])
 
 
+@pytest.mark.slow
 def test_models_train_writes_to_isolated_dir(client, monkeypatch, tmp_path):
-    """Training must run end-to-end without mutating the repository artifacts."""
+    """Training must run end-to-end without mutating the repository artifacts.
+
+    Trains all 7 models (~2 minutes on a busy machine), so it is tagged `slow`:
+    deselect with `pytest -m "not slow"` for fast local iterations.
+    """
     import machine_learning.preprocessing as preprocessing
     import machine_learning.train as train_module
 

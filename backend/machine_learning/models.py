@@ -101,8 +101,8 @@ def get_models() -> dict[str, Any]:
         #   and features (bagging). The final prediction is the majority
         #   vote across all trees. This reduces overfitting compared to
         #   a single decision tree.
-        # Why n_estimators=100:
-        #   100 trees provide a good balance between performance and
+        # Why n_estimators=150:
+        #   150 trees provide a good balance between performance and
         #   computation time.
         "Random Forest": RandomForestClassifier(
             n_estimators=150,

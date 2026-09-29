@@ -104,12 +104,15 @@ class PersonDetector:
                 self._model = YOLO(pt_path)
         return self._model
 
-    def detect(self, image: np.ndarray) -> list[Detection]:
+    def detect(self, image: np.ndarray, confidence: float | None = None) -> list[Detection]:
         """
         Detect people in an image.
 
         Args:
             image: Input image as a NumPy array (BGR format from OpenCV).
+            confidence: Optional per-call confidence threshold override. Keeps
+                        the instance default free of cross-request races when
+                        the API serves concurrent requests.
 
         Returns:
             List of Detection objects for each person found.
@@ -118,6 +121,7 @@ class PersonDetector:
             return []
 
         model = self._load_model()
+        conf_threshold = self.confidence_threshold if confidence is None else float(confidence)
 
         import sys
         if sys.platform == "darwin":
@@ -129,7 +133,7 @@ class PersonDetector:
         # Resize if the image is too large (preserves aspect ratio internally)
         results = model.predict(
             source=image,
-            conf=self.confidence_threshold,
+            conf=conf_threshold,
             classes=[self.PERSON_CLASS_ID],  # Only detect people
             imgsz=self.max_image_size,
             device=device,
@@ -153,13 +157,19 @@ class PersonDetector:
 
         return detections
 
-    def track(self, image: np.ndarray, persist: bool = True) -> list[Detection]:
+    def track(
+        self,
+        image: np.ndarray,
+        persist: bool = True,
+        confidence: float | None = None,
+    ) -> list[Detection]:
         """
         Detect and track people in an image using ByteTrack.
-        
+
         Args:
             image: Input image.
             persist: Whether to persist tracks across frames.
+            confidence: Optional per-call confidence threshold override.
 
         Returns:
             List of Detection objects with person_id populated.
@@ -168,6 +178,7 @@ class PersonDetector:
             return []
 
         model = self._load_model()
+        conf_threshold = self.confidence_threshold if confidence is None else float(confidence)
 
         import sys
         if sys.platform == "darwin":
@@ -178,7 +189,7 @@ class PersonDetector:
 
         results = model.track(
             source=image,
-            conf=self.confidence_threshold,
+            conf=conf_threshold,
             classes=[self.PERSON_CLASS_ID],
             imgsz=self.max_image_size,
             device=device,
