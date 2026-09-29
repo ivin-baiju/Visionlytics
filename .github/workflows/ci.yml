@@ -33,7 +33,5 @@ jobs:
         pip install -e ./frontend
 
     - name: Run unit tests
-      env:
-        PYTHONPATH: ${{ github.workspace }}
       run: |
-        echo "No tracking tests configured yet. Tests passing by default."
+        python -m pytest -q

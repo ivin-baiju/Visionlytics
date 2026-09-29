@@ -26,14 +26,19 @@
 - [x] Convert `st.tabs` to `st.segmented_control` where applicable
 - [x] Replace inline hex colors with theme tokens in all UI pages
 
-## Wave 4: Dataset & ML Models Backend [CURRENT]
-- [ ] Implement `/dataset/*` and `/models/*` endpoints in FastAPI router
-- [ ] Ensure model prediction fallback and champion weights are correctly wired
-- [ ] Validate live prediction flow
+## Wave 4: Dataset & ML Models Backend [DONE]
+- [x] Implement `/dataset/*` and `/models/*` endpoints in FastAPI router
+- [x] Ensure model prediction fallback and champion weights are correctly wired
+- [x] Validate live prediction flow
 
-## Wave 5: E2E Verification & Closure
-- [ ] Write integration and AppTest tests
-- [ ] Validate Docker Compose build and start
-- [ ] Capture UI screenshots
-- [ ] Final state snapshot & documentation update
+## Wave 5: E2E Verification & Closure [DONE]
+- [x] Write integration and AppTest tests
+- [x] Validate Docker Compose config and required volume mounts
+- [x] Verify rendered UI (Streamlit AppTest) on every route
+- [x] Final state snapshot & documentation update
+
+> **Environment limitations:** Docker is not installed here, so a live
+> `docker compose build` was not run — compose YAML, service definitions and
+> weight mounts were validated statically instead. Visual screenshot capture
+> requires a browser; page rendering is asserted through AppTest.
 

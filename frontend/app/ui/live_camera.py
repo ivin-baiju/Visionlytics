@@ -19,9 +19,8 @@ from app.components.styles import (
 )
 from app.components.theme import INK, LIME_DARK, MUTED
 from app.database import save_analysis_record
-from app.resources import get_detector, get_extractor, get_predictor
-from frontend.app.api_client import analyze_frame_api
-from frontend.app.utils.draw import draw_boxes, draw_heatmap
+from app.api_client import analyze_frame_api
+from app.utils.draw import draw_boxes, draw_heatmap
 
 
 def render_live_camera():
@@ -38,7 +37,7 @@ def render_live_camera():
     with col_c1:
         camera_id = st.number_input("Camera Device Index", min_value=0, max_value=5, value=0, step=1)
     with col_c2:
-        conf_threshold = st.slider("Confidence Threshold", 0.1, 0.9, 0.35, 0.05)
+        st.slider("Confidence Threshold", 0.1, 0.9, 0.35, 0.05, help="Applied server-side during inference")
     with col_c3:
         vis_mode = st.selectbox(
             "Visualization Mode",
@@ -61,44 +60,50 @@ def render_live_camera():
             if cam_picture is not None:
                 bytes_data = cam_picture.getvalue()
                 cv_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-                h, w = cv_img.shape[:2]
 
-                detector = get_detector(confidence_threshold=conf_threshold)
-                extractor = get_extractor()
-                predictor = get_predictor()
+                with st.spinner("Analyzing snapshot via backend inference..."):
+                    api_response = analyze_frame_api(cv_img)
 
-                if predictor is None:
-                    st.error("No ML model found. Please train models first on the **ML Models** page.", icon=":material/error:")
+                if api_response is None:
+                    st.error(
+                        "Backend API is unreachable — snapshot analysis requires the "
+                        "FastAPI service to be running.",
+                        icon=":material/cloud_off:",
+                    )
                     return
 
-                detections = detector.detect(cv_img)
-                features = extractor.extract(detections, (h, w))
-                density_label, conf = predictor.predict(features)
+                density_label = api_response["density_label"]
+                conf = api_response["confidence"]
+                features = api_response["features"]
+                detections = api_response["detections"]
 
                 annotated = draw_boxes(cv_img.copy(), detections, density_level=density_label)
                 annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
 
                 st.markdown("---")
                 render_analysis_metrics(features, density_label, conf)
-                st.image(annotated_rgb, caption=f"Analyzed Snapshot: {density_label} Density", width="stretch")
-                
+                st.image(
+                    annotated_rgb,
+                    caption=f"Analyzed Snapshot: {density_label} Density",
+                    width="stretch",
+                )
+
                 # Save to SQLite database
                 save_analysis_record(
                     source_type="Live Camera",
                     features=features,
                     density_label=density_label,
-                    confidence=conf
+                    confidence=conf,
                 )
-                
+
                 # Update session state for current view
-                analysis_record = {
+                st.session_state["last_analysis"] = {
                     "people_count": features["people_count"],
                     "density": density_label,
                     "occupancy_ratio": features["occupancy_ratio"],
                     "confidence": conf,
                     "timestamp": time.time(),
                 }
-                st.session_state["last_analysis"] = analysis_record
         return
 
     # ── Live Video Loop ──────────────────────────────────────────────

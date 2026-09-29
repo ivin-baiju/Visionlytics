@@ -14,10 +14,15 @@ all 7 Statistical Machine Learning models on the crowd dataset:
 
 import os
 
-import joblib
 import pandas as pd
 import streamlit as st
 
+from app.api_client import (
+    get_feature_importance_api,
+    get_model_evaluation_api,
+    get_models_list_api,
+    train_models_api,
+)
 from app.components.charts import (
     confusion_matrix_heatmap,
     feature_importance_bar,
@@ -26,12 +31,40 @@ from app.components.charts import (
 )
 from app.components.styles import header_html, metric_card_html
 from app.components.theme import DENSITY, INK, LIME_DARK, MUTED
-from machine_learning.preprocessing import (
-    FEATURE_COLUMNS,
-    LABEL_CLASSES,
-    MODELS_DIR,
-)
-from machine_learning.train import train_all_models
+
+# Fallbacks so the page still renders if the backend is unreachable.
+FALLBACK_FEATURE_COLUMNS = [
+    "people_count",
+    "occupancy_ratio",
+    "avg_person_area",
+    "avg_distance",
+    "min_distance",
+    "spatial_spread",
+    "top_region_count",
+    "middle_region_count",
+    "bottom_region_count",
+    "frame_occupancy_density",
+]
+FALLBACK_LABEL_CLASSES = ["LOW", "MEDIUM", "HIGH"]
+
+
+def _local_results_fallback():
+    """Best-effort local read of saved evaluation results (dev/offline only).
+
+    Returns (results_dict, models_dir) or (None, None). Never raises: the
+    backend package is absent inside the frontend container.
+    """
+    try:
+        import joblib  # noqa: PLC0415
+
+        from machine_learning.preprocessing import MODELS_DIR  # noqa: PLC0415
+
+        results_path = os.path.join(MODELS_DIR, "evaluation_results.joblib")
+        if not os.path.exists(results_path):
+            return None, MODELS_DIR
+        return joblib.load(results_path), MODELS_DIR
+    except Exception:
+        return None, None
 
 
 def render_ml_models():
@@ -43,74 +76,83 @@ def render_ml_models():
         "on the extracted spatial crowd features."
     )
 
+    # ── Backend registry state ───────────────────────────────────────
+    registry = get_models_list_api() or {}
+    backend_online = bool(registry)
+    feature_columns = registry.get("feature_columns") or FALLBACK_FEATURE_COLUMNS
+    label_classes = registry.get("class_labels") or FALLBACK_LABEL_CLASSES
+    has_trained_models = bool(registry.get("has_trained_models", False))
+
+    if not backend_online:
+        st.warning(
+            "Backend API is offline — showing locally stored results where available. "
+            "Start the FastAPI service to train or refresh models.",
+            icon=":material/cloud_off:",
+        )
+
     col_btn, col_info = st.columns([1, 3])
     with col_btn:
-        train_clicked = st.button("Train All 7 Models", icon=":material/model_training:", type="primary")
+        train_clicked = st.button(
+            "Train All 7 Models",
+            icon=":material/model_training:",
+            type="primary",
+            disabled=not backend_online,
+            help="Runs the full 70/15/15 stratified training pipeline in the backend.",
+        )
+        if not backend_online:
+            st.caption("Requires the FastAPI backend.")
 
-    best_meta_path = os.path.join(MODELS_DIR, "best_model_meta.joblib")
-    has_trained_models = os.path.exists(best_meta_path)
+    # ── Training / results acquisition (API-first) ───────────────────
+    results = None
 
     if train_clicked:
         with st.spinner("Training all 7 models and evaluating performance..."):
-            results = train_all_models(verbose=False)
-            st.session_state["ml_results"] = results
-            st.success(
-                f"Training complete! Best Model: **{results['best_model_name']}** "
-                f"(F1: {results['val_metrics'][results['best_model_name']]['f1_weighted']:.4f})"
-            )
+            trained_payload = train_models_api()
+        if trained_payload:
+            results = trained_payload
+            st.session_state["ml_results"] = trained_payload
+            best_name = trained_payload.get("best_model_name", "n/a")
+            best_f1 = trained_payload["val_metrics"].get(best_name, {}).get("f1_weighted", 0.0)
+            st.success(f"Training complete! Best Model: **{best_name}** (F1: {best_f1:.4f})")
             has_trained_models = True
+        else:
+            st.error("Training failed — the backend API did not respond.", icon=":material/error:")
+            return
 
-    if not has_trained_models and "ml_results" not in st.session_state:
-        st.info("No saved models found. Click **'Train All 7 Models'** above to train on the crowd dataset.")
+    if results is None:
+        results = st.session_state.get("ml_results")
+
+    if results is None:
+        results = get_model_evaluation_api()
+
+    if results is None:
+        local_results, _local_models_dir = _local_results_fallback()
+        results = local_results
+
+    if results is None:
+        if not has_trained_models:
+            st.info(
+                "No saved models found. Click **'Train All 7 Models'** above to train "
+                "on the crowd dataset."
+            )
+            return
+        st.info("Evaluation metrics are unavailable. Retrain the models to regenerate them.")
         return
 
-    # Load results or evaluate from disk
-    if "ml_results" in st.session_state:
-        results = st.session_state["ml_results"]
-        val_metrics = results["val_metrics"]
-        best_model_name = results["best_model_name"]
-        training_times = results["training_times"]
-        trained_models = results["models"]
-    else:
-        # Load results from disk
-        results_path = os.path.join(MODELS_DIR, "evaluation_results.joblib")
-        if not os.path.exists(results_path):
-            st.info("No saved evaluation metrics found. Click **'Train All 7 Models'** above to train on the crowd dataset.")
-            return
-            
-        try:
-            results = joblib.load(results_path)
-            val_metrics = results["val_metrics"]
-            test_metrics = results.get("test_metrics", {})
-            best_model_name = results["best_model_name"]
-            training_times = results["training_times"]
-            
-            # Load models for feature importance and other uses
-            trained_models = {}
-            model_files = {
-                "Logistic Regression": "logistic_regression.joblib",
-                "KNN": "knn.joblib",
-                "Decision Tree": "decision_tree.joblib",
-                "Random Forest": "random_forest.joblib",
-                "SVM": "svm.joblib",
-                "Gradient Boosting": "gradient_boosting.joblib",
-                "Voting Ensemble": "voting_ensemble.joblib",
-            }
-            for name, fname in model_files.items():
-                mpath = os.path.join(MODELS_DIR, fname)
-                if os.path.exists(mpath):
-                    trained_models[name] = joblib.load(mpath)
-                    
-        except Exception as e:
-            st.error(f"Error loading models or results: {e}. Please click 'Train All 7 Models'.")
-            return
+    val_metrics = results.get("val_metrics", {})
+    test_metrics = results.get("test_metrics", {})
+    best_model_name = results.get("best_model_name", "n/a")
+    training_times = results.get("training_times", {})
 
-    # ── Best Model Highlight Banner ──────────────────────────────────
-    best_f1 = val_metrics[best_model_name]["f1_weighted"]
-    best_acc = val_metrics[best_model_name]["accuracy"]
+    if not val_metrics:
+        st.info("Evaluation metrics are empty. Retrain the models to regenerate them.")
+        return
 
+    # ── Champion summary ─────────────────────────────────────────────
     st.markdown("---")
-    st.subheader("Benchmark Champion", icon=":material/military_tech:")
+    best_metrics = val_metrics.get(best_model_name, {})
+    best_f1 = float(best_metrics.get("f1_weighted", 0.0))
+    best_acc = float(best_metrics.get("accuracy", 0.0))
 
     col_b1, col_b2, col_b3 = st.columns(3)
     with col_b1:
@@ -122,35 +164,33 @@ def render_ml_models():
 
     st.markdown("---")
 
-    # ── Comparison Table & Chart ─────────────────────────────────────
-    st.subheader("Model Performance Comparison", icon=":material/leaderboard:")
-
-    comparison_rows = []
+    # ── Model comparison table & chart ───────────────────────────────
+    st.subheader("Model comparison (validation set)", icon=":material/leaderboard:")
+    comp_rows = []
     for name, m in val_metrics.items():
-        comparison_rows.append({
+        comp_rows.append({
             "Model": name,
-            "Accuracy": m["accuracy"],
-            "Precision": m["precision_weighted"],
-            "Recall": m["recall_weighted"],
-            "F1-Score": m["f1_weighted"],
-            "Training Time (s)": training_times.get(name, 0.0),
+            "Accuracy": float(m.get("accuracy", 0.0)),
+            "Precision": float(m.get("precision_weighted", 0.0)),
+            "Recall": float(m.get("recall_weighted", 0.0)),
+            "F1-Score": float(m.get("f1_weighted", 0.0)),
         })
 
-    comp_df = pd.DataFrame(comparison_rows).sort_values("F1-Score", ascending=False).reset_index(drop=True)
-
-    col_tbl, col_chart = st.columns([1, 1])
-    with col_tbl:
-        st.markdown("##### Detailed Metric Table")
+    if comp_rows:
+        comp_df = pd.DataFrame(comp_rows).sort_values("F1-Score", ascending=False).reset_index(drop=True)
         st.dataframe(
-            comp_df.style.highlight_max(subset=["Accuracy", "Precision", "Recall", "F1-Score"], color=LIME_DARK),
+            comp_df.style.highlight_max(
+                subset=["Accuracy", "Precision", "Recall", "F1-Score"], color=LIME_DARK
+            ),
             width="stretch",
             height=260,
         )
-    with col_chart:
         fig_comp = model_comparison_bar(comp_df)
         st.plotly_chart(fig_comp, width="stretch")
+    else:
+        st.info("No model comparison data available.")
 
-    st.markdown("---")
+
 
     # ── Confusion Matrices & Test Results ────────────────────────────
     st.subheader("Detailed Model Evaluation", icon=":material/grid_on:")
@@ -166,7 +206,7 @@ def render_ml_models():
                 col_cm, col_rep = st.columns([1, 1])
                 with col_cm:
                     cm = val_metrics[name]["confusion_matrix"]
-                    fig_cm = confusion_matrix_heatmap(cm, LABEL_CLASSES, title=f"Val CM: {name}")
+                    fig_cm = confusion_matrix_heatmap(cm, label_classes, title=f"Val CM: {name}")
                     st.plotly_chart(fig_cm, width="stretch")
                 with col_rep:
                     st.markdown("##### Validation Classification Report")
@@ -180,7 +220,7 @@ def render_ml_models():
                     col_cm, col_rep = st.columns([1, 1])
                     with col_cm:
                         cm = test_metrics[name]["confusion_matrix"]
-                        fig_cm = confusion_matrix_heatmap(cm, LABEL_CLASSES, title=f"Test CM: {name}")
+                        fig_cm = confusion_matrix_heatmap(cm, label_classes, title=f"Test CM: {name}")
                         st.plotly_chart(fig_cm, width="stretch")
                     with col_rep:
                         st.markdown("##### Test Classification Report")
@@ -195,13 +235,16 @@ def render_ml_models():
 
     with col_feat:
         st.subheader("Feature Importance", icon=":material/bar_chart:")
-        # Extract from Best Model or Random Forest
-        rf_model = trained_models.get("Random Forest") or trained_models.get(best_model_name)
-        if rf_model is not None and hasattr(rf_model, "feature_importances_"):
-            fig_fi = feature_importance_bar(FEATURE_COLUMNS, rf_model.feature_importances_.tolist())
+        fi_payload = get_feature_importance_api()
+        if fi_payload and fi_payload.get("importances"):
+            fig_fi = feature_importance_bar(
+                fi_payload.get("feature_names") or feature_columns,
+                fi_payload["importances"],
+            )
             st.plotly_chart(fig_fi, width="stretch")
+            st.caption(f"Source model: **{fi_payload.get('model_name', 'n/a')}**")
         else:
-            st.info("Feature importance is not available for this model type.")
+            st.info("Feature importance is not available for the trained model types.")
 
     with col_time:
         st.subheader("Computational Efficiency", icon=":material/timer:")

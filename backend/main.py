@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI
+from api.data_routers import router as data_router
 from api.routers import router
 
 app = FastAPI(
@@ -14,6 +15,7 @@ app = FastAPI(
 )
 
 app.include_router(router)
+app.include_router(data_router)
 
 @app.get("/health")
 def health_check():

@@ -1,5 +1,3 @@
-import io
-import time
 from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import JSONResponse
 import numpy as np
@@ -10,7 +8,6 @@ from computer_vision.person_detection import PersonDetector
 from computer_vision.feature_extraction import FeatureExtractor
 from computer_vision.csrnet import CSRNet, estimate_dense_crowd
 from machine_learning.predict import CrowdPredictor
-from db.firebase_client import db_client
 import torch
 import torchvision.transforms as transforms
 

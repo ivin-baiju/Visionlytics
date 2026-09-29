@@ -8,8 +8,10 @@ and dataset regeneration controls.
 
 import os
 
+import pandas as pd
 import streamlit as st
 
+from app.api_client import get_dataset_info_api, get_dataset_preview_api
 from app.components.charts import (
     class_distribution_bar,
     feature_correlation_heatmap,
@@ -18,13 +20,40 @@ from app.components.charts import (
 )
 from app.components.styles import header_html, metric_card_html
 from app.components.theme import INK, MUTED
-from dataset.generate_dataset import generate_dataset
-from machine_learning.preprocessing import (
-    DATASET_PATH,
-    FEATURE_COLUMNS,
-    LABEL_CLASSES,
-    load_dataset,
-)
+
+# Fallbacks so the page still renders if the backend is unreachable.
+FALLBACK_FEATURE_COLUMNS = [
+    "people_count",
+    "occupancy_ratio",
+    "avg_person_area",
+    "avg_distance",
+    "min_distance",
+    "spatial_spread",
+    "top_region_count",
+    "middle_region_count",
+    "bottom_region_count",
+    "frame_occupancy_density",
+]
+FALLBACK_LABEL_CLASSES = ["LOW", "MEDIUM", "HIGH"]
+
+
+def _local_dataset_fallback():
+    """Best-effort local dataset load for offline/dev runs.
+
+    Returns a DataFrame or None. The backend package is not shipped inside the
+    frontend container, so this import is attempted lazily and never fatal.
+    """
+    try:
+        from machine_learning.preprocessing import (  # noqa: PLC0415
+            DATASET_PATH,
+            load_dataset,
+        )
+
+        if not os.path.exists(DATASET_PATH):
+            return None
+        return load_dataset(DATASET_PATH)
+    except Exception:
+        return None
 
 
 def render_dataset_page():
@@ -35,6 +64,21 @@ def render_dataset_page():
         "Inspect the training dataset, examine feature distributions, "
         "verify class balance, and study spatial correlation patterns."
     )
+
+    # ── Backend dataset metadata (drives columns/labels) ─────────────
+    info = get_dataset_info_api() or {}
+    feature_columns = info.get("feature_columns") or FALLBACK_FEATURE_COLUMNS
+    label_classes = info.get("class_labels") or FALLBACK_LABEL_CLASSES
+
+    backend_online = bool(info)
+    dataset_exists = bool(info.get("exists", False))
+
+    if not backend_online:
+        st.warning(
+            "Backend API is offline — falling back to a direct local dataset read. "
+            "Start the FastAPI service for full functionality.",
+            icon=":material/cloud_off:",
+        )
 
     # ── Dataset Controls ─────────────────────────────────────────────
     with st.expander("Dataset Generation Controls", icon=":material/settings:"):
@@ -51,20 +95,52 @@ def render_dataset_page():
                 help="Check this box to confirm overwriting the existing dataset."
             )
         with col_ctrl3:
-            st.write("") # Spacer
-            st.write("") # Spacer
-            regenerate = st.button("Regenerate Dataset", icon=":material/refresh:", type="primary" if confirm_overwrite else "secondary", disabled=not confirm_overwrite and os.path.exists(DATASET_PATH))
+            st.write("")  # Spacer
+            st.write("")  # Spacer
+            regenerate = st.button(
+                "Regenerate Dataset",
+                icon=":material/refresh:",
+                type="primary" if confirm_overwrite else "secondary",
+                disabled=not confirm_overwrite and dataset_exists,
+            )
 
-    if not os.path.exists(DATASET_PATH) or regenerate:
+    # ── Load dataset via API, with generate/fallback paths ───────────
+    df = None
+    source_label = ""
+
+    if regenerate:
         with st.spinner(f"Generating calibrated synthetic crowd dataset ({n_per_class * 3} samples)..."):
-            df = generate_dataset(n_per_class=n_per_class, output_path=DATASET_PATH)
-            st.success("Dataset successfully generated and saved to disk!")
-    else:
-        try:
-            df = load_dataset(DATASET_PATH)
-        except Exception as e:
-            st.error(f"Error loading dataset: {e}")
+            from app.api_client import generate_dataset_api  # noqa: PLC0415
+
+            payload = generate_dataset_api(n_per_class=int(n_per_class))
+        if payload:
+            df = pd.DataFrame(payload["rows"], columns=payload["columns"])
+            st.success(
+                f"Dataset regenerated server-side: {payload.get('n_rows', len(df)):,} samples."
+            )
+            source_label = "Backend API"
+        else:
+            st.error("Regeneration failed — the backend API did not respond.")
             return
+    else:
+        payload = get_dataset_preview_api()
+        if payload:
+            df = pd.DataFrame(payload["rows"], columns=payload["columns"])
+            source_label = "Backend API"
+        else:
+            df = _local_dataset_fallback()
+            source_label = "Local disk"
+
+    if df is None or len(df) == 0:
+        st.error(
+            "No dataset available. Ensure the FastAPI backend is running, "
+            "then use **Regenerate Dataset** above.",
+            icon=":material/database_off:",
+        )
+        return
+
+    st.caption(f"Data source: **{source_label}** · {len(df):,} rows loaded")
+
 
     # ── High Level Overview Cards ────────────────────────────────────
     st.markdown("---")
@@ -72,9 +148,9 @@ def render_dataset_page():
     with c1:
         st.markdown(metric_card_html("Total Samples", f"{len(df):,}", INK), unsafe_allow_html=True)
     with c2:
-        st.markdown(metric_card_html("Feature Count", f"{len(FEATURE_COLUMNS)}", MUTED), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Feature Count", f"{len(feature_columns)}", MUTED), unsafe_allow_html=True)
     with c3:
-        st.markdown(metric_card_html("Classes", f"{len(LABEL_CLASSES)}", INK), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Classes", f"{len(label_classes)}", INK), unsafe_allow_html=True)
     with c4:
         missing_count = int(df.isnull().sum().sum())
         st.markdown(metric_card_html("Missing Values", f"{missing_count}", MUTED), unsafe_allow_html=True)
@@ -105,7 +181,7 @@ def render_dataset_page():
 
     with col_d2:
         st.subheader("Feature Correlation Matrix", icon=":material/hub:")
-        fig_corr = feature_correlation_heatmap(df, FEATURE_COLUMNS)
+        fig_corr = feature_correlation_heatmap(df, feature_columns)
         st.plotly_chart(fig_corr, width="stretch")
 
     # ── Interactive Feature Analysis ─────────────────────────────────
@@ -118,7 +194,7 @@ def render_dataset_page():
         st.markdown("##### Histogram by Class")
         selected_feat = st.selectbox(
             "Select Feature for Histogram",
-            FEATURE_COLUMNS,
+            feature_columns,
             index=0,
             key="hist_feat",
         )
@@ -129,9 +205,9 @@ def render_dataset_page():
         st.markdown("##### Feature Scatter Relationship")
         col_x, col_y = st.columns(2)
         with col_x:
-            feat_x = st.selectbox("X Axis", FEATURE_COLUMNS, index=0, key="scatter_x")
+            feat_x = st.selectbox("X Axis", feature_columns, index=0, key="scatter_x")
         with col_y:
-            feat_y = st.selectbox("Y Axis", FEATURE_COLUMNS, index=1, key="scatter_y")
+            feat_y = st.selectbox("Y Axis", feature_columns, index=1, key="scatter_y")
 
         fig_scat = scatter_feature_vs_density(df, feat_x, feat_y)
         st.plotly_chart(fig_scat, width="stretch")
@@ -139,4 +215,4 @@ def render_dataset_page():
     # ── Summary Statistics Table ─────────────────────────────────────
     st.markdown("---")
     with st.expander("Numerical Descriptive Statistics (Mean, Std, Min, Max)", icon=":material/analytics:"):
-        st.dataframe(df[FEATURE_COLUMNS].describe().T.style.format("{:.4f}"), width="stretch")
+        st.dataframe(df[feature_columns].describe().T.style.format("{:.4f}"), width="stretch")

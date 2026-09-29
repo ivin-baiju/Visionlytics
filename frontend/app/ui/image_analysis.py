@@ -22,8 +22,8 @@ from app.components.styles import (
     metric_card_html,
 )
 from app.components.theme import INK
-from frontend.app.api_client import analyze_frame_api
-from frontend.app.utils.draw import draw_boxes, draw_heatmap
+from app.api_client import analyze_frame_api
+from app.utils.draw import draw_boxes, draw_heatmap
 
 
 def render_image_analysis():

@@ -23,7 +23,6 @@ ML Concepts Demonstrated:
 
 from typing import Any
 
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import (
     GradientBoostingClassifier,
     RandomForestClassifier,

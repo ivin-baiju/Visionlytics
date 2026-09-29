@@ -27,8 +27,8 @@ from app.components.styles import (
 )
 from app.components.theme import DENSITY, INK
 from app.database import save_analysis_record
-from frontend.app.api_client import analyze_frame_api
-from frontend.app.utils.draw import draw_boxes
+from app.api_client import analyze_frame_api
+from app.utils.draw import draw_boxes
 
 
 def render_video_analysis():
