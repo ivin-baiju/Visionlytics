@@ -6,7 +6,6 @@ configurable interval, track people across frames, predict density per frame,
 and view crowd metrics over time.
 """
 
-import collections
 import os
 import tempfile
 import time
@@ -26,6 +25,7 @@ from app.components.styles import (
     header_html,
     metric_card_html,
 )
+from app.components.theme import DENSITY, INK
 from app.database import save_analysis_record
 from frontend.app.api_client import analyze_frame_api
 from frontend.app.utils.draw import draw_boxes
@@ -52,12 +52,13 @@ def render_video_analysis():
                 help="Process every Nth frame (higher = faster, lower = denser timeline)",
             )
         with col_v2:
-            conf_threshold = st.slider(
+            st.slider(
                 "Detection Confidence",
                 min_value=0.1,
                 max_value=0.9,
                 value=0.35,
                 step=0.05,
+                help="Minimum confidence score (applied server-side)",
             )
         with col_v3:
             enable_tracking = st.checkbox(
@@ -195,7 +196,7 @@ def render_video_analysis():
 
                 # Live metrics
                 active_tracks = sum(1 for det in detections if det.get("person_id") is not None) if enable_tracking else 0
-                density_color = DENSITY_COLORS.get(density_label, "#1a2340")
+                density_color = DENSITY_COLORS.get(density_label, INK)
                 stats_placeholder.markdown(f"""
                 <div class="section-container">
                     <h4 style="margin-top:0;">Live Frame Stats</h4>
@@ -258,15 +259,15 @@ def render_video_analysis():
                 "HIGH": densities.count("HIGH"),
             }
             peak_density = max(class_counts, key=class_counts.get)
-            peak_color = DENSITY_COLORS.get(peak_density, "#1a2340")
+            peak_color = DENSITY_COLORS.get(peak_density, INK)
 
             c1, c2, c3, c4 = st.columns(4)
             with c1:
-                st.markdown(metric_card_html("Avg People", f"{avg_people:.1f}", "#4A7DFF"), unsafe_allow_html=True)
+                st.markdown(metric_card_html("Avg People", f"{avg_people:.1f}", INK), unsafe_allow_html=True)
             with c2:
-                st.markdown(metric_card_html("Peak People", str(max_people), "#FF6B6B"), unsafe_allow_html=True)
+                st.markdown(metric_card_html("Peak People", str(max_people), DENSITY["HIGH"]), unsafe_allow_html=True)
             with c3:
-                st.markdown(metric_card_html("Min People", str(min_people), "#2ECDA7"), unsafe_allow_html=True)
+                st.markdown(metric_card_html("Min People", str(min_people), DENSITY["LOW"]), unsafe_allow_html=True)
             with c4:
                 st.markdown(metric_card_html("Predominant Density", peak_density, peak_color), unsafe_allow_html=True)
 

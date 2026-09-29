@@ -21,6 +21,7 @@ from app.components.styles import (
     header_html,
     metric_card_html,
 )
+from app.components.theme import INK
 from frontend.app.api_client import analyze_frame_api
 from frontend.app.utils.draw import draw_boxes, draw_heatmap
 
@@ -38,13 +39,13 @@ def render_image_analysis():
     with st.expander("Analysis Settings", icon=":material/tune:"):
         col_s1, col_s2, col_s3 = st.columns(3)
         with col_s1:
-            conf_threshold = st.slider(
+            st.slider(
                 "Detection Confidence",
                 min_value=0.1,
                 max_value=0.9,
                 value=0.3,
                 step=0.05,
-                help="Minimum confidence score for YOLO person detection",
+                help="Minimum confidence score for YOLO person detection (applied server-side)",
             )
         with col_s2:
             vis_mode = st.selectbox(
@@ -173,13 +174,18 @@ def render_image_analysis():
     st.markdown("---")
 
     # ── Detailed Analytics Tabs ─────────────────────────────────────
-    tab_feat, tab_prob, tab_attr = st.tabs([
-        ":material/scatter_plot: Spatial Features (10)",
-        ":material/query_stats: ML Model Probabilities",
-        ":material/palette: Visual Attributes",
-    ])
+    detail_view = st.segmented_control(
+        "Detail view",
+        options=[
+            ":material/scatter_plot: Spatial Features (10)",
+            ":material/query_stats: ML Model Probabilities",
+            ":material/palette: Visual Attributes",
+        ],
+        default=":material/scatter_plot: Spatial Features (10)",
+        key="image_detail_view",
+    )
 
-    with tab_feat:
+    if detail_view == ":material/scatter_plot: Spatial Features (10)":
         col_f1, col_f2 = st.columns([1, 1])
         with col_f1:
             st.markdown("##### Extracted Feature Vector")
@@ -206,11 +212,11 @@ def render_image_analysis():
             )
             st.plotly_chart(fig_reg, width="stretch")
 
-    with tab_prob:
+    elif detail_view == ":material/query_stats: ML Model Probabilities":
         st.markdown("##### Class Probability Distribution")
         prob_cols = st.columns(3)
         for idx, (cls_name, prob_val) in enumerate(proba.items()):
-            color = DENSITY_COLORS.get(cls_name, "#ffffff")
+            color = DENSITY_COLORS.get(cls_name, INK)
             with prob_cols[idx]:
                 st.markdown(
                     metric_card_html(f"{cls_name} Probability", f"{prob_val*100:.1f}%", color),
@@ -223,7 +229,7 @@ def render_image_analysis():
             f"Inference & detection latency: {detection_time:.1f} ms."
         )
 
-    with tab_attr:
+    elif detail_view == ":material/palette: Visual Attributes":
         if enable_attributes and len(attributes_list) > 0:
             hair_counts = {}
             clothing_counts = {}
@@ -243,7 +249,7 @@ def render_image_analysis():
 
             st.markdown("""
             <div class="info-box" style="font-size: 0.8rem;">
-                <strong style="color: #FFB347;">Note:</strong> Hair and clothing colors are estimated via HSV color histogram
+                <strong>Note:</strong> Hair and clothing colors are estimated via HSV color histogram
                 analysis on detected person bounding boxes. Apparent sex is marked as UNKNOWN in accordance
                 with privacy and ethical AI standards.
             </div>

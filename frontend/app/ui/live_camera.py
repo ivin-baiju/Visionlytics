@@ -6,7 +6,6 @@ Displays real-time bounding boxes, live crowd density classification,
 occupancy metrics, and FPS tracking.
 """
 
-import collections
 import time
 
 import cv2
@@ -18,6 +17,7 @@ from app.components.styles import (
     DENSITY_COLORS,
     header_html,
 )
+from app.components.theme import INK, LIME_DARK, MUTED
 from app.database import save_analysis_record
 from app.resources import get_detector, get_extractor, get_predictor
 from frontend.app.api_client import analyze_frame_api
@@ -46,7 +46,7 @@ def render_live_camera():
             index=0,
         )
     with col_c4:
-        enable_tracking = st.toggle("Enable Tracking", value=True)
+        st.toggle("Enable Tracking", value=True, help="Tracking overlay is applied server-side when IDs are returned")
 
     col_btn1, _col_btn2 = st.columns([1, 4])
     with col_btn1:
@@ -75,7 +75,7 @@ def render_live_camera():
                 features = extractor.extract(detections, (h, w))
                 density_label, conf = predictor.predict(features)
 
-                annotated = detector.draw_detections(cv_img.copy(), detections, density_level=density_label)
+                annotated = draw_boxes(cv_img.copy(), detections, density_level=density_label)
                 annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
 
                 st.markdown("---")
@@ -120,8 +120,6 @@ def render_live_camera():
 
     prev_time = time.time()
     fps_history = []
-    prob_history = collections.deque(maxlen=5)
-    prob_history = collections.deque(maxlen=5)
 
     try:
         while run_camera:
@@ -190,11 +188,11 @@ def render_live_camera():
                 "timestamp": time.time(),
             }
 
-            density_color = DENSITY_COLORS.get(density_label, "#1a2340")
+            density_color = DENSITY_COLORS.get(density_label, INK)
             metrics_placeholder.markdown(f"""
             <div class="metric-card">
                 <div class="metric-label">People Detected</div>
-                <div class="metric-value" style="color: #4A7DFF;">{features['people_count']}</div>
+                <div class="metric-value" style="color: {INK};">{features['people_count']}</div>
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Crowd Density</div>
@@ -202,15 +200,15 @@ def render_live_camera():
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Occupancy</div>
-                <div class="metric-value" style="color: #A78BFA;">{features['occupancy_ratio']*100:.1f}%</div>
+                <div class="metric-value" style="color: {MUTED};">{features['occupancy_ratio']*100:.1f}%</div>
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Model Confidence</div>
-                <div class="metric-value" style="color: #FFB347;">{conf*100:.1f}%</div>
+                <div class="metric-value" style="color: {LIME_DARK};">{conf*100:.1f}%</div>
             </div>
             <div class="metric-card" style="margin-top: 10px;">
                 <div class="metric-label">Stream Rate</div>
-                <div class="metric-value" style="color: #2ECDA7;">{avg_fps:.1f} FPS</div>
+                <div class="metric-value" style="color: {LIME_DARK};">{avg_fps:.1f} FPS</div>
             </div>
             """, unsafe_allow_html=True)
 

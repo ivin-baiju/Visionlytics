@@ -26,8 +26,8 @@ if PROJECT_ROOT not in sys.path:
 
 from app.components.icons import BRAND_LOGO_SVG
 from app.components.styles import get_custom_css
+from app.components.theme import DENSITY
 from app.database import init_db
-from app.resources import get_predictor
 
 # ── Page Configuration ───────────────────────────────────────────────────────
 
@@ -88,25 +88,31 @@ def main():
             api_up = False
             
         if api_up:
-            st.markdown("""
+            st.markdown(
+                f"""
             <div class="model-status">
-                <div class="status-indicator" style="color: #2ECDA7;">
-                    <span class="status-dot"></span>
+                <div class="status-indicator">
+                    <span class="status-dot" style="background: {DENSITY['LOW']};"></span>
                     API Connected
                 </div>
                 <div class="status-detail">FastAPI Microservice Active</div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
         else:
-            st.markdown("""
+            st.markdown(
+                f"""
             <div class="model-status">
-                <div class="status-indicator" style="color: #FFB347;">
-                    <span class="status-dot" style="background: #FFB347; box-shadow: 0 0 6px rgba(255,179,71,0.4);"></span>
+                <div class="status-indicator">
+                    <span class="status-dot" style="background: {DENSITY['MEDIUM']};"></span>
                     API Offline
                 </div>
                 <div class="status-detail">Is the backend running?</div>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
 
     # ── Page Routing ──────────────────────────────────────────────────
     page_key = PAGES[page]

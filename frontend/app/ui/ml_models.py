@@ -25,6 +25,7 @@ from app.components.charts import (
     training_time_bar,
 )
 from app.components.styles import header_html, metric_card_html
+from app.components.theme import DENSITY, INK, LIME_DARK, MUTED
 from machine_learning.preprocessing import (
     FEATURE_COLUMNS,
     LABEL_CLASSES,
@@ -113,11 +114,11 @@ def render_ml_models():
 
     col_b1, col_b2, col_b3 = st.columns(3)
     with col_b1:
-        st.markdown(metric_card_html("Best Model", best_model_name, "#2ECDA7"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Best Model", best_model_name, DENSITY["LOW"]), unsafe_allow_html=True)
     with col_b2:
-        st.markdown(metric_card_html("F1-Score (Weighted)", f"{best_f1:.4f}", "#4A7DFF"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("F1-Score (Weighted)", f"{best_f1:.4f}", INK), unsafe_allow_html=True)
     with col_b3:
-        st.markdown(metric_card_html("Accuracy", f"{best_acc * 100:.2f}%", "#FFB347"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Accuracy", f"{best_acc * 100:.2f}%", MUTED), unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -141,7 +142,7 @@ def render_ml_models():
     with col_tbl:
         st.markdown("##### Detailed Metric Table")
         st.dataframe(
-            comp_df.style.highlight_max(subset=["Accuracy", "Precision", "Recall", "F1-Score"], color="#2ECDA7"),
+            comp_df.style.highlight_max(subset=["Accuracy", "Precision", "Recall", "F1-Score"], color=LIME_DARK),
             width="stretch",
             height=260,
         )

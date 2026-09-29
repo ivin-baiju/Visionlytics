@@ -17,6 +17,7 @@ from app.components.charts import (
     scatter_feature_vs_density,
 )
 from app.components.styles import header_html, metric_card_html
+from app.components.theme import INK, MUTED
 from dataset.generate_dataset import generate_dataset
 from machine_learning.preprocessing import (
     DATASET_PATH,
@@ -69,14 +70,14 @@ def render_dataset_page():
     st.markdown("---")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown(metric_card_html("Total Samples", f"{len(df):,}", "#4A7DFF"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Total Samples", f"{len(df):,}", INK), unsafe_allow_html=True)
     with c2:
-        st.markdown(metric_card_html("Feature Count", f"{len(FEATURE_COLUMNS)}", "#A78BFA"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Feature Count", f"{len(FEATURE_COLUMNS)}", MUTED), unsafe_allow_html=True)
     with c3:
-        st.markdown(metric_card_html("Classes", f"{len(LABEL_CLASSES)}", "#2ECDA7"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Classes", f"{len(LABEL_CLASSES)}", INK), unsafe_allow_html=True)
     with c4:
         missing_count = int(df.isnull().sum().sum())
-        st.markdown(metric_card_html("Missing Values", f"{missing_count}", "#FFB347"), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Missing Values", f"{missing_count}", MUTED), unsafe_allow_html=True)
 
     # ── Dataset Table & Download ─────────────────────────────────────
     st.markdown("---")

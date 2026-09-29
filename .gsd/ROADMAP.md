@@ -20,13 +20,13 @@
 - [x] Update `frontend/app/components/charts.py` (flat clean Plotly styles)
 - [x] Update `.streamlit/config.toml` (remove dark sidebar inversion, apply light palette)
 
-## Wave 3: UI Migration [CURRENT]
-- [ ] Migrate `frontend/app/main.py` sidebar to white rail
-- [ ] Migrate `frontend/app/ui/dashboard.py` to 3-zone layout with analyses panel
-- [ ] Convert `st.tabs` to `st.segmented_control` where applicable
-- [ ] Replace inline hex colors with theme tokens in all UI pages
+## Wave 3: UI Migration [DONE]
+- [x] Migrate `frontend/app/main.py` sidebar to white rail
+- [x] Migrate `frontend/app/ui/dashboard.py` to 3-zone layout with analyses panel
+- [x] Convert `st.tabs` to `st.segmented_control` where applicable
+- [x] Replace inline hex colors with theme tokens in all UI pages
 
-## Wave 4: Dataset & ML Models Backend
+## Wave 4: Dataset & ML Models Backend [CURRENT]
 - [ ] Implement `/dataset/*` and `/models/*` endpoints in FastAPI router
 - [ ] Ensure model prediction fallback and champion weights are correctly wired
 - [ ] Validate live prediction flow

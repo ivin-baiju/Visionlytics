@@ -12,6 +12,7 @@ from app.components.styles import (
     density_badge_html,
     metric_card_html,
 )
+from app.components.theme import INK, LIME_DARK, MUTED
 
 
 def render_metric_row(metrics: dict):
@@ -20,7 +21,7 @@ def render_metric_row(metrics: dict):
 
     Args:
         metrics: Dictionary mapping label → (value, color).
-                 Example: {"People": ("14", "#2ECDA7")}
+                 Example: {"People": ("14", INK)}
     """
     cols = st.columns(len(metrics))
     for col, (label, (value, color)) in zip(cols, metrics.items()):
@@ -63,13 +64,13 @@ def render_analysis_metrics(features: dict, density: str, confidence: float):
         density: Predicted density label.
         confidence: Model confidence score (0-1).
     """
-    density_color = DENSITY_COLORS.get(density, "#1a2340")
+    density_color = DENSITY_COLORS.get(density, INK)
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.markdown(
-            metric_card_html("People Detected", str(int(features['people_count'])), "#4A7DFF"),
+            metric_card_html("People Detected", str(int(features['people_count'])), INK),
             unsafe_allow_html=True,
         )
 
@@ -81,12 +82,12 @@ def render_analysis_metrics(features: dict, density: str, confidence: float):
 
     with col3:
         st.markdown(
-            metric_card_html("Occupancy", f"{features['occupancy_ratio']*100:.1f}%", "#A78BFA"),
+            metric_card_html("Occupancy", f"{features['occupancy_ratio']*100:.1f}%", MUTED),
             unsafe_allow_html=True,
         )
 
     with col4:
         st.markdown(
-            metric_card_html("Confidence", f"{confidence*100:.1f}%", "#FFB347"),
+            metric_card_html("Confidence", f"{confidence*100:.1f}%", LIME_DARK),
             unsafe_allow_html=True,
         )

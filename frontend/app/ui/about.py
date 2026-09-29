@@ -29,11 +29,11 @@ def render_about():
     with col_proj:
         st.markdown(f"""
         <div class="section-container">
-            <h3 style="margin-top:0; color:#4A7DFF; display:flex; align-items:center; gap:0.6rem;">
+            <h3 style="margin-top:0; color:#14161A; display:flex; align-items:center; gap:0.6rem;">
                 {ICON_TARGET}
                 <span>Project purpose</span>
             </h3>
-            <p style="color: #5a6578; font-size: 0.9rem;">
+            <p style="color: #5B6472; font-size: 0.9rem;">
                 Traditional computer vision demonstrations often rely solely on pretrained
                 black-box models. <strong>VISIONLYTICS</strong> bridges modern Computer Vision
                 and classical <strong>Statistical Machine Learning</strong> by using object detection
@@ -46,11 +46,11 @@ def render_about():
     with col_obj:
         st.markdown(f"""
         <div class="section-container">
-            <h3 style="margin-top:0; color:#2ECDA7; display:flex; align-items:center; gap:0.6rem;">
+            <h3 style="margin-top:0; color:#14161A; display:flex; align-items:center; gap:0.6rem;">
                 {ICON_OBJECTIVES}
                 <span>Key objectives</span>
             </h3>
-            <p style="color: #5a6578; font-size: 0.9rem;">
+            <p style="color: #5B6472; font-size: 0.9rem;">
                 • Real-time person detection across images, video files, and webcam streams.<br>
                 • Extraction of 10 calibrated spatial, geometric, and regional crowd features.<br>
                 • Training, validation, and empirical comparison of 7 classical ML algorithms.<br>
@@ -166,5 +166,5 @@ def render_about():
     - **Computer Vision**: Ultralytics YOLOv8s, OpenCV, Pillow
     - **Statistical ML**: Scikit-Learn (7 Classifiers + Ensemble), NumPy, Pandas, Joblib
     - **Visualization**: Plotly Interactive Charts, Matplotlib, Seaborn
-    - **Application**: Streamlit, Custom Glassmorphism Design System
+    - **Application**: Streamlit, Flat Design System (white surfaces, hairline borders, lime accents)
     """)

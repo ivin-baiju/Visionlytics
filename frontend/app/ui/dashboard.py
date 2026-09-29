@@ -1,8 +1,8 @@
 """
 Dashboard Page for Visionlytics.
 
-Displays a premium overview of the system with animated feature cards,
-metric summaries, system status indicators, and architecture overview.
+Displays a flat overview of the system with dense metric cards,
+an analyses filter panel, system status indicators, and architecture overview.
 """
 
 import pandas as pd
@@ -28,6 +28,7 @@ from app.components.styles import (
     metric_card_html,
     status_card_html,
 )
+from app.components.theme import INK, LIME_DARK, MUTED
 from app.database import get_recent_history
 
 
@@ -46,7 +47,7 @@ def render_dashboard():
                 ICON_IMAGE_ANALYSIS,
                 "Image Analysis",
                 "Upload a photo to detect people and analyze crowd density with spatial heatmaps",
-                "#4A7DFF",
+                INK,
             ),
             unsafe_allow_html=True,
         )
@@ -57,7 +58,7 @@ def render_dashboard():
                 ICON_VIDEO_ANALYSIS,
                 "Video Analysis",
                 "Upload a video to track people and view density changes over time",
-                "#A78BFA",
+                MUTED,
             ),
             unsafe_allow_html=True,
         )
@@ -68,7 +69,7 @@ def render_dashboard():
                 ICON_LIVE_CAMERA,
                 "Live Camera",
                 "Real-time crowd analysis using your webcam feed with instant density classification",
-                "#2ECDA7",
+                LIME_DARK,
             ),
             unsafe_allow_html=True,
         )
@@ -88,6 +89,59 @@ def render_dashboard():
     else:
         analysis = None
 
+    # ── Zone 2: Analyses filter panel ─────────────────────────────────
+    st.subheader("Analyses", icon=":material/filter_list:")
+
+    status_filter = st.segmented_control(
+        "Status",
+        options=["All", "LOW", "MEDIUM", "HIGH"],
+        default="All",
+        key="dashboard_status_filter",
+    )
+    source_filter = st.segmented_control(
+        "Source",
+        options=["All", "Image", "Video", "Live Camera"],
+        default="All",
+        key="dashboard_source_filter",
+    )
+
+    filtered = list(history)
+    if status_filter and status_filter != "All":
+        filtered = [h for h in filtered if h.get("density_label") == status_filter]
+    norm_source = (source_filter or "All").lower()
+    if norm_source != "all":
+        filtered = [
+            h
+            for h in filtered
+            if norm_source in str(h.get("source_type", "")).lower()
+        ]
+
+    if filtered:
+        st.markdown('<div class="analyses-panel">', unsafe_allow_html=True)
+        st.caption(f"{len(filtered)} of {len(history)} records")
+        st.dataframe(
+            [
+                {
+                    "Time": h.get("timestamp", ""),
+                    "Source": h.get("source_type", ""),
+                    "People": h.get("people_count", 0),
+                    "Density": h.get("density_label", ""),
+                    "Confidence": f"{float(h.get('confidence', 0)) * 100:.1f}%",
+                }
+                for h in filtered[:20]
+            ],
+            width="stretch",
+            height=280,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.info("No analyses match the selected filters.", icon=":material/search_off:")
+
+        st.markdown("---")
+
+    # ── Zone 3: Analysis history & trends ────────────────────────────
+
+
     if analysis:
         st.subheader("Latest analysis", icon=":material/insights:")
 
@@ -98,14 +152,14 @@ def render_dashboard():
                 metric_card_html(
                     "People Detected",
                     str(int(analysis.get("people_count", 0))),
-                    "#4A7DFF",
+                    INK,
                 ),
                 unsafe_allow_html=True,
             )
 
         with col2:
             density = analysis.get("density", "N/A")
-            color = DENSITY_COLORS.get(density, "#1a2340")
+            color = DENSITY_COLORS.get(density, INK)
             st.markdown(
                 metric_card_html("Crowd Density", density, color),
                 unsafe_allow_html=True,
@@ -114,14 +168,14 @@ def render_dashboard():
         with col3:
             occ = analysis.get("occupancy_ratio", 0)
             st.markdown(
-                metric_card_html("Occupancy", f"{occ*100:.1f}%", "#A78BFA"),
+                metric_card_html("Occupancy", f"{float(occ) * 100:.1f}%", MUTED),
                 unsafe_allow_html=True,
             )
 
         with col4:
             conf = analysis.get("confidence", 0)
             st.markdown(
-                metric_card_html("Confidence", f"{conf*100:.1f}%", "#FFB347"),
+                metric_card_html("Confidence", f"{conf*100:.1f}%", LIME_DARK),
                 unsafe_allow_html=True,
             )
 
@@ -194,7 +248,7 @@ def render_dashboard():
                     "Centroid-based Tracking",
                     "Visual Attribute Estimation",
                 ],
-                "#4A7DFF",
+                INK,
             ),
             unsafe_allow_html=True,
         )
@@ -211,7 +265,7 @@ def render_dashboard():
                     "Frame Occupancy Density",
                     "10 Features Total",
                 ],
-                "#A78BFA",
+                MUTED,
             ),
             unsafe_allow_html=True,
         )
@@ -228,7 +282,7 @@ def render_dashboard():
                     "Gradient Boosting",
                     "Voting Ensemble (Meta-learner)",
                 ],
-                "#2ECDA7",
+                LIME_DARK,
             ),
             unsafe_allow_html=True,
         )
