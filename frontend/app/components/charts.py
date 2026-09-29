@@ -14,11 +14,12 @@ import plotly.graph_objects as go
 # ── Common Theme ─────────────────────────────────────────────────────────────
 
 PLOTLY_TEMPLATE = "plotly_white"
-BG_COLOR = "rgba(0,0,0,0)"
-GRID_COLOR = "rgba(74, 125, 255, 0.06)"
-FONT_COLOR = "#3a4560"
-DENSITY_COLORS_MAP = {"LOW": "#2ECDA7", "MEDIUM": "#FFB347", "HIGH": "#FF6B6B"}
-ACCENT_COLORS = ["#4A7DFF", "#2ECDA7", "#FFB347", "#FF6B6B", "#A78BFA"]
+BG_COLOR = "#FFFFFF"
+GRID_COLOR = "#E9EAEC"
+FONT_COLOR = "#5B6472"
+INK_COLOR = "#14161A"
+DENSITY_COLORS_MAP = {"LOW": "#0F9D58", "MEDIUM": "#B7791F", "HIGH": "#D93025"}
+ACCENT_COLORS = ["#8FBF2E", "#14161A", "#5B6472", "#B4E04C", "#9AA3AF"]
 
 
 def _base_layout(title: str = "", height: int = 400) -> dict:
@@ -28,7 +29,7 @@ def _base_layout(title: str = "", height: int = 400) -> dict:
         "paper_bgcolor": BG_COLOR,
         "plot_bgcolor": BG_COLOR,
         "font": {"family": "Inter", "color": FONT_COLOR},
-        "title": {"text": title, "font": {"size": 16, "color": "#1a2340"}},
+        "title": {"text": title, "font": {"size": 15, "color": "#14161A"}},
         "height": height,
         "margin": {"l": 40, "r": 20, "t": 50, "b": 40},
         "xaxis": {"gridcolor": GRID_COLOR, "zerolinecolor": GRID_COLOR},
@@ -42,7 +43,7 @@ def density_distribution_pie(class_counts: dict[str, int]) -> go.Figure:
     """Pie chart showing crowd density class distribution."""
     labels = list(class_counts.keys())
     values = list(class_counts.values())
-    colors = [DENSITY_COLORS_MAP.get(l, "#4A7DFF") for l in labels]
+    colors = [DENSITY_COLORS_MAP.get(label, "#14161A") for label in labels]
 
     fig = go.Figure(data=[go.Pie(
         labels=labels,
@@ -60,7 +61,7 @@ def density_over_time(timestamps: list[float], densities: list[str]) -> go.Figur
     """Line chart showing crowd density changes over time."""
     density_map = {"LOW": 1, "MEDIUM": 2, "HIGH": 3}
     density_nums = [density_map.get(d, 0) for d in densities]
-    colors = [DENSITY_COLORS_MAP.get(d, "#4A7DFF") for d in densities]
+    colors = [DENSITY_COLORS_MAP.get(d, "#14161A") for d in densities]
 
     fig = go.Figure()
 
@@ -68,7 +69,7 @@ def density_over_time(timestamps: list[float], densities: list[str]) -> go.Figur
         x=timestamps,
         y=density_nums,
         mode="lines+markers",
-        line={"color": "#4A7DFF", "width": 2},
+        line={"color": "#14161A", "width": 2},
         marker={"color": colors, "size": 6, "line": {"width": 1, "color": "#ffffff"}},
         hovertemplate="Time: %{x:.1f}s<br>Density: %{text}<extra></extra>",
         text=densities,
@@ -94,8 +95,8 @@ def people_count_over_time(timestamps: list[float], counts: list[int]) -> go.Fig
         x=timestamps,
         y=counts,
         fill="tozeroy",
-        fillcolor="rgba(74, 125, 255, 0.12)",
-        line={"color": "#4A7DFF", "width": 2},
+        fillcolor="rgba(143, 191, 46, 0.15)",
+        line={"color": "#8FBF2E", "width": 2},
         mode="lines",
     ))
 
@@ -111,7 +112,7 @@ def region_distribution_bar(top: int, middle: int, bottom: int) -> go.Figure:
     fig = go.Figure(data=[go.Bar(
         x=["Top", "Middle", "Bottom"],
         y=[top, middle, bottom],
-        marker_color=["#4A7DFF", "#A78BFA", "#2ECDA7"],
+        marker_color=["#14161A", "#5B6472", "#8FBF2E"],
         text=[top, middle, bottom],
         textposition="auto",
     )])
@@ -177,7 +178,7 @@ def confusion_matrix_heatmap(
         y=class_names,
         text=annotations,
         texttemplate="%{text}",
-        colorscale=[[0, "#eef3fb"], [0.5, "#6B9FFF"], [1, "#4A7DFF"]],
+        colorscale=[[0, "#FFFFFF"], [0.5, "#E9EAEC"], [1, "#14161A"]],
         showscale=False,
     ))
 
@@ -204,7 +205,7 @@ def feature_importance_bar(
         orientation="h",
         marker={
             "color": sorted_vals,
-            "colorscale": [[0, "#eef3fb"], [1, "#4A7DFF"]],
+            "colorscale": [[0, "#FFFFFF"], [1, "#8FBF2E"]],
         },
         text=[f"{v:.4f}" for v in sorted_vals],
         textposition="auto",
@@ -245,7 +246,7 @@ def feature_correlation_heatmap(df: pd.DataFrame, feature_cols: list[str]) -> go
         z=corr.values,
         x=[c.replace("_", " ").title()[:15] for c in corr.columns],
         y=[c.replace("_", " ").title()[:15] for c in corr.index],
-        colorscale=[[0, "#FF6B6B"], [0.5, "#f8faff"], [1, "#2ECDA7"]],
+        colorscale=[[0, "#D93025"], [0.5, "#FFFFFF"], [1, "#0F9D58"]],
         zmid=0,
         text=np.round(corr.values, 2),
         texttemplate="%{text}",
@@ -289,7 +290,7 @@ def class_distribution_bar(class_counts: dict[str, int]) -> go.Figure:
     """Bar chart of class label distribution in the dataset."""
     labels = list(class_counts.keys())
     counts = list(class_counts.values())
-    colors = [DENSITY_COLORS_MAP.get(l, "#4A7DFF") for l in labels]
+    colors = [DENSITY_COLORS_MAP.get(l, "#14161A") for l in labels]
 
     fig = go.Figure(data=[go.Bar(
         x=labels,
@@ -345,7 +346,7 @@ def attribute_bar_chart(attribute_counts: dict[str, int], title: str) -> go.Figu
         x=labels,
         y=counts,
         marker_color=ACCENT_COLORS[:len(labels)] if len(labels) <= len(ACCENT_COLORS)
-                     else ["#4A7DFF"] * len(labels),
+                     else ["#14161A"] * len(labels),
         text=counts,
         textposition="auto",
     )])

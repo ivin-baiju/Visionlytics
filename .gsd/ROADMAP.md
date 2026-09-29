@@ -13,14 +13,14 @@
 - [x] Fix root `app.py` wrapper
 - [x] Validate backend FastAPI startup & health check
 
-## Wave 2: Flat Theme Foundation [CURRENT]
-- [ ] Create `frontend/app/components/theme.py` (tokens, badge/card primitives)
-- [ ] Rewrite `frontend/app/components/styles.py` (eliminate blur, gradients, animations)
-- [ ] Update `frontend/app/components/icons.py` (currentColor SVGs, flat brand logo)
-- [ ] Update `frontend/app/components/charts.py` (flat clean Plotly styles)
-- [ ] Update `.streamlit/config.toml` (remove dark sidebar inversion, apply light palette)
+## Wave 2: Flat Theme Foundation [DONE]
+- [x] Create `frontend/app/components/theme.py` (tokens, badge/card primitives)
+- [x] Rewrite `frontend/app/components/styles.py` (eliminate blur, gradients, animations)
+- [x] Update `frontend/app/components/icons.py` (currentColor SVGs, flat brand logo)
+- [x] Update `frontend/app/components/charts.py` (flat clean Plotly styles)
+- [x] Update `.streamlit/config.toml` (remove dark sidebar inversion, apply light palette)
 
-## Wave 3: UI Migration
+## Wave 3: UI Migration [CURRENT]
 - [ ] Migrate `frontend/app/main.py` sidebar to white rail
 - [ ] Migrate `frontend/app/ui/dashboard.py` to 3-zone layout with analyses panel
 - [ ] Convert `st.tabs` to `st.segmented_control` where applicable
