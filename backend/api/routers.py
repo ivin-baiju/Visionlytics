@@ -84,7 +84,9 @@ async def analyze_frame(file: UploadFile = File(...)):
         det_list.append({
             "bbox": [float(x) for x in d.bbox],
             "confidence": float(d.confidence),
-            "class_id": int(d.class_id),
+            # Detection has no class_id field — the detector only ever
+            # returns COCO person (class 0).
+            "class_id": int(detector.PERSON_CLASS_ID),
             "person_id": int(d.person_id) if d.person_id else None
         })
 

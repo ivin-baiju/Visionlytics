@@ -74,6 +74,39 @@ def test_analyze_frame_rejects_invalid_image(client):
     assert response.status_code == 400
 
 
+def test_analyze_frame_serializes_detections(client, monkeypatch):
+    """Regression: /analyze/frame returned 500 whenever people were detected.
+
+    The serialization loop read ``d.class_id``, but the Detection dataclass
+    only has (bbox, confidence, person_id). The plain-image contract test
+    never hit it because an all-black frame detects zero people.
+    """
+    from api.routers import detector as real_detector
+    from computer_vision.person_detection import Detection
+
+    fake_detections = [
+        Detection(bbox=(10, 20, 60, 180), confidence=0.91, person_id=7),
+        Detection(bbox=(70, 30, 130, 190), confidence=0.77, person_id=None),
+    ]
+    monkeypatch.setattr(real_detector, "detect", lambda frame: fake_detections)
+
+    response = client.post(
+        "/analyze/frame",
+        files={"file": ("frame.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+    assert response.status_code == 200
+
+    dets = response.json()["detections"]
+    assert len(dets) == 2
+
+    first, second = dets
+    assert first["bbox"] == [10.0, 20.0, 60.0, 180.0]
+    assert first["class_id"] == 0
+    assert first["person_id"] == 7
+    assert second["person_id"] is None
+    assert 0.0 <= first["confidence"] <= 1.0
+
+
 # ── Dataset endpoints ────────────────────────────────────────────────────────
 
 def test_dataset_info(client):

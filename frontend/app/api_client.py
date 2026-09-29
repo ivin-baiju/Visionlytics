@@ -50,8 +50,14 @@ def analyze_frame_api(frame: np.ndarray):
         )
         if response.status_code == 200:
             return response.json()
-    except requests.exceptions.RequestException:
-        pass
+        # Surface non-200s in the Streamlit log so pages that show a generic
+        # "API offline" message don't mask backend errors (e.g. a 500).
+        print(
+            f"[api_client] POST /analyze/frame -> HTTP {response.status_code}: "
+            f"{response.text[:300]}"
+        )
+    except requests.exceptions.RequestException as exc:
+        print(f"[api_client] POST /analyze/frame failed: {exc}")
 
     return None
 
