@@ -87,13 +87,20 @@ def density_over_time(timestamps: list[float], densities: list[str]) -> go.Figur
     return fig
 
 
-def people_count_over_time(timestamps: list[float], counts: list[int]) -> go.Figure:
-    """Area chart showing people count over time."""
+def people_count_over_time(timestamps, counts) -> go.Figure:
+    """Area chart showing people count over time.
+
+    Accepts any iterables (list, range, numpy array, pandas Series) — inputs
+    are coerced to plain lists because Plotly rejects ``range`` objects.
+    """
     fig = go.Figure()
 
+    x = list(timestamps)
+    y = list(counts)
+
     fig.add_trace(go.Scatter(
-        x=timestamps,
-        y=counts,
+        x=x,
+        y=y,
         fill="tozeroy",
         fillcolor="rgba(143, 191, 46, 0.15)",
         line={"color": "#8FBF2E", "width": 2},

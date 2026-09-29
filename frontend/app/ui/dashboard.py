@@ -196,14 +196,13 @@ def render_dashboard():
                 st.plotly_chart(fig, width="stretch")
 
         with col_b:
-            # Regional distribution
+            # People count trend across recorded analyses (oldest → newest)
             if history:
                 df = pd.DataFrame(history)
-                fig_line = people_count_over_time(
-                    df['people_count'].tolist(),
-                    range(len(df))
-                )
-                st.plotly_chart(fig_line, width="stretch")
+                if "people_count" in df.columns and len(df) > 0:
+                    counts = df["people_count"].tolist()[::-1]  # history is DESC
+                    fig_line = people_count_over_time(list(range(len(counts))), counts)
+                    st.plotly_chart(fig_line, width="stretch")
 
     else:
         # No analysis yet — welcome message
