@@ -153,9 +153,9 @@ export default function AboutPage() {
       {/* GitHub & Links */}
       <div className="vl-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <h4 style={{ fontSize: "1rem", fontWeight: 700 }}>Open Source Repository</h4>
+          <h4 style={{ fontSize: "1rem", fontWeight: 700 }}>Visionlytics Platform</h4>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "2px" }}>
-            Source code, models, and deployment configurations are available on GitHub.
+            Developed by <strong>Ivin Baiju</strong>. Open source on GitHub.
           </p>
         </div>
         <a

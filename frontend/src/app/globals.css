@@ -5,42 +5,55 @@
   --font-heading: 'Outfit', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Premium Palette */
-  --bg-primary: #0A0D14;
-  --bg-secondary: #101522;
-  --bg-surface: rgba(18, 24, 38, 0.7);
-  --bg-surface-elevated: rgba(26, 35, 54, 0.85);
-  --bg-surface-glass: rgba(18, 24, 38, 0.55);
-  
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-highlight: rgba(255, 255, 255, 0.16);
-  --border-glow: rgba(56, 189, 248, 0.35);
+  /* ── Premium Deep-Space Palette ───────────────────────────────────────── */
+  --bg-primary: #060A13;
+  --bg-secondary: #0C1222;
+  --bg-surface: rgba(14, 20, 36, 0.72);
+  --bg-surface-elevated: rgba(22, 30, 52, 0.88);
+  --bg-surface-glass: rgba(14, 20, 36, 0.58);
 
-  --text-primary: #F8FAFC;
+  /* Claymorphism surface — soft, puffy inner highlight with deep shadow */
+  --clay-bg: rgba(18, 26, 46, 0.65);
+  --clay-shadow:
+    8px 8px 20px rgba(0, 0, 0, 0.55),
+    -4px -4px 12px rgba(56, 189, 248, 0.04),
+    inset 0 2px 3px rgba(255, 255, 255, 0.06),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25);
+  --clay-shadow-hover:
+    6px 6px 16px rgba(0, 0, 0, 0.6),
+    -3px -3px 10px rgba(99, 102, 241, 0.07),
+    inset 0 2px 4px rgba(255, 255, 255, 0.09),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.3);
+
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-highlight: rgba(255, 255, 255, 0.14);
+  --border-glow: rgba(99, 102, 241, 0.4);
+
+  --text-primary: #F1F5F9;
   --text-secondary: #94A3B8;
   --text-tertiary: #64748B;
   --text-muted: #475569;
 
   --accent-blue: #38BDF8;
-  --accent-indigo: #6366F1;
-  --accent-purple: #A855F7;
-  --accent-emerald: #10B981;
-  --accent-amber: #F59E0B;
-  --accent-rose: #F43F5E;
+  --accent-indigo: #818CF8;
+  --accent-purple: #C084FC;
+  --accent-emerald: #34D399;
+  --accent-amber: #FBBF24;
+  --accent-rose: #FB7185;
 
-  --gradient-brand: linear-gradient(135deg, #38BDF8 0%, #6366F1 50%, #A855F7 100%);
+  --gradient-brand: linear-gradient(135deg, #6366F1 0%, #818CF8 40%, #38BDF8 100%);
   --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
-  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 70%);
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 24px rgba(56, 189, 248, 0.25);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.65);
+  --shadow-glow: 0 0 28px rgba(99, 102, 241, 0.3);
 }
 
 /* ── Reset & Base ──────────────────────────────────────────────────────────── */
@@ -72,7 +85,7 @@ html, body {
   background-size: 200% 200%;
   animation: vl-flow-gradient 6s ease infinite;
   z-index: 99999;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.65);
 }
 
 @keyframes vl-flow-gradient {
@@ -85,7 +98,7 @@ html, body {
 .vl-bg-wrap {
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: -3;
   overflow: hidden;
   pointer-events: none;
 }
@@ -98,20 +111,127 @@ html, body {
   min-height: 100%;
   transform: translate(-50%, -50%);
   object-fit: cover;
-  opacity: 0.18;
-  filter: saturate(1.2) contrast(1.1);
+  opacity: 0.14;
+  filter: saturate(1.3) contrast(1.15) hue-rotate(8deg);
 }
 
 .vl-bg-overlay {
   position: fixed;
   inset: 0;
-  z-index: -1;
-  background: radial-gradient(circle at 50% -20%, rgba(56, 189, 248, 0.12) 0%, transparent 60%),
-              radial-gradient(circle at 100% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-              linear-gradient(180deg, rgba(10, 13, 20, 0.85) 0%, rgba(10, 13, 20, 0.98) 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: -2;
+  background: radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.14) 0%, transparent 60%),
+              radial-gradient(circle at 100% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 0% 60%, rgba(192, 132, 252, 0.06) 0%, transparent 40%),
+              linear-gradient(180deg, rgba(6, 10, 19, 0.82) 0%, rgba(6, 10, 19, 0.97) 100%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   pointer-events: none;
+}
+
+/* ── Floating Animated Particles / Orbs ─────────────────────────────────────── */
+.vl-particles {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.vl-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  will-change: transform;
+}
+
+.vl-orb-1 {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 70%);
+  top: 8%;
+  left: 12%;
+  animation: vl-float-1 18s ease-in-out infinite;
+}
+
+.vl-orb-2 {
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, transparent 70%);
+  top: 55%;
+  right: 8%;
+  animation: vl-float-2 22s ease-in-out infinite;
+}
+
+.vl-orb-3 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.3) 0%, transparent 70%);
+  bottom: 15%;
+  left: 25%;
+  animation: vl-float-3 20s ease-in-out infinite;
+}
+
+.vl-orb-4 {
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.25) 0%, transparent 70%);
+  top: 35%;
+  right: 35%;
+  animation: vl-float-4 16s ease-in-out infinite;
+}
+
+.vl-orb-5 {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.18) 0%, transparent 70%);
+  top: 70%;
+  left: 60%;
+  animation: vl-float-5 24s ease-in-out infinite;
+}
+
+.vl-orb-6 {
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
+  top: 20%;
+  right: 15%;
+  animation: vl-float-6 19s ease-in-out infinite;
+}
+
+@keyframes vl-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(40px, -30px) scale(1.08); }
+  50% { transform: translate(-20px, 50px) scale(0.95); }
+  75% { transform: translate(30px, 20px) scale(1.04); }
+}
+
+@keyframes vl-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-50px, 30px) scale(1.1); }
+  66% { transform: translate(25px, -45px) scale(0.92); }
+}
+
+@keyframes vl-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, -40px) scale(1.06); }
+}
+
+@keyframes vl-float-4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-35px, 25px) scale(1.12); }
+  80% { transform: translate(20px, -35px) scale(0.9); }
+}
+
+@keyframes vl-float-5 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30% { transform: translate(30px, 40px) scale(0.95); }
+  70% { transform: translate(-45px, -20px) scale(1.08); }
+}
+
+@keyframes vl-float-6 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-40px, 30px) scale(1.05); }
 }
 
 /* ── Floating Pill Navbar ─────────────────────────────────────────────────── */
@@ -132,22 +252,22 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  background: var(--bg-surface-elevated);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--clay-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   padding: 6px 18px 6px 8px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--clay-shadow);
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .vl-brand-pill:hover {
   border-color: var(--border-glow);
-  box-shadow: var(--shadow-glow);
-  transform: translateY(-1px);
+  box-shadow: var(--clay-shadow-hover), 0 0 20px rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
 }
 
 .vl-logo-svg {
@@ -168,7 +288,7 @@ html, body {
   font-size: 0.95rem;
   letter-spacing: 0.12em;
   color: var(--text-primary);
-  background: linear-gradient(135deg, #FFFFFF 30%, #94A3B8 100%);
+  background: linear-gradient(135deg, #FFFFFF 30%, #C4B5FD 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -177,7 +297,7 @@ html, body {
   font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--accent-blue);
+  color: var(--accent-indigo);
   text-transform: uppercase;
 }
 
@@ -185,14 +305,14 @@ html, body {
 .vl-nav-pill {
   display: inline-flex;
   align-items: center;
-  background: var(--bg-surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--clay-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   padding: 5px 8px;
   gap: 4px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--clay-shadow);
 }
 
 .vl-nav-item {
@@ -224,7 +344,7 @@ html, body {
   color: #FFFFFF;
   background: var(--gradient-brand);
   font-weight: 600;
-  box-shadow: 0 2px 12px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 2px 14px rgba(99, 102, 241, 0.45);
 }
 
 .vl-nav-top {
@@ -244,13 +364,13 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-surface-elevated);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--clay-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   padding: 5px 10px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--clay-shadow);
 }
 
 .vl-icon-btn {
@@ -280,12 +400,12 @@ html, body {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #38BDF8 0%, #6366F1 100%);
+  background: var(--gradient-brand);
   color: #FFFFFF;
   font-weight: 700;
   font-size: 0.8rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.45);
 }
 
 /* ── Main Container ────────────────────────────────────────────────────────── */
@@ -295,17 +415,17 @@ html, body {
   padding: 0 1.5rem 5rem;
 }
 
-/* ── Hero Section ──────────────────────────────────────────────────────────── */
+/* ── Hero Section — Claymorphism ──────────────────────────────────────────── */
 .vl-hero {
   position: relative;
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: var(--clay-bg);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 2.2rem 2.5rem;
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--clay-shadow);
   overflow: hidden;
 }
 
@@ -316,7 +436,7 @@ html, body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .vl-hero-header {
@@ -332,7 +452,7 @@ html, body {
   border-radius: 18px;
   background: var(--gradient-brand);
   padding: 2px;
-  box-shadow: var(--shadow-glow);
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -353,7 +473,7 @@ html, body {
   font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #FFFFFF 20%, #E2E8F0 60%, #94A3B8 100%);
+  background: linear-gradient(135deg, #FFFFFF 20%, #E2E8F0 50%, #C4B5FD 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1.1;
@@ -381,15 +501,15 @@ html, body {
   border-radius: var(--radius-full);
   font-size: 0.78rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   letter-spacing: 0.02em;
 }
 
 .vl-badge.live {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
   color: var(--accent-emerald);
 }
 
@@ -408,7 +528,7 @@ html, body {
   100% { transform: scale(0.9); opacity: 0.7; }
 }
 
-/* ── KPI Grid ──────────────────────────────────────────────────────────────── */
+/* ── KPI Grid — Claymorphism Cards ─────────────────────────────────────────── */
 .vl-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -418,21 +538,32 @@ html, body {
 
 .vl-card {
   position: relative;
-  background: var(--bg-surface-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--clay-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 1.5rem;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--clay-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
+.vl-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  pointer-events: none;
+}
+
 .vl-card:hover {
   border-color: var(--border-highlight);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+  box-shadow: var(--clay-shadow-hover);
 }
 
 .vl-card-header {
@@ -454,11 +585,11 @@ html, body {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(99, 102, 241, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-blue);
+  color: var(--accent-indigo);
 }
 
 .vl-kpi-value {
@@ -479,7 +610,7 @@ html, body {
   gap: 6px;
 }
 
-/* ── Quick Actions Grid ────────────────────────────────────────────────────── */
+/* ── Quick Actions Grid — Claymorphism ─────────────────────────────────────── */
 .vl-actions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -492,33 +623,46 @@ html, body {
   flex-direction: column;
   padding: 1.75rem;
   border-radius: var(--radius-md);
-  background: var(--bg-surface-glass);
+  background: var(--clay-bg);
   border: 1px solid var(--border-subtle);
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--clay-shadow);
+}
+
+.vl-action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  pointer-events: none;
 }
 
 .vl-action-card:hover {
-  border-color: var(--accent-blue);
+  border-color: var(--accent-indigo);
   background: var(--bg-surface-elevated);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-glow);
+  transform: translateY(-4px);
+  box-shadow: var(--clay-shadow-hover), 0 0 24px rgba(99, 102, 241, 0.15);
 }
 
 .vl-action-icon {
   width: 46px;
   height: 46px;
-  border-radius: 12px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  color: var(--accent-blue);
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--accent-indigo);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1.25rem;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.06);
 }
 
 .vl-action-title {
@@ -540,7 +684,7 @@ html, body {
   margin-top: 1rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--accent-blue);
+  color: var(--accent-indigo);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -560,21 +704,21 @@ html, body {
 }
 
 .vl-density-LOW {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10B981;
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(52, 211, 153, 0.15);
+  color: #34D399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
 .vl-density-MEDIUM {
-  background: rgba(245, 158, 11, 0.15);
-  color: #F59E0B;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(251, 191, 36, 0.15);
+  color: #FBBF24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
 }
 
 .vl-density-HIGH {
-  background: rgba(244, 63, 94, 0.15);
-  color: #F43F5E;
-  border: 1px solid rgba(244, 63, 94, 0.35);
+  background: rgba(251, 113, 133, 0.15);
+  color: #FB7185;
+  border: 1px solid rgba(251, 113, 133, 0.35);
 }
 
 /* ── Upload & Canvas Area ──────────────────────────────────────────────────── */
@@ -584,13 +728,15 @@ html, body {
   padding: 3rem 2rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   background: rgba(255, 255, 255, 0.015);
+  box-shadow: var(--clay-shadow);
 }
 
 .vl-upload-box:hover, .vl-upload-box.dragging {
-  border-color: var(--accent-blue);
-  background: rgba(56, 189, 248, 0.04);
+  border-color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.04);
+  box-shadow: var(--clay-shadow-hover);
 }
 
 .vl-canvas-wrap {
@@ -624,7 +770,7 @@ html, body {
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   border: 1px solid transparent;
   outline: none;
 }
@@ -632,30 +778,32 @@ html, body {
 .vl-btn-primary {
   background: var(--gradient-brand);
   color: #FFFFFF;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
 }
 
 .vl-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 22px rgba(56, 189, 248, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.55);
 }
 
 .vl-btn-secondary {
-  background: var(--bg-surface-elevated);
+  background: var(--clay-bg);
   border-color: var(--border-subtle);
   color: var(--text-primary);
+  box-shadow: var(--clay-shadow);
 }
 
 .vl-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--border-highlight);
+  box-shadow: var(--clay-shadow-hover);
 }
 
 .vl-input {
   width: 100%;
   padding: 10px 14px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
   font-family: var(--font-main);
@@ -665,8 +813,8 @@ html, body {
 }
 
 .vl-input:focus {
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 /* ── Tables & Lists ───────────────────────────────────────────────────────── */
@@ -716,4 +864,73 @@ html, body {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* ── "Forged By Ivin Baiju" Floating Badge (Bottom-Right) ─────────────────── */
+.vl-developer-badge {
+  position: fixed;
+  bottom: 20px;
+  right: 24px;
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--clay-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 16px 8px 10px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--clay-shadow);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.vl-developer-badge:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+  background: rgba(22, 30, 52, 0.92);
+  color: var(--text-primary);
+  transform: translateY(-3px);
+  box-shadow: var(--clay-shadow-hover), 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.vl-developer-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+  flex-shrink: 0;
+}
+
+.vl-developer-text {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vl-forged-label {
+  font-weight: 500;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+.vl-developer-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #FFFFFF 30%, #C4B5FD 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

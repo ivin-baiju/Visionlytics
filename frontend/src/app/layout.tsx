@@ -23,7 +23,7 @@ export default function RootLayout({
         {/* Top Glowing Ambient Bar */}
         <div className="vl-top-bar" />
 
-        {/* Looping ambient background video with overlay */}
+        {/* Looping ambient background video + particles */}
         <BackgroundVideo />
 
         {/* Floating Pill Top Navbar */}
@@ -31,6 +31,21 @@ export default function RootLayout({
 
         {/* Main Content Area */}
         <main>{children}</main>
+
+        {/* "Forged By Ivin Baiju" Floating Badge — Bottom Right */}
+        <a
+          href="https://github.com/ivin-baiju"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="vl-developer-badge"
+          title="Forged by Ivin Baiju"
+        >
+          <div className="vl-developer-avatar">IB</div>
+          <div className="vl-developer-text">
+            <span className="vl-forged-label">Forged By</span>
+            <span className="vl-developer-name">Ivin Baiju</span>
+          </div>
+        </a>
       </body>
     </html>
   );
