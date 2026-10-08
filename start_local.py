@@ -77,30 +77,11 @@ def _start_frontend(port: int, backend_port: int) -> subprocess.Popen:
     """Start the Streamlit frontend as a subprocess."""
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
-    env["API_URL"] = f"http://127.0.0.1:{backend_port}"
-    # Ensure backend is importable from the frontend when needed
-    env["PYTHONPATH"] = (
-        FRONTEND_DIR + os.pathsep +
-        BACKEND_DIR + os.pathsep +
-        PROJECT_ROOT + os.pathsep +
-        env.get("PYTHONPATH", "")
-    )
+    env["NEXT_PUBLIC_API_URL"] = f"http://127.0.0.1:{backend_port}"
 
-    cmd = [
-        PYTHON_EXE, "-m", "streamlit", "run",
-        "app/main.py",
-        f"--server.port={port}",
-        "--server.address=127.0.0.1",
-        "--server.headless=true",
-        "--browser.gatherUsageStats=false",
-        "--theme.base=light",
-        "--theme.primaryColor=#4F46E5",
-        "--theme.backgroundColor=#E9EBF0",
-        "--theme.secondaryBackgroundColor=#FFFFFF",
-        "--theme.textColor=#14161A",
-    ]
+    cmd = ["npm", "run", "dev", "--", "-p", str(port)]
 
-    print(f"  ▸ Starting Streamlit frontend on http://127.0.0.1:{port}")
+    print(f"  ▸ Starting Next.js frontend on http://127.0.0.1:{port}")
     proc = subprocess.Popen(
         cmd,
         cwd=FRONTEND_DIR,
@@ -120,8 +101,8 @@ def main():
         help="Port for the FastAPI backend (default: 8000)",
     )
     parser.add_argument(
-        "--frontend-port", type=int, default=8501,
-        help="Port for the Streamlit frontend (default: 8501)",
+        "--frontend-port", type=int, default=3000,
+        help="Port for the Next.js frontend (default: 3000)",
     )
     args = parser.parse_args()
 

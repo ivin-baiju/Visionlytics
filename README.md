@@ -9,20 +9,20 @@
 </p>
 
 <p align="center">
-  <a href="https://visionlytics.streamlit.app"><img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Streamlit Cloud App" /></a>
-  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python" alt="Python 3.10+" />
-  <img src="https://img.shields.io/badge/YOLOv8-Small-00FFFF?style=flat-square" alt="YOLOv8s" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-blue?style=flat-square&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/FastAPI-2.0-009688?style=flat-square&logo=fastapi" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/Streamlit-1.63%2B-FF4B4B?style=flat-square&logo=streamlit" alt="Streamlit" />
+  <img src="https://img.shields.io/badge/YOLOv8-Small-00FFFF?style=flat-square" alt="YOLOv8s" />
+  <img src="https://img.shields.io/badge/Deploy-Vercel-black?style=flat-square&logo=vercel" alt="Vercel" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
 </p>
 
 ---
 
-## 🚀 Live App
+## ⚡ Next.js + React Frontend & Vercel Hosting
 
-Explore the live web application on Streamlit Cloud:  
-👉 **[visionlytics.streamlit.app](https://visionlytics.streamlit.app)**
+Visionlytics is built with a production-grade **Next.js 16 + React 19 App Router** frontend designed for seamless hosting on **Vercel**, powered by a high-performance **FastAPI** computer vision microservice.
 
 ---
 
