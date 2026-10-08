@@ -1,11 +1,11 @@
 # VISIONLYTICS — Intelligent Visual Crowd Analytics Platform
 
 <p align="center">
-  <img src="static/logo.svg" alt="Visionlytics Logo" width="96" height="96" />
+  <img src="frontend/public/logo.svg" alt="Visionlytics Logo" width="96" height="96" />
 </p>
 
 <p align="center">
-  <strong>Intelligent Computer Vision & Statistical Machine Learning for Real-Time Crowd Analytics</strong>
+  <strong>High-Performance Computer Vision & Statistical Machine Learning for Real-Time Crowd Analytics</strong>
 </p>
 
 <p align="center">
@@ -20,79 +20,62 @@
 
 ---
 
-## ⚡ Next.js + React Frontend & Vercel Hosting
+## ⚡ Next.js + React Architecture & Vercel Native
 
-Visionlytics is built with a production-grade **Next.js 16 + React 19 App Router** frontend designed for seamless hosting on **Vercel**, powered by a high-performance **FastAPI** computer vision microservice.
-
----
-
-## 📌 Overview
-
-**VISIONLYTICS** is an end-to-end computer vision and statistical machine learning platform engineered to analyze crowd dynamics across diverse visual inputs:
-
-1. 📷 **Static Imagery** — High-resolution crowd photographs and bottleneck analysis.
-2. 🎥 **Recorded Video** — Temporal crowd flow tracking with centroid trajectory persistence.
-3. 📹 **Real-Time Webcam** — Live surveillance and real-time density classification.
-4. 🧠 **Multi-Model ML Benchmarking** — Comparative evaluation of 7 statistical classifiers.
-5. 📊 **Spatial Density Mapping** — Gaussian kernel density heatmaps and proximity clustering.
-
-Rather than relying purely on an uninterpretable deep learning "black box", VISIONLYTICS pairs **YOLOv8s** for sensory perception with **geometric & spatial feature engineering** and classical **Statistical Machine Learning** classifiers. For extreme dense crowds (>40 persons), a **CSRNet** dilated convolutional network is used as a density regression fallback.
+VISIONLYTICS features a decoupled, production-grade architecture:
+- **Frontend**: **Next.js 16 (Turbopack)** + **React 19** + **TypeScript** with floating pill navigation, ambient video HUD, HTML5 canvas overlay engine, and glassmorphism styling — optimized for 1-click **Vercel** deployment.
+- **Backend Microservice**: High-throughput **FastAPI** service serving Ultralytics **YOLOv8s** person detection, **CSRNet** dilated CNN density fallback, and 7 calibrated statistical ML classifiers.
 
 ---
 
-## 🏛️ System Architecture
+## 📌 Core Features
+
+1. 📷 **Image Perception Workspace** — Drag-and-drop / upload photos with confidence sliders, ByteTrack tracking, visual attribute tags (clothing/hair color), and live canvas bounding boxes.
+2. 🎥 **Video Surveillance Feed** — Continuous frame-by-frame monitoring with live safety bottleneck alerts and temporal crowd volume graphs.
+3. 📹 **Real-Time WebRTC Camera** — Live browser webcam streaming with instant bounding box overlays and real-time FPS counter.
+4. 🧠 **Multi-Model ML Suite** — Comparative evaluation leaderboard across 7 statistical models with feature importance rankings and retrain triggers.
+5. 📊 **Spatial Feature Extraction** — Derives a 10-dimensional geometric descriptor vector capturing interpersonal spacing, occupancy, and distribution.
+6. 📈 **Dataset Explorer** — Empirical and synthetic crowd dynamics explorer with 3,000 balanced feature vector records.
+
+---
+
+## 🏛️ System Pipeline
 
 ```mermaid
 graph TD
-    A["Visual Input (Image / Video / Camera)"] --> B["YOLOv8s Detector (Confidence >= 0.3)"]
+    A["Visual Stream (Photo / Video / Camera)"] --> B["YOLOv8s Detector (Confidence >= 0.3)"]
     B --> C["Person Bounding Boxes [x1, y1, x2, y2]"]
     
-    C --> D["Spatial Feature Extractor (10 Geometric Features)"]
-    C --> E["Visual Analytics (Heatmaps / Centroids / Attributes)"]
+    C --> D["Spatial Feature Extractor (10 Geometric Descriptors)"]
+    C --> E["Visual HUD Analytics (Heatmaps / Centroids / Attributes)"]
     
-    D --> F["StandardScaler Normalization"]
-    F --> G["Statistical Classifiers (Random Forest, SVM, GB, Voting Ensemble)"]
+    D --> F["StandardScaler Normalization (Trained Split)"]
+    F --> G["Statistical Classifiers (Random Forest, SVM, GB, Ensemble)"]
     
     G --> H["Crowd Density Prediction (LOW / MEDIUM / HIGH)"]
-    G --> I["Class Probabilities & Calibrated Confidence"]
+    G --> I["Calibrated Class Probabilities"]
     
-    E --> J["Interactive Streamlit Dashboard"]
+    E --> J["Next.js 16 + React 19 Interactive Web App"]
     H --> J
     I --> J
 ```
 
 ---
 
-## 🔬 Spatial Feature Descriptors
-
-The feature engineering pipeline computes a 10-dimensional spatial descriptor vector from detected person bounding boxes:
+## 🔬 Spatial Descriptor Vector (10 Dimensions)
 
 | # | Feature Key | Formulation / Meaning | Range | Importance |
 |---|-------------|-----------------------|-------|------------|
 | 1 | `people_count` | Total detected persons ($N$) | $[0, \infty)$ | Primary volume metric |
-| 2 | `occupancy_ratio` | $\frac{\sum \text{Area}(\text{box}_i)}{W \times H}$ | $[0, 1]$ | Space consumption |
-| 3 | `avg_person_area` | $\frac{\text{occupancy\_ratio}}{N}$ | $[0, 1]$ | Foreground vs distance ratio |
+| 2 | `occupancy_ratio` | $\frac{\sum \text{Area}(\text{box}_i)}{W \times H}$ | $[0, 1]$ | Perspective space consumption |
+| 3 | `avg_person_area` | $\frac{\text{occupancy\_ratio}}{N}$ | $[0, 1]$ | Foreground vs distance scaling |
 | 4 | `avg_distance` | $\frac{2}{N(N-1)} \sum_{i < j} \|\mathbf{c}_i - \mathbf{c}_j\|_2$ | $[0, \sqrt{2}]$ | Mean interpersonal spacing |
 | 5 | `min_distance` | $\min_{i \neq j} \|\mathbf{c}_i - \mathbf{c}_j\|_2$ | $[0, \sqrt{2}]$ | Bottleneck / cluster identification |
-| 6 | `std_distance` | Standard deviation of pairwise distances | $[0, \sqrt{2}]$ | Spatial uniformity |
+| 6 | `std_distance` | Standard deviation of pairwise distances | $[0, \sqrt{2}]$ | Spatial dispersion uniformity |
 | 7 | `top_region_count` | Detections in upper third ($y < 0.33 H$) | $[0, N]$ | Background crowd depth |
 | 8 | `middle_region_count` | Detections in middle third ($0.33 H \leq y < 0.67 H$) | $[0, N]$ | Midground activity |
-| 9 | `bottom_region_count` | Detections in lower third ($y \geq 0.67 H$) | $[0, N]$ | Immediate foreground |
-| 10 | `density_ratio` | Dynamic density index | $[0, 1]$ | Composite density measure |
-
----
-
-## 🤖 Machine Learning Model Suite
-
-VISIONLYTICS trains and benchmarks 7 statistical models with isolated 70/15/15 train/val/test splits:
-
-- **Random Forest Classifier** *(Default Champion)*
-- **Voting Ensemble** (Soft Voting)
-- **Gradient Boosting Classifier**
-- **Support Vector Machine** (RBF Kernel with probability calibration)
-- **Multinomial Logistic Regression** (L2 Regularized)
-- **K-Nearest Neighbors** (KNN)
-- **Decision Trees** (CART)
+| 9 | `bottom_region_count` | Detections in lower third ($y \geq 0.67 H$) | $[0, N]$ | Immediate camera foreground |
+| 10 | `density_ratio` | Dynamic congestion index | $[0, 1]$ | Space congestion index |
 
 ---
 
@@ -100,27 +83,33 @@ VISIONLYTICS trains and benchmarks 7 statistical models with isolated 70/15/15 t
 
 ```
 Visionlytics/
-├── app.py                      # Streamlit application entry point
-├── static/                     # Static assets (logo, icons, video)
-│   ├── logo.svg
-│   ├── bg_video.mp4
-│   └── icon_*.svg
-├── frontend/                   # Streamlit Frontend application
-│   ├── app/
-│   │   ├── main.py             # Main UI routing and page rendering
-│   │   ├── components/         # Pill navbar, Mono-Clay styles, theme, icons
-│   │   └── ui/                 # Dashboard, Image, Video, Camera, Models, Dataset
-│   └── pyproject.toml
+├── vercel.json                 # Vercel deployment configuration
+├── start_local.py              # Single-command local runner (FastAPI + Next.js)
+├── requirements.txt            # Python dependencies for FastAPI backend
+├── frontend/                   # Next.js 16 + React 19 Web Application
+│   ├── package.json
+│   ├── next.config.ts          # Turbopack & API rewrite proxy configuration
+│   ├── public/                 # Static assets (logo.svg, bg_video.mp4, icons)
+│   └── src/
+│       ├── app/
+│       │   ├── page.tsx        # Dashboard with live KPIs & density regimes
+│       │   ├── globals.css     # Glassmorphism design system & animations
+│       │   ├── image-analysis/ # Upload & canvas perception workspace
+│       │   ├── video-analysis/ # Video player & temporal graph stream
+│       │   ├── live-camera/    # WebRTC live webcam inference feed
+│       │   ├── ml-models/      # 7-model leaderboard & feature ranking
+│       │   ├── dataset/        # 10D dataset explorer
+│       │   └── about/          # Mathematical breakdown & architecture
+│       ├── components/         # Pill Navbar, Canvas, Ambient Video, Stat Cards
+│       ├── lib/api.ts          # FastAPI client with autonomous fallback
+│       └── types/index.ts      # TypeScript interfaces
 ├── backend/                    # FastAPI Microservice
-│   ├── main.py                 # FastAPI application
-│   ├── api/                    # REST routes & endpoints
+│   ├── main.py                 # FastAPI application entry point
+│   ├── api/                    # REST routes (/analyze/frame, /models/*, etc.)
 │   ├── computer_vision/        # YOLOv8s detector, CSRNet, heatmaps
-│   ├── machine_learning/       # Training, inference, models registry
+│   ├── machine_learning/       # Predictor, model registry, preprocessing
 │   └── pyproject.toml
-├── models/                     # Trained ML model weights (.joblib)
-├── requirements.txt            # Python dependencies
-├── packages.txt                # System packages for cloud deployment
-└── start_local.py              # Local launcher for both services
+└── models/                     # Trained ML weights (.joblib)
 ```
 
 ---
@@ -128,8 +117,8 @@ Visionlytics/
 ## ⚡ Quickstart
 
 ### Prerequisites
-- Python 3.10+
-- `pip` or virtual environment manager
+- **Node.js**: v18+ (`npm` or `pnpm`)
+- **Python**: 3.10+
 
 ### 1. Clone the Repository
 ```bash
@@ -137,45 +126,64 @@ git clone https://github.com/ivin-baiju/Visionlytics.git
 cd Visionlytics
 ```
 
-### 2. Set Up Virtual Environment & Dependencies
+### 2. Install Dependencies
 ```bash
+# Backend dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pip install -e ./backend
-pip install -e ./frontend
+
+# Frontend dependencies
+cd frontend
+npm install
+cd ..
 ```
 
 ### 3. Launch Locally
-Start both the FastAPI backend and Streamlit frontend with a single command:
+Start both the FastAPI backend and Next.js frontend with a single command:
 ```bash
 python start_local.py
 ```
-Or start them independently:
-```bash
-# Terminal 1: FastAPI Backend
-uvicorn backend.main:app --host 127.0.0.1 --port 8000
 
-# Terminal 2: Streamlit Frontend
-streamlit run app.py
+Or start each service independently:
+```bash
+# Terminal 1: FastAPI Microservice (Port 8000)
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+
+# Terminal 2: Next.js Frontend (Port 3000)
+cd frontend
+npm run dev
 ```
 
-Open **http://localhost:8501** in your browser.
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ---
 
-## 📡 API Endpoints (FastAPI)
+## 🚀 Deploying to Vercel
+
+The frontend is configured for 1-click deployment on **Vercel**:
+
+1. Go to **[vercel.com/new](https://vercel.com/new)** and connect your GitHub account.
+2. Import **`ivin-baiju/Visionlytics`**.
+3. Set **Root Directory** to `frontend`.
+4. (Optional) Set `NEXT_PUBLIC_API_URL` to your hosted FastAPI backend URL.
+5. Click **Deploy** 🎉 — your site will be live on a global edge CDN in under 1 minute!
+
+---
+
+## 📡 API Reference (FastAPI Microservice)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/health` | Service health status check |
-| `POST` | `/analyze/frame` | Single frame inference (YOLO + ML density + attributes) |
-| `GET` | `/models/list` | Model registry & champion performance |
-| `GET` | `/models/evaluation` | Full validation metrics and confusion matrices |
-| `GET` | `/dataset/info` | Dataset sample count and class breakdown |
-| `POST` | `/models/train` | Trigger retraining pipeline |
+| `GET` | `/health` | Service health status |
+| `POST` | `/analyze/frame` | Single frame inference (YOLO + 10D features + ML density) |
+| `GET` | `/models/list` | Model inventory & active champion identifier |
+| `GET` | `/models/evaluation` | Validation & test metrics for all 7 classifiers |
+| `GET` | `/dataset/info` | Dataset sample distribution and feature columns |
+| `POST` | `/models/train` | Trigger model retraining pipeline |
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License.
+Distributed under the MIT License.
