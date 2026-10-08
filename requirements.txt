@@ -1,5 +1,13 @@
-# Root requirements for Visionlytics (compatible with HF Spaces & local running)
--e ./backend
--e ./frontend
-ruff>=0.4.0
-pytest>=8.0.0
+# Visionlytics — Streamlit Cloud requirements
+# Frontend (Streamlit UI)
+streamlit>=1.63.0,<2
+requests>=2.31.0
+opencv-python-headless>=4.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+plotly>=5.15.0
+pillow>=10.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+joblib>=1.3.0
+watchdog>=3.0.0

@@ -19,6 +19,4 @@ for p in (PROJECT_ROOT, BACKEND_DIR, FRONTEND_DIR):
 
 from app.main import main
 
-if __name__ == "__main__":
-    main()
-
+main()
