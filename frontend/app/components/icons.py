@@ -2,12 +2,40 @@
 Brand and vector assets for Visionlytics.
 
 Provides the animated brand logo and component icons.
+Uses base64 data URIs for bulletproof zero-latency rendering across all environments.
 """
 
-# HTML embedding the animated SVG logo with fallbacks
-BRAND_LOGO_HTML = '<img class="brand-logo-img" src="app/static/logo.svg" alt="Visionlytics" width="48" height="48" />'
+import base64
+import os
 
-# Inline SVG string kept for backward compatibility with existing imports
+
+def _get_svg_data_uri(filename: str) -> str:
+    """Read SVG file and convert to data:image/svg+xml;base64,... URI."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, "..", "static", filename),
+        os.path.join(base_dir, "..", "..", "..", "static", filename),
+        os.path.join("static", filename),
+        os.path.join("frontend", "app", "static", filename),
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                with open(p, "rb") as f:
+                    encoded = base64.b64encode(f.read()).decode("utf-8")
+                    return f"data:image/svg+xml;base64,{encoded}"
+            except Exception:
+                pass
+    return f"app/static/{filename}"
+
+
+LOGO_DATA_URI = _get_svg_data_uri("logo.svg")
+ICON_TUNE_DATA_URI = _get_svg_data_uri("icon_tune.svg")
+ICON_BELL_DATA_URI = _get_svg_data_uri("icon_bell.svg")
+ICON_USER_DATA_URI = _get_svg_data_uri("icon_user.svg")
+
+# HTML embedding the animated SVG logo with embedded data URI
+BRAND_LOGO_HTML = f'<img class="brand-logo-img" src="{LOGO_DATA_URI}" alt="Visionlytics" width="48" height="48" />'
 BRAND_LOGO_SVG = BRAND_LOGO_HTML
 
 # ── Feature Icons ─────────────────────────────────────────────────────────

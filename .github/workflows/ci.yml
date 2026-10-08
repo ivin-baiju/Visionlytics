@@ -2,9 +2,9 @@ name: Visionlytics CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ version3 ]
   pull_request:
-    branches: [ main ]
+    branches: [ version3 ]
 
 jobs:
   build-and-test:

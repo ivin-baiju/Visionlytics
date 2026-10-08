@@ -152,7 +152,7 @@ def get_video_background_html() -> str:
 
     <div id="vl-video-bg">
         <video autoplay muted loop playsinline>
-            <source src="app/static/bg_video.mp4" type="video/mp4">
+            <source src="/app/static/bg_video.mp4" type="video/mp4">
         </video>
     </div>
     <div id="vl-video-overlay"></div>

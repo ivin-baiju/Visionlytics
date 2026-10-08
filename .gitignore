@@ -42,6 +42,8 @@ models/*.joblib
 # Temporary files
 *.tmp
 *.temp
+*.onnx
+*.ipynb
 
 # Firebase credentials
 firebase-adminsdk.json

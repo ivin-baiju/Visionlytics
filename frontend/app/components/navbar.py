@@ -2,8 +2,15 @@
 Top Navigation Bar Component for Visionlytics.
 
 Renders a floating pill navigation bar matching the design in media_1791488384243.png.
-Uses <img> tags pointing to app/static/ SVGs for bulletproof rendering in Streamlit.
+Uses base64 data URIs for bulletproof zero-latency rendering in Streamlit.
 """
+
+from app.components.icons import (
+    ICON_BELL_DATA_URI,
+    ICON_TUNE_DATA_URI,
+    ICON_USER_DATA_URI,
+    LOGO_DATA_URI,
+)
 
 NAV_ITEMS = [
     {"key": "dashboard", "type": "single", "text": "Dashboard"},
@@ -39,15 +46,15 @@ def get_navbar_html(active_page: str = "dashboard") -> str:
         f'<div class="vl-top-accent-line"></div>'
         f'<div class="vl-navbar-container">'
         f'<a href="/?page=dashboard" target="_self" class="vl-brand-pill" title="Visionlytics Home">'
-        f'<div class="vl-brand-icon-wrap"><img src="app/static/logo.svg" alt="Visionlytics Logo" class="brand-logo-img" /></div>'
+        f'<div class="vl-brand-icon-wrap"><img src="{LOGO_DATA_URI}" alt="Visionlytics Logo" class="brand-logo-img" /></div>'
         f'<span class="vl-brand-name">VISIONLYTICS</span>'
         f'</a>'
         f'<nav class="vl-nav-pill">'
         f'<div class="vl-nav-links">{nav_links}</div>'
         f'<div class="vl-nav-controls">'
-        f'<div class="vl-nav-icon-btn" title="System Settings"><img src="app/static/icon_tune.svg" alt="Settings" width="19" height="19" /></div>'
-        f'<div class="vl-nav-icon-btn" title="Notifications"><img src="app/static/icon_bell.svg" alt="Notifications" width="19" height="19" /></div>'
-        f'<div class="vl-nav-avatar-btn" title="User Profile"><img src="app/static/icon_user.svg" alt="User" width="20" height="20" /></div>'
+        f'<div class="vl-nav-icon-btn" title="System Settings"><img src="{ICON_TUNE_DATA_URI}" alt="Settings" width="19" height="19" /></div>'
+        f'<div class="vl-nav-icon-btn" title="Notifications"><img src="{ICON_BELL_DATA_URI}" alt="Notifications" width="19" height="19" /></div>'
+        f'<div class="vl-nav-avatar-btn" title="User Profile"><img src="{ICON_USER_DATA_URI}" alt="User" width="20" height="20" /></div>'
         f'</div>'
         f'</nav>'
         f'</div>'

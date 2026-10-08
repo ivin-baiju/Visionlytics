@@ -6,7 +6,7 @@ restrained indigo accent. Class names are unchanged from the previous flat
 system so pages need no edits. Density is encoded with ink shades only.
 """
 
-from app.components.icons import BRAND_LOGO_SVG
+from app.components.icons import BRAND_LOGO_SVG, LOGO_DATA_URI
 from app.components.theme import DENSITY, DENSITY_BG
 
 
@@ -864,7 +864,7 @@ def header_html() -> str:
     return (
         f'<div class="hero-section">'
         f'<div class="hero-content-wrap">'
-        f'<div class="hero-brand-badge"><img src="app/static/logo.svg" alt="Visionlytics Logo" class="brand-logo-img" /></div>'
+        f'<div class="hero-brand-badge"><img src="{LOGO_DATA_URI}" alt="Visionlytics Logo" class="brand-logo-img" /></div>'
         f'<div class="hero-text-block">'
         f'<h1>VISIONLYTICS</h1>'
         f'<p>Intelligent Visual Crowd Analytics & Machine Learning Platform</p>'

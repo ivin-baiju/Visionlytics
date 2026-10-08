@@ -25,31 +25,12 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from app.api_client import API_URL, check_api_health_cached
-from app.components.icons import BRAND_LOGO_SVG
+from app.components.icons import BRAND_LOGO_SVG, LOGO_DATA_URI
 from app.components.navbar import get_navbar_html
 from app.components.splash import get_video_background_html
 from app.components.styles import get_custom_css, offline_banner_html
 from app.components.theme import INDIGO
 from app.database import init_db
-
-# ── Page Configuration ───────────────────────────────────────────────────────
-
-st.set_page_config(
-    page_title="VISIONLYTICS — Crowd Analytics",
-    page_icon=":material/visibility:",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
-
-# Initialize the persistent SQLite database
-init_db()
-
-# Looping background video
-st.markdown(get_video_background_html(), unsafe_allow_html=True)
-
-# Custom styles & design system
-st.markdown(get_custom_css(), unsafe_allow_html=True)
-
 
 # ── Navigation Mapping ───────────────────────────────────────────────────────
 
@@ -77,6 +58,26 @@ SIDEBAR_TO_KEY = {v: k for k, v in SIDEBAR_LABELS.items()}
 
 def main():
     """Main application loop."""
+    # ── Page Configuration (always runs first) ─────────────────────────
+    try:
+        st.set_page_config(
+            page_title="VISIONLYTICS — Crowd Analytics",
+            page_icon=":material/visibility:",
+            layout="wide",
+            initial_sidebar_state="collapsed",
+        )
+    except Exception:
+        pass
+
+    # Initialize the persistent SQLite database
+    init_db()
+
+    # Looping background video
+    st.html(get_video_background_html())
+
+    # Custom styles & design system (injected on every run so styles never drop!)
+    st.html(get_custom_css())
+
     # ── Page Routing (Top Bar query params + session state) ─────────
     query_page = st.query_params.get("page", None)
     if query_page in PAGES_MAP:
@@ -93,7 +94,7 @@ def main():
 
     # ── Sidebar (Collapsible rail with status & secondary nav) ───────
     with st.sidebar:
-        st.html('<div class="sidebar-brand"><img src="app/static/logo.svg" alt="Visionlytics Logo" class="brand-logo-img" style="width:36px; height:36px;" /><div><h2>VISIONLYTICS</h2><p>Crowd Analytics Platform</p></div></div>')
+        st.html(f'<div class="sidebar-brand"><img src="{LOGO_DATA_URI}" alt="Visionlytics Logo" class="brand-logo-img" style="width:36px; height:36px;" /><div><h2>VISIONLYTICS</h2><p>Crowd Analytics Platform</p></div></div>')
 
 
 
