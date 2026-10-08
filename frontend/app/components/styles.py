@@ -318,6 +318,36 @@ def get_custom_css() -> str:
         font-size: 0.9rem;
         color: #2A2E35 !important;
     }
+    /* Mono-clay offline banner (replaces yellow/blue native alerts). */
+    .clay-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background: #FFFFFF;
+        border: none;
+        border-radius: 18px;
+        box-shadow: 5px 5px 10px rgba(15, 23, 42, 0.08),
+                    -5px -5px 10px rgba(255, 255, 255, 0.9);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+        font-size: 0.92rem;
+        color: #2A2E35 !important;
+    }
+    .clay-banner .clay-banner-dot {
+        width: 10px; height: 10px;
+        border-radius: 999px;
+        background: #9CA3AF;
+        box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.5),
+                    1px 1px 2px rgba(15, 23, 42, 0.25);
+        flex: none;
+        margin-top: 0.35rem;
+    }
+    .clay-banner code {
+        background: #E9EBF0;
+        border-radius: 6px;
+        padding: 0.1rem 0.35rem;
+        font-size: 0.85em;
+    }
     .stats-table, .model-table {
         width: 100%;
         border-collapse: collapse;
@@ -549,5 +579,15 @@ def arch_card_html(icon: str, title: str, items: list, accent_color: str = "#141
         <div class="arch-list">
             {items_html}
         </div>
+    </div>
+    """
+
+
+def offline_banner_html(message: str) -> str:
+    """Return HTML for a mono-clay connectivity banner (no alert washes)."""
+    return f"""
+    <div class="clay-banner">
+        <span class="clay-banner-dot"></span>
+        <div>{message}</div>
     </div>
     """

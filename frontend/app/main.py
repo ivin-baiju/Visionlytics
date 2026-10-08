@@ -24,9 +24,10 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from app.api_client import API_URL, check_api_health_cached
 from app.components.icons import BRAND_LOGO_SVG
-from app.components.styles import get_custom_css
-from app.components.theme import DENSITY
+from app.components.styles import get_custom_css, offline_banner_html
+from app.components.theme import DENSITY, INDIGO
 from app.database import init_db
 
 # ── Page Configuration ───────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ PAGES = {
     ":material/image: Image analysis": "image_analysis",
     ":material/movie: Video analysis": "video_analysis",
     ":material/videocam: Live camera": "live_camera",
+    ":material/neurology: ML Models": "ml_models",
     ":material/dataset: Dataset": "dataset_page",
     ":material/info: About": "about",
 }
@@ -64,8 +66,10 @@ def main():
         st.markdown(f"""
         <div class="sidebar-brand">
             {BRAND_LOGO_SVG}
-            <h2>VISIONLYTICS</h2>
-            <p>Crowd Analytics Platform</p>
+            <div>
+                <h2>VISIONLYTICS</h2>
+                <p>Crowd Analytics Platform</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -79,20 +83,15 @@ def main():
 
         st.markdown("---")
 
-        # Model status indicator via FastAPI
-        import requests
-        try:
-            res = requests.get("http://localhost:8000/health", timeout=2)
-            api_up = res.status_code == 200
-        except Exception:
-            api_up = False
+        # Model status indicator via FastAPI (memoised for HEALTH_CACHE_TTL)
+        api_up = check_api_health_cached()
             
         if api_up:
             st.markdown(
                 f"""
             <div class="model-status">
                 <div class="status-indicator">
-                    <span class="status-dot" style="background: {DENSITY['LOW']};"></span>
+                    <span class="status-dot" style="background: {INDIGO};"></span>
                     API Connected
                 </div>
                 <div class="status-detail">FastAPI Microservice Active</div>
@@ -105,7 +104,7 @@ def main():
                 f"""
             <div class="model-status">
                 <div class="status-indicator">
-                    <span class="status-dot" style="background: {DENSITY['MEDIUM']};"></span>
+                    <span class="status-dot" style="background: #9CA3AF;"></span>
                     API Offline
                 </div>
                 <div class="status-detail">Is the backend running?</div>
@@ -114,8 +113,31 @@ def main():
                 unsafe_allow_html=True,
             )
 
+        st.caption(f"Endpoint: `{API_URL}`")
+        if st.button(
+            "Re-check connection",
+            icon=":material/refresh:",
+            use_container_width=True,
+            help="Clears the cached health result and probes the backend again",
+        ):
+            st.session_state.pop("_api_health_cache", None)
+            st.rerun()
+
     # ── Page Routing ──────────────────────────────────────────────────
     page_key = PAGES[page]
+
+    # Global connectivity banner: fail loudly and actionably instead of
+    # letting each page surface its own "API offline" message.
+    if not api_up:
+        st.markdown(
+            offline_banner_html(
+                f"Backend API unreachable at {API_URL}. Start it with "
+                "<code>uvicorn main:app --port 8000</code> from the "
+                "<code>backend</code> directory to enable detection, "
+                "training and dataset features."
+            ),
+            unsafe_allow_html=True,
+        )
 
     if page_key == "dashboard":
         from app.ui.dashboard import render_dashboard

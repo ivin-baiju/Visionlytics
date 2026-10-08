@@ -109,6 +109,7 @@ def test_style_primitives_render():
     assert "status-card" in styles.status_card_html("API", "up", True)
     assert "feature-card" in styles.feature_card_html("<svg/>", "Title", "Desc")
     assert "arch-card" in styles.arch_card_html("<svg/>", "Title", ["item"])
+    assert "clay-banner" in styles.offline_banner_html("Backend unreachable")
 
 
 def test_icons_are_flat_and_inherit_color():

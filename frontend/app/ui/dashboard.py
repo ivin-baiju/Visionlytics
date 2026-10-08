@@ -31,6 +31,7 @@ from app.components.styles import (
     feature_card_html,
     header_html,
     metric_card_html,
+    offline_banner_html,
     status_card_html,
 )
 from app.components.theme import INK, LIME_DARK, MUTED
@@ -271,10 +272,12 @@ def render_dashboard():
         )
 
     if not api_online:
-        st.info(
-            f"Backend unreachable at {API_URL} — start the FastAPI service to run "
-            "new analyses. Cached results below remain available.",
-            icon=":material/cloud_off:",
+        st.markdown(
+            offline_banner_html(
+                f"Backend unreachable at {API_URL} — start the FastAPI service "
+                "to run new analyses. Cached results below remain available."
+            ),
+            unsafe_allow_html=True,
         )
 
     # ── System Architecture ─────────────────────────────────────────
