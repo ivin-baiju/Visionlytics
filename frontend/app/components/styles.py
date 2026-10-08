@@ -1,440 +1,521 @@
 """
-Flat CSS for the Visionlytics dashboard.
+Mono-Clay design system for Visionlytics.
 
-Ronas IT delivery-tracking design language: flat white surfaces, hairline
-borders, solid ink text, lime accents. No gradients, no glass blur,
-no keyframe animations.
+Soft embossed grayscale surfaces, generous radii, tactile controls and one
+restrained indigo accent. Class names are unchanged from the previous flat
+system so pages need no edits. Density is encoded with ink shades only.
 """
 
 from app.components.theme import DENSITY, DENSITY_BG
 
 
 def get_custom_css() -> str:
-    """Return the flat custom CSS for the Visionlytics dashboard."""
+    """Return the Mono-Clay custom CSS."""
     return """
     <style>
-    /* ── App canvas ──────────────────────────────────────────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    /* ── Clay Canvas ─────────────────────────────────────────────── */
     .stApp {
-        background: #F5F6F7;
-        color: #14161A;
-        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background-color: #E9EBF0 !important;
+        color: #14161A !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     .block-container {
-        padding-top: 1.25rem;
-        padding-bottom: 2rem;
-        max-width: 1200px;
+        padding-top: 1.75rem;
+        padding-bottom: 3rem;
+        max-width: 1240px;
+        animation: clay-rise 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+    @keyframes clay-rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Streamlit core text overrides to ensure total legibility */
+    .stApp p, .stApp span, .stApp label, .stApp div {
+        color: #14161A;
+    }
+    .stApp a {
+        color: #4F46E5 !important;
+    }
+
+    :focus-visible {
+        outline: 2px solid #4F46E5 !important;
+        outline-offset: 2px;
+    }
+
+    /* ── Sidebar Clay Rail ───────────────────────────────────────── */
     section[data-testid="stSidebar"] {
-        background: #FFFFFF;
-        border-right: 1px solid #E9EAEC;
+        background: #E9EBF0 !important;
+        border-right: none !important;
     }
     section[data-testid="stSidebar"] .block-container {
-        padding-top: 1rem;
+        padding-top: 1.5rem;
     }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
-    /* ── Page header ─────────────────────────────────────────────── */
+    /* ── Clay Hero Header ────────────────────────────────────────── */
     .hero-section {
         background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-left: 4px solid #B4E04C;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(20, 22, 26, 0.04);
-        padding: 1rem 1.25rem;
-        margin-bottom: 1.25rem;
-        text-align: left;
+        border: none;
+        border-radius: 22px;
+        box-shadow: 8px 8px 16px rgba(15, 23, 42, 0.10),
+                    -8px -8px 16px rgba(255, 255, 255, 0.9);
+        padding: 1.6rem 1.9rem;
+        margin-bottom: 1.75rem;
     }
     .hero-section h1 {
-        color: #14161A;
-        font-family: Inter, sans-serif;
-        font-size: 1.35rem;
-        font-weight: 700;
+        color: #14161A !important;
+        font-size: 1.7rem;
+        font-weight: 800;
         margin: 0;
-        letter-spacing: 0.06em;
+        letter-spacing: -0.02em;
     }
     .hero-section p {
-        color: #5B6472;
-        font-size: 0.8rem;
-        margin: 0.25rem 0 0;
+        color: #6B7280 !important;
+        font-size: 0.95rem;
+        margin: 0.35rem 0 0;
         font-weight: 500;
-        letter-spacing: 0.04em;
     }
+
     .page-header {
+        margin: 0 0 1.25rem;
         display: flex;
         align-items: flex-start;
-        gap: 0.6rem;
-        margin: 0 0 1rem;
+        gap: 0.75rem;
     }
-    .page-tick {
-        width: 4px;
+    .page-header .page-tick {
+        width: 6px;
         align-self: stretch;
-        background: #B4E04C;
-        border-radius: 2px;
+        border-radius: 999px;
+        background: #14161A;
         flex: none;
     }
     .page-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #14161A;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #14161A !important;
         margin: 0;
     }
     .page-subtitle {
-        font-size: 0.8rem;
-        color: #5B6472;
-        margin: 0.15rem 0 0;
+        font-size: 0.9rem;
+        color: #6B7280 !important;
+        margin: 0.25rem 0 0;
     }
-    /* ── Cards ───────────────────────────────────────────────────── */
+
+    /* ── Clay Metric Cards ────────────────────────────────────────── */
     .metric-card {
         background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(20, 22, 26, 0.04);
-        padding: 0.9rem 1rem;
+        border: none;
+        border-radius: 18px;
+        padding: 1.15rem 1.3rem;
+        box-shadow: 8px 8px 16px rgba(15, 23, 42, 0.10),
+                    -8px -8px 16px rgba(255, 255, 255, 0.9);
+        transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 12px 12px 24px rgba(15, 23, 42, 0.12),
+                    -12px -12px 24px rgba(255, 255, 255, 0.95);
+    }
+    .metric-card:active {
+        transform: translateY(0) scale(0.99);
+        box-shadow: inset 4px 4px 8px rgba(15, 23, 42, 0.10),
+                    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
     }
     .metric-card .metric-label {
-        font-size: 0.7rem;
-        font-weight: 600;
+        font-size: 0.75rem;
+        font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #5B6472;
+        color: #6B7280 !important;
     }
     .metric-card .metric-value {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #14161A;
-        margin-top: 0.15rem;
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #14161A !important;
+        margin-top: 0.3rem;
+        letter-spacing: -0.02em;
     }
+
+    /* ── Clay Status Cards ────────────────────────────────────────── */
     .status-card {
         background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(20, 22, 26, 0.04);
-        padding: 0.9rem 1rem;
+        border: none;
+        border-radius: 18px;
+        padding: 1rem 1.25rem;
+        box-shadow: 5px 5px 10px rgba(15, 23, 42, 0.08),
+                    -5px -5px 10px rgba(255, 255, 255, 0.9);
     }
     .status-card .status-label {
-        font-size: 0.7rem;
-        font-weight: 600;
+        font-size: 0.72rem;
+        font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #5B6472;
+        color: #6B7280 !important;
     }
     .status-card .status-value {
         display: flex;
         align-items: center;
-        gap: 0.45rem;
-        font-size: 1rem;
+        gap: 0.5rem;
+        font-size: 1.05rem;
         font-weight: 700;
-        color: #14161A;
-        margin-top: 0.2rem;
+        color: #14161A !important;
+        margin-top: 0.3rem;
     }
     .status-dot {
-        width: 8px; height: 8px;
+        width: 10px; height: 10px;
         border-radius: 999px;
-        background: #0F9D58;
+        background: #14161A;
+        box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.5),
+                    1px 1px 2px rgba(15, 23, 42, 0.25);
         flex: none;
     }
+
+    /* ── Clay Feature Cards ───────────────────────────────────────── */
     .feature-card {
         background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-top: 3px solid var(--card-accent, #8FBF2E);
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(20, 22, 26, 0.04);
-        padding: 1.1rem 1.2rem;
+        border: none;
+        border-radius: 18px;
+        padding: 1.3rem 1.4rem;
+        box-shadow: 8px 8px 16px rgba(15, 23, 42, 0.10),
+                    -8px -8px 16px rgba(255, 255, 255, 0.9);
+        transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .feature-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 12px 12px 24px rgba(15, 23, 42, 0.12),
+                    -12px -12px 24px rgba(255, 255, 255, 0.95);
     }
     .feature-card .card-icon {
-        width: 34px; height: 34px;
-        border-radius: 8px;
-        background: #F5F6F7;
-        border: 1px solid #E9EAEC;
-        color: var(--card-accent, #5B6472);
+        width: 44px; height: 44px;
+        border-radius: 14px;
+        background: #E9EBF0;
+        border: none;
+        box-shadow: inset 3px 3px 6px rgba(15, 23, 42, 0.10),
+                    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+        color: #14161A;
         display: inline-flex;
         align-items: center; justify-content: center;
-        margin-bottom: 0.6rem;
+        margin-bottom: 0.8rem;
     }
     .feature-card .card-icon svg {
-        width: 20px; height: 20px;
+        width: 22px; height: 22px;
     }
     .feature-card .card-title {
-        font-size: 0.95rem;
+        font-size: 1.05rem;
         font-weight: 700;
-        color: #14161A;
-        margin-bottom: 0.3rem;
+        color: #14161A !important;
+        margin-bottom: 0.35rem;
     }
     .feature-card .card-desc {
-        font-size: 0.82rem;
-        color: #5B6472;
+        font-size: 0.88rem;
+        color: #6B7280 !important;
         line-height: 1.5;
     }
+
+    /* ── Clay Architecture Cards ──────────────────────────────────── */
     .arch-card {
         background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(20, 22, 26, 0.04);
-        padding: 1.1rem 1.2rem;
+        border: none;
+        border-radius: 18px;
+        padding: 1.3rem 1.4rem;
+        box-shadow: 8px 8px 16px rgba(15, 23, 42, 0.10),
+                    -8px -8px 16px rgba(255, 255, 255, 0.9);
     }
     .arch-card .arch-title {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        font-size: 0.95rem;
+        gap: 0.6rem;
+        font-size: 1.05rem;
         font-weight: 700;
-        color: #14161A;
-        padding-bottom: 0.6rem;
-        border-bottom: 1px solid #E9EAEC;
-        margin-bottom: 0.6rem;
+        color: #14161A !important;
+        padding-bottom: 0.7rem;
+        border-bottom: none;
+        box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+        margin-bottom: 0.75rem;
     }
     .arch-card .arch-title svg {
-        width: 18px; height: 18px;
-        color: var(--accent, #8FBF2E);
+        width: 20px; height: 20px;
+        color: #14161A;
     }
     .arch-item {
-        font-size: 0.82rem;
-        color: #14161A;
-        padding: 0.3rem 0 0.3rem 0.8rem;
-        border-left: 2px solid #E9EAEC;
-        margin: 0.25rem 0;
+        font-size: 0.88rem;
+        color: #2A2E35 !important;
+        padding: 0.4rem 0 0.4rem 0.9rem;
+        background: #E9EBF0;
+        border-radius: 10px;
+        box-shadow: inset 2px 2px 4px rgba(15, 23, 42, 0.08),
+                    inset -2px -2px 4px rgba(255, 255, 255, 0.9);
+        margin: 0.35rem 0;
     }
-    /* ── Badges, sections, tables ──────────────────────────────── */
+
+    /* ── Mono Density Badges (ink shades, never hue) ──────────────── */
     .density-badge {
-        display: inline-block;
-        padding: 0.2rem 0.7rem;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.9rem;
         border-radius: 999px;
-        font-size: 0.72rem;
+        font-size: 0.75rem;
         font-weight: 700;
-        letter-spacing: 0.05em;
-        border: 1px solid #E9EAEC;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        box-shadow: inset 2px 2px 4px rgba(15, 23, 42, 0.10),
+                    inset -2px -2px 4px rgba(255, 255, 255, 0.7);
     }
     .density-low {
-        background: #E7F5EE;
-        color: #0F9D58;
-        border-color: #C9E7D6;
+        background: #F3F4F6 !important;
+        color: #6B7280 !important;
+        border: none;
     }
     .density-medium {
-        background: #FEF5E5;
-        color: #B7791F;
-        border-color: #F3DFB8;
+        background: #D1D5DB !important;
+        color: #2A2E35 !important;
+        border: none;
     }
     .density-high {
-        background: #FDECEA;
-        color: #D93025;
-        border-color: #F5C6C1;
+        background: #14161A !important;
+        color: #FFFFFF !important;
+        border: none;
+        box-shadow: 3px 3px 6px rgba(15, 23, 42, 0.25),
+                    -2px -2px 5px rgba(255, 255, 255, 0.7);
     }
+
+    /* ── Clay Containers & Information Boxes ─────────────────────── */
     .section-container {
         background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(20, 22, 26, 0.04);
-        padding: 1.1rem 1.25rem;
-        margin-bottom: 1rem;
+        border: none;
+        border-radius: 18px;
+        box-shadow: 8px 8px 16px rgba(15, 23, 42, 0.10),
+                    -8px -8px 16px rgba(255, 255, 255, 0.9);
+        padding: 1.3rem 1.5rem;
+        margin-bottom: 1.2rem;
     }
     .section-container h3, .section-container h4 {
-        color: #14161A;
+        color: #14161A !important;
     }
     .info-box {
-        background: #F5F6F7;
-        border: 1px solid #E9EAEC;
-        border-left: 3px solid #8FBF2E;
-        border-radius: 0 8px 8px 0;
-        padding: 0.85rem 1rem;
-        font-size: 0.85rem;
-        color: #14161A;
+        background: #EEF0FE;
+        border: none;
+        border-radius: 14px;
+        box-shadow: inset 3px 3px 6px rgba(79, 70, 229, 0.12),
+                    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+        color: #2A2E35 !important;
     }
     .warning-box {
-        background: #FEF5E5;
-        border: 1px solid #F3DFB8;
-        border-left: 3px solid #B7791F;
-        border-radius: 0 8px 8px 0;
-        padding: 0.85rem 1rem;
-        font-size: 0.85rem;
-        color: #14161A;
+        background: #E9EBF0;
+        border: none;
+        border-radius: 14px;
+        box-shadow: inset 3px 3px 6px rgba(15, 23, 42, 0.10),
+                    inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+        color: #2A2E35 !important;
     }
     .stats-table, .model-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
     }
     .stats-table th, .model-table th {
         text-align: left;
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #5B6472;
-        padding: 0.55rem 0.9rem;
-        border-bottom: 1px solid #E9EAEC;
+        color: #6B7280 !important;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #E5E7EB;
+        background: #E9EBF0;
     }
     .stats-table td, .model-table td {
-        padding: 0.55rem 0.9rem;
-        border-bottom: 1px solid #E9EAEC;
-        color: #14161A;
-    }
-    .stats-table tr:last-child td, .model-table tr:last-child td {
-        border-bottom: none;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #E5E7EB;
+        color: #14161A !important;
     }
     .stats-table tr:hover td, .model-table tr:hover td {
-        background: #FAFBFC;
+        background: #E9EBF0;
     }
-    /* ── Sidebar rail, Streamlit controls ────────────────────────── */
+
+    /* ── Clay Sidebar Brand ──────────────────────────────────────── */
     .sidebar-brand {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0.5rem 0.25rem 0.75rem;
-        border-bottom: 1px solid #E9EAEC;
-        margin-bottom: 0.5rem;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem 1rem;
+        background: #FFFFFF;
+        border: none;
+        border-radius: 18px;
+        box-shadow: 5px 5px 10px rgba(15, 23, 42, 0.08),
+                    -5px -5px 10px rgba(255, 255, 255, 0.9);
+        margin-bottom: 0.85rem;
     }
     .sidebar-brand .brand-logo-svg {
-        width: 30px; height: 30px;
-        color: #14161A;
+        width: 34px; height: 34px;
         flex: none;
     }
     .sidebar-brand h2 {
-        font-size: 0.95rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        color: #14161A;
+        font-size: 1.15rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        color: #14161A !important;
         margin: 0;
     }
     .sidebar-brand p {
-        font-size: 0.7rem;
-        color: #5B6472;
+        font-size: 0.75rem;
+        color: #6B7280 !important;
         margin: 0;
     }
     .model-status {
         background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-radius: 8px;
-        padding: 0.7rem 0.8rem;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 5px 5px 10px rgba(15, 23, 42, 0.08),
+                    -5px -5px 10px rgba(255, 255, 255, 0.9);
+        padding: 0.85rem 1rem;
     }
     .model-status .status-indicator {
         display: flex;
         align-items: center;
-        gap: 0.45rem;
-        font-size: 0.82rem;
+        gap: 0.5rem;
+        font-size: 0.88rem;
         font-weight: 700;
-        color: #14161A;
+        color: #14161A !important;
     }
     .model-status .status-detail {
-        font-size: 0.72rem;
-        color: #5B6472;
+        font-size: 0.76rem;
+        color: #6B7280 !important;
         margin-top: 0.2rem;
     }
-    .analyses-panel {
-        background: #FFFFFF;
-        border: 1px solid #E9EAEC;
-        border-radius: 8px;
-        padding: 0.9rem 1rem;
-    }
-    .analyses-panel h4 {
-        font-size: 0.78rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: #5B6472;
-        margin: 0 0 0.6rem;
-    }
-    /* Streamlit buttons: solid ink primary, flat secondary */
+
+    /* ── Clay Buttons & Controls ─────────────────────────────────── */
     .stButton > button[kind="primary"], .stButton > button[kind="primaryFormSubmit"] {
-        background: #14161A;
-        color: #FFFFFF;
-        border: 1px solid #14161A;
-        border-radius: 6px;
-        font-weight: 600;
+        background: #4F46E5 !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 14px !important;
+        font-weight: 700 !important;
+        padding: 0.6rem 1.4rem !important;
+        box-shadow: 4px 4px 8px rgba(79, 70, 229, 0.35),
+                    -2px -2px 6px rgba(255, 255, 255, 0.7);
+        transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     }
     .stButton > button[kind="primary"]:hover, .stButton > button[kind="primaryFormSubmit"]:hover {
-        background: #2A2E35;
-        border-color: #2A2E35;
+        background: #4338CA !important;
+        border: none !important;
+        transform: translateY(-2px);
+    }
+    .stButton > button[kind="primary"]:active, .stButton > button[kind="primaryFormSubmit"]:active {
+        transform: translateY(0) scale(0.97);
+        box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25) !important;
     }
     .stButton > button[kind="secondary"] {
-        background: #FFFFFF;
-        color: #14161A;
-        border: 1px solid #E9EAEC;
-        border-radius: 6px;
-        font-weight: 600;
+        background: #FFFFFF !important;
+        color: #14161A !important;
+        border: none !important;
+        border-radius: 14px !important;
+        font-weight: 600 !important;
+        box-shadow: 4px 4px 8px rgba(15, 23, 42, 0.10),
+                    -3px -3px 7px rgba(255, 255, 255, 0.9) !important;
+        transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     }
     .stButton > button[kind="secondary"]:hover {
-        border-color: #8FBF2E;
+        transform: translateY(-2px);
     }
-    .stButton > button:focus-visible, .stTextInput input:focus, .stSelectbox div[data-baseweb="select"]:focus-within {
-        outline: 2px solid #B4E04C;
-        outline-offset: 1px;
+    .stButton > button[kind="secondary"]:active {
+        transform: translateY(0) scale(0.97);
+        box-shadow: inset 3px 3px 6px rgba(15, 23, 42, 0.10),
+                    inset -3px -3px 6px rgba(255, 255, 255, 0.9) !important;
     }
-    /* Tabs / radio: underline + lime active state */
-    .stTabs [data-baseweb="tab"] {
-        font-weight: 600;
-        color: #5B6472;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #14161A;
-        border-bottom: 2px solid #8FBF2E;
-    }
-    div[data-testid="stRadio"] label:has(input:checked) {
-        background: #EFF6DA;
-        border-color: #B4E04C;
-        border-radius: 6px;
-    }
-    /* File uploader + progress: flat */
+
+    /* Clay file uploader dropzone */
     [data-testid="stFileUploader"] section {
-        border-radius: 8px;
-        border: 1px dashed #E9EAEC;
-        background: #FFFFFF;
+        border-radius: 18px !important;
+        border: 2px dashed #9CA3AF !important;
+        background: #FFFFFF !important;
+        box-shadow: inset 4px 4px 8px rgba(15, 23, 42, 0.06),
+                    inset -4px -4px 8px rgba(255, 255, 255, 0.9) !important;
+        padding: 1.5rem !important;
+        transition: border-color 220ms ease !important;
     }
     [data-testid="stFileUploader"] section:hover {
-        border-color: #8FBF2E;
+        border-color: #4F46E5 !important;
     }
-    .stProgress > div > div > div > div {
-        background: #8FBF2E;
+
+    /* ── Skeleton shimmer (loading placeholders) ──────────────────── */
+    .clay-skeleton {
+        border-radius: 18px;
+        background: #E9EBF0;
+        box-shadow: inset 4px 4px 8px rgba(15, 23, 42, 0.08),
+                    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+        min-height: 88px;
+        animation: clay-pulse 1.4s ease-in-out infinite;
     }
+    @keyframes clay-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.55; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .block-container { animation: none; }
+        .clay-skeleton { animation: none; }
+        .metric-card, .feature-card,
+        .stButton > button { transition: none !important; }
+    }
+
     hr {
         border: none;
         height: 1px;
-        background: #E9EAEC;
-        margin: 1.25rem 0;
+        background: #E5E7EB;
+        margin: 1.5rem 0;
     }
-/*__P4__*/
-/*__P3__*/
-/*__P2__*/
     </style>
     """
 
 
-# ── Density Color Utilities (re-exported from theme) ──────────────────────────
+# ── Density Color Utilities ──────────────────────────────────────────────────
 
 DENSITY_COLORS = dict(DENSITY)
-
 DENSITY_BG_COLORS = dict(DENSITY_BG)
 
 
 def header_html() -> str:
-    """Return HTML for the flat header section."""
+    """Return HTML for the clean hero banner."""
     return """
     <div class="hero-section">
         <h1>VISIONLYTICS</h1>
-        <p>Intelligent Visual Crowd Analytics</p>
+        <p>Intelligent Visual Crowd Analytics & Machine Learning Platform</p>
     </div>
     """
 
 
 def density_badge_html(density: str) -> str:
-    """Return HTML for a flat pill density badge."""
+    """Return HTML for a crisp pill density badge."""
     css_class = f"density-{density.lower()}"
     return f'<span class="density-badge {css_class}">{density}</span>'
 
 
 def metric_card_html(label: str, value: str, color: str = "#14161A") -> str:
-    """Return HTML for a flat metric card."""
+    """Return HTML for a clay metric card."""
     return f"""
     <div class="metric-card">
         <div class="metric-label">{label}</div>
-        <div class="metric-value" style="color: {color}">{value}</div>
+        <div class="metric-value" style="color: {color} !important;">{value}</div>
     </div>
     """
 
 
 def status_card_html(label: str, value: str, is_online: bool = True) -> str:
-    """Return HTML for a flat system status card."""
-    dot_color = "#0F9D58" if is_online else "#B7791F"
+    """Return HTML for a clay system status card."""
+    dot_color = "#4F46E5" if is_online else "#9CA3AF"
     return f"""
     <div class="status-card">
         <div class="status-label">{label}</div>
@@ -446,10 +527,10 @@ def status_card_html(label: str, value: str, is_online: bool = True) -> str:
     """
 
 
-def feature_card_html(icon: str, title: str, description: str, accent_color: str = "#8FBF2E") -> str:
-    """Return HTML for a flat feature card."""
+def feature_card_html(icon: str, title: str, description: str, accent_color: str = "#14161A") -> str:
+    """Return HTML for a clay feature card."""
     return f"""
-    <div class="feature-card" style="--card-accent: {accent_color};">
+    <div class="feature-card">
         <div class="card-icon">{icon}</div>
         <div class="card-title">{title}</div>
         <div class="card-desc">{description}</div>
@@ -457,13 +538,13 @@ def feature_card_html(icon: str, title: str, description: str, accent_color: str
     """
 
 
-def arch_card_html(icon: str, title: str, items: list, accent_color: str = "#8FBF2E") -> str:
-    """Return HTML for a flat architecture card."""
+def arch_card_html(icon: str, title: str, items: list, accent_color: str = "#14161A") -> str:
+    """Return HTML for a clay architecture card."""
     items_html = "\n".join(
         f'<div class="arch-item">{item}</div>' for item in items
     )
     return f"""
-    <div class="arch-card" style="--accent: {accent_color};">
+    <div class="arch-card">
         <div class="arch-title">{icon} {title}</div>
         <div class="arch-list">
             {items_html}

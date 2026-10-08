@@ -8,6 +8,11 @@ an analyses filter panel, system status indicators, and architecture overview.
 import pandas as pd
 import streamlit as st
 
+from app.api_client import (
+    API_URL,
+    check_api_health_cached,
+    get_models_list_api,
+)
 from app.components.charts import (
     density_distribution_pie,
     people_count_over_time,
@@ -47,7 +52,7 @@ def render_dashboard():
                 ICON_IMAGE_ANALYSIS,
                 "Image Analysis",
                 "Upload a photo to detect people and analyze crowd density with spatial heatmaps",
-                INK,
+                "#14161A",
             ),
             unsafe_allow_html=True,
         )
@@ -58,7 +63,7 @@ def render_dashboard():
                 ICON_VIDEO_ANALYSIS,
                 "Video Analysis",
                 "Upload a video to track people and view density changes over time",
-                MUTED,
+                "#14161A",
             ),
             unsafe_allow_html=True,
         )
@@ -69,7 +74,7 @@ def render_dashboard():
                 ICON_LIVE_CAMERA,
                 "Live Camera",
                 "Real-time crowd analysis using your webcam feed with instant density classification",
-                LIME_DARK,
+                "#14161A",
             ),
             unsafe_allow_html=True,
         )
@@ -216,18 +221,61 @@ def render_dashboard():
         </div>
         """, unsafe_allow_html=True)
 
-    # ── System Status Panel ─────────────────────────────────────────
+    # ── System Status Panel (live API values, not hardcoded) ─────────
     st.markdown("---")
     st.subheader("System status", icon=":material/tune:")
+
+    api_online = check_api_health_cached()
+    models_info = get_models_list_api() if api_online else None
+
+    loaded_classifiers = 0
+    total_classifiers = 0
+    if models_info:
+        artifacts = models_info.get("artifacts", {})
+        total_classifiers = len(artifacts)
+        loaded_classifiers = sum(1 for a in artifacts.values() if a.get("present"))
+        classifiers_value = f"{loaded_classifiers}/{total_classifiers} Loaded"
+    else:
+        classifiers_value = "Unavailable"
+
     col_s1, col_s2, col_s3, col_s4 = st.columns(4)
     with col_s1:
-        st.markdown(status_card_html("Core Backend", "Online"), unsafe_allow_html=True)
+        st.markdown(
+            status_card_html(
+                "Core Backend", "Online" if api_online else "Offline", api_online
+            ),
+            unsafe_allow_html=True,
+        )
     with col_s2:
-        st.markdown(status_card_html("YOLOv8s Engine", "Ready"), unsafe_allow_html=True)
+        st.markdown(
+            status_card_html(
+                "YOLOv8s Engine", "Ready" if api_online else "Unknown", api_online
+            ),
+            unsafe_allow_html=True,
+        )
     with col_s3:
-        st.markdown(status_card_html("ML Classifiers", "7 Loaded"), unsafe_allow_html=True)
+        st.markdown(
+            status_card_html(
+                "ML Classifiers",
+                classifiers_value,
+                api_online and loaded_classifiers > 0,
+            ),
+            unsafe_allow_html=True,
+        )
     with col_s4:
-        st.markdown(status_card_html("Tracker", "Active"), unsafe_allow_html=True)
+        st.markdown(
+            status_card_html(
+                "Person Tracker", "ByteTrack Ready" if api_online else "Offline", api_online
+            ),
+            unsafe_allow_html=True,
+        )
+
+    if not api_online:
+        st.info(
+            f"Backend unreachable at {API_URL} — start the FastAPI service to run "
+            "new analyses. Cached results below remain available.",
+            icon=":material/cloud_off:",
+        )
 
     # ── System Architecture ─────────────────────────────────────────
     st.markdown("---")
@@ -241,13 +289,13 @@ def render_dashboard():
                 ICON_COMPUTER_VISION,
                 "Computer Vision",
                 [
-                    "YOLOv8s Person Detection",
+                    "YOLOv8s Person Detection (ONNX)",
                     "Bounding Box Visualization",
                     "Gaussian Heatmap Generation",
                     "Centroid-based Tracking",
                     "Visual Attribute Estimation",
                 ],
-                INK,
+                "#14161A",
             ),
             unsafe_allow_html=True,
         )
@@ -262,9 +310,9 @@ def render_dashboard():
                     "Spatial Distance Metrics",
                     "Regional Distribution (3-zone)",
                     "Frame Occupancy Density",
-                    "10 Features Total",
+                    "10 Vectorized Features",
                 ],
-                MUTED,
+                "#14161A",
             ),
             unsafe_allow_html=True,
         )
@@ -278,10 +326,10 @@ def render_dashboard():
                     "Logistic Regression & KNN",
                     "Decision Tree & Random Forest",
                     "SVM with RBF Kernel",
-                    "Gradient Boosting",
+                    "Gradient Boosting & XGBoost",
                     "Voting Ensemble (Meta-learner)",
                 ],
-                LIME_DARK,
+                "#14161A",
             ),
             unsafe_allow_html=True,
         )

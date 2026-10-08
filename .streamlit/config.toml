@@ -1,39 +1,33 @@
 [theme]
 base = "light"
-primaryColor = "#8FBF2E"
-backgroundColor = "#F5F6F7"
+primaryColor = "#4F46E5"
+backgroundColor = "#E9EBF0"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#14161A"
 borderColor = "#E9EAEC"
-baseRadius = "medium"
-buttonRadius = "small"
+baseRadius = "large"
+buttonRadius = "large"
 showWidgetBorder = true
-showSidebarBorder = true
+showSidebarBorder = false
 linkUnderline = false
 
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap"
-codeFont = "monospace"
-baseFontSize = 14
-baseFontWeight = 400
-headingFontSizes = ["28px", "22px", "18px", "15px", "13px", "12px"]
-headingFontWeights = [700, 600, 600, 600, 500, 500]
+font = "sans-serif"
 
-greenColor = "#0F9D58"
-redColor = "#D93025"
-orangeColor = "#B7791F"
-blueColor = "#5B6472"
-violetColor = "#9AA3AF"
-grayColor = "#5B6472"
+greenColor = "#4B5563"
+redColor = "#14161A"
+orangeColor = "#9CA3AF"
+blueColor = "#4F46E5"
+violetColor = "#4F46E5"
+grayColor = "#9CA3AF"
 
-chartCategoricalColors = ["#8FBF2E", "#14161A", "#5B6472", "#B4E04C", "#9AA3AF", "#0F9D58", "#B7791F"]
+chartCategoricalColors = ["#14161A", "#4B5563", "#9CA3AF", "#4F46E5", "#2A2E35"]
 
 [theme.sidebar]
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F5F6F7"
+backgroundColor = "#E9EBF0"
+secondaryBackgroundColor = "#FFFFFF"
 textColor = "#14161A"
 borderColor = "#E9EAEC"
-primaryColor = "#8FBF2E"
+primaryColor = "#4F46E5"
 
 [server]
 headless = true

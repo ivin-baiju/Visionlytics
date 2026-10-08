@@ -1,12 +1,14 @@
 import cv2
 import numpy as np
 
+
 def draw_boxes(frame, detections, density_level):
-    color = (0, 255, 0)
+    # Mono overlay ramp (BGR): light / mid / full ink by density level.
+    color = (175, 175, 175)
     if density_level == "MEDIUM":
-        color = (0, 165, 255)
+        color = (85, 85, 85)
     elif density_level == "HIGH":
-        color = (0, 0, 255)
+        color = (22, 22, 22)
         
     for d in detections:
         bbox = d.get("bbox", [0,0,0,0])
@@ -29,5 +31,6 @@ def draw_heatmap(frame, detections):
             
     mask = np.clip(mask, 0, 1)
     mask = (mask * 255).astype(np.uint8)
-    heatmap = cv2.applyColorMap(mask, cv2.COLORMAP_JET)
+    # Mono heatmap: white -> gray -> ink (no hue).
+    heatmap = cv2.applyColorMap(mask, cv2.COLORMAP_BONE)
     return cv2.addWeighted(frame, 0.5, heatmap, 0.5, 0)

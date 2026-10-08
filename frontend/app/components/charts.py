@@ -15,21 +15,21 @@ import plotly.graph_objects as go
 
 PLOTLY_TEMPLATE = "plotly_white"
 BG_COLOR = "#FFFFFF"
-GRID_COLOR = "#E9EAEC"
-FONT_COLOR = "#5B6472"
+GRID_COLOR = "#E5E7EB"
+FONT_COLOR = "#6B7280"
 INK_COLOR = "#14161A"
-DENSITY_COLORS_MAP = {"LOW": "#0F9D58", "MEDIUM": "#B7791F", "HIGH": "#D93025"}
-ACCENT_COLORS = ["#8FBF2E", "#14161A", "#5B6472", "#B4E04C", "#9AA3AF"]
+DENSITY_COLORS_MAP = {"LOW": "#9CA3AF", "MEDIUM": "#4B5563", "HIGH": "#14161A"}
+ACCENT_COLORS = ["#14161A", "#4B5563", "#9CA3AF", "#4F46E5", "#2A2E35"]
 
 
 def _base_layout(title: str = "", height: int = 400) -> dict:
-    """Return common Plotly layout settings."""
+    """Return common Plotly layout settings with clean, high-contrast aesthetics."""
     return {
         "template": PLOTLY_TEMPLATE,
         "paper_bgcolor": BG_COLOR,
         "plot_bgcolor": BG_COLOR,
-        "font": {"family": "Inter", "color": FONT_COLOR},
-        "title": {"text": title, "font": {"size": 15, "color": "#14161A"}},
+        "font": {"family": "Inter, sans-serif", "color": FONT_COLOR},
+        "title": {"text": title, "font": {"size": 16, "color": INK_COLOR, "weight": "bold"}},
         "height": height,
         "margin": {"l": 40, "r": 20, "t": 50, "b": 40},
         "xaxis": {"gridcolor": GRID_COLOR, "zerolinecolor": GRID_COLOR},
@@ -88,11 +88,7 @@ def density_over_time(timestamps: list[float], densities: list[str]) -> go.Figur
 
 
 def people_count_over_time(timestamps, counts) -> go.Figure:
-    """Area chart showing people count over time.
-
-    Accepts any iterables (list, range, numpy array, pandas Series) — inputs
-    are coerced to plain lists because Plotly rejects ``range`` objects.
-    """
+    """Area chart showing people count over time."""
     fig = go.Figure()
 
     x = list(timestamps)
@@ -102,8 +98,8 @@ def people_count_over_time(timestamps, counts) -> go.Figure:
         x=x,
         y=y,
         fill="tozeroy",
-        fillcolor="rgba(143, 191, 46, 0.15)",
-        line={"color": "#8FBF2E", "width": 2},
+        fillcolor="rgba(79, 70, 229, 0.12)",
+        line={"color": "#4F46E5", "width": 2},
         mode="lines",
     ))
 
@@ -119,7 +115,7 @@ def region_distribution_bar(top: int, middle: int, bottom: int) -> go.Figure:
     fig = go.Figure(data=[go.Bar(
         x=["Top", "Middle", "Bottom"],
         y=[top, middle, bottom],
-        marker_color=["#14161A", "#5B6472", "#8FBF2E"],
+        marker_color=["#14161A", "#4F46E5", "#9CA3AF"],
         text=[top, middle, bottom],
         textposition="auto",
     )])
@@ -212,7 +208,7 @@ def feature_importance_bar(
         orientation="h",
         marker={
             "color": sorted_vals,
-            "colorscale": [[0, "#FFFFFF"], [1, "#8FBF2E"]],
+            "colorscale": [[0, "#E5E7EB"], [1, "#14161A"]],
         },
         text=[f"{v:.4f}" for v in sorted_vals],
         textposition="auto",
@@ -253,7 +249,7 @@ def feature_correlation_heatmap(df: pd.DataFrame, feature_cols: list[str]) -> go
         z=corr.values,
         x=[c.replace("_", " ").title()[:15] for c in corr.columns],
         y=[c.replace("_", " ").title()[:15] for c in corr.index],
-        colorscale=[[0, "#D93025"], [0.5, "#FFFFFF"], [1, "#0F9D58"]],
+        colorscale=[[0, "#9CA3AF"], [0.5, "#FFFFFF"], [1, "#14161A"]],
         zmid=0,
         text=np.round(corr.values, 2),
         texttemplate="%{text}",
@@ -273,6 +269,9 @@ def feature_distribution_histogram(
     """Histogram of a feature, colored by density class."""
     fig = go.Figure()
 
+    # Shape-coded density: solid light ink / hatched mid ink / solid full ink.
+    patterns = {"LOW": "", "MEDIUM": "/", "HIGH": ""}
+    opacities = {"LOW": 0.55, "MEDIUM": 0.85, "HIGH": 0.9}
     for label, color in DENSITY_COLORS_MAP.items():
         subset = df[df[label_col] == label]
         if len(subset) > 0:
@@ -280,7 +279,8 @@ def feature_distribution_histogram(
                 x=subset[feature],
                 name=label,
                 marker_color=color,
-                opacity=0.7,
+                marker_pattern_shape=patterns.get(label, ""),
+                opacity=opacities.get(label, 0.7),
             ))
 
     title = feature.replace("_", " ").title()

@@ -70,7 +70,7 @@ def render_analysis_metrics(features: dict, density: str, confidence: float):
 
     with col1:
         st.markdown(
-            metric_card_html("People Detected", str(int(features['people_count'])), INK),
+            metric_card_html("People Detected", str(int(features['people_count'])), "#14161A"),
             unsafe_allow_html=True,
         )
 
@@ -82,12 +82,12 @@ def render_analysis_metrics(features: dict, density: str, confidence: float):
 
     with col3:
         st.markdown(
-            metric_card_html("Occupancy", f"{features['occupancy_ratio']*100:.1f}%", MUTED),
+            metric_card_html("Occupancy", f"{features['occupancy_ratio']*100:.1f}%", "#6B7280"),
             unsafe_allow_html=True,
         )
 
     with col4:
         st.markdown(
-            metric_card_html("Confidence", f"{confidence*100:.1f}%", LIME_DARK),
+            metric_card_html("Confidence", f"{confidence*100:.1f}%", "#14161A"),
             unsafe_allow_html=True,
         )
