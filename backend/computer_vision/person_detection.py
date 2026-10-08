@@ -1,15 +1,24 @@
 """
 Person Detection Module for Visionlytics.
 
-Uses YOLOv8n (nano) — a lightweight pretrained object detection model — to detect
+Uses YOLOv8s — a lightweight pretrained object detection model — to detect
 people in images and video frames. The detector filters for class 'person' only
 and returns bounding boxes with confidence scores.
+
+Performance Strategy:
+    - ONNX Runtime is the PRIMARY inference backend (2-4x faster than PyTorch on CPU)
+    - PyTorch (.pt) is used as a fallback only when ONNX is unavailable
+    - Model is loaded once at construction and reused across all requests
+    - Device selection is cached (no per-frame platform checks)
 
 This module handles the computer vision detection step. The extracted bounding boxes
 are then passed to the feature extraction module for statistical analysis.
 """
 
+import os
+import sys
 from dataclasses import dataclass
+from functools import lru_cache
 
 import cv2
 import numpy as np
@@ -52,12 +61,46 @@ class Detection:
         return self.bbox[3] - self.bbox[1]
 
 
+@lru_cache(maxsize=1)
+def _resolve_device() -> str:
+    """Resolve the best available device once and cache it."""
+    if sys.platform == "darwin":
+        return "cpu"  # Force CPU to prevent MPS threading segfaults on Mac
+    try:
+        import torch
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except ImportError:
+        return "cpu"
+
+
+@lru_cache(maxsize=1)
+def _resolve_model_paths() -> tuple[str | None, str]:
+    """Find ONNX and PT model paths once and cache the result."""
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    search_dirs = [PROJECT_ROOT, os.path.dirname(PROJECT_ROOT)]
+
+    onnx_path = None
+    pt_path = "yolov8s.pt"  # fallback to download
+
+    for d in search_dirs:
+        cand_onnx = os.path.join(d, "yolov8s.onnx")
+        if os.path.exists(cand_onnx) and onnx_path is None:
+            onnx_path = cand_onnx
+        cand_pt = os.path.join(d, "yolov8s.pt")
+        if os.path.exists(cand_pt):
+            pt_path = cand_pt
+
+    return onnx_path, pt_path
+
+
 class PersonDetector:
     """
     Detects people in images using YOLOv8s.
 
-    The detector loads the YOLOv8s model on first use and caches it.
-    Only detections of class 'person' (COCO class 0) are returned.
+    Performance Notes:
+        - ONNX Runtime is preferred over PyTorch for 2-4x CPU speedup
+        - Model is loaded eagerly on first use and cached for the process lifetime
+        - Device detection is cached globally (no per-frame overhead)
 
     Parameters:
         confidence_threshold: Minimum confidence score to keep a detection.
@@ -75,34 +118,54 @@ class PersonDetector:
         self.confidence_threshold = confidence_threshold
         self.max_image_size = max_image_size
         self._model = None
+        self._device = _resolve_device()
 
     def _load_model(self):
-        """Lazily load the YOLOv8s model on first use, preferring ONNX for speed."""
+        """Load the YOLOv8s model, preferring ONNX for speed."""
         if self._model is None:
-            import os
-
             from ultralytics import YOLO
 
-            PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            search_dirs = [PROJECT_ROOT, os.path.dirname(PROJECT_ROOT)]
-
-            onnx_path = None
-            pt_path = "yolov8s.pt"
-
-            for d in search_dirs:
-                cand_onnx = os.path.join(d, "yolov8s.onnx")
-                if os.path.exists(cand_onnx) and onnx_path is None:
-                    onnx_path = cand_onnx
-                cand_pt = os.path.join(d, "yolov8s.pt")
-                if os.path.exists(cand_pt):
-                    pt_path = cand_pt
+            onnx_path, pt_path = _resolve_model_paths()
 
             if onnx_path and os.path.exists(onnx_path):
-                # Using ONNX format
+                # ONNX Runtime: 2-4x faster than PyTorch on CPU
                 self._model = YOLO(onnx_path, task='detect')
             else:
                 self._model = YOLO(pt_path)
         return self._model
+
+    def warm_up(self):
+        """Pre-load model weights and run a dummy frame to eliminate first-request latency."""
+        self._load_model()
+        dummy = np.zeros((320, 320, 3), dtype=np.uint8)
+        self.detect(dummy)
+
+    @staticmethod
+    def _parse_results(results) -> list[Detection]:
+        """Extract Detection objects from YOLO results (shared by detect/track)."""
+        detections = []
+        if not results or len(results) == 0:
+            return detections
+
+        result = results[0]
+        if result.boxes is None or len(result.boxes) == 0:
+            return detections
+
+        boxes = result.boxes
+        # Batch extract all boxes at once (single CPU transfer)
+        xyxy = boxes.xyxy.cpu().numpy().astype(int)
+        confs = boxes.conf.cpu().numpy()
+        ids = boxes.id.cpu().numpy().astype(int) if boxes.id is not None else None
+
+        for i in range(len(boxes)):
+            x1, y1, x2, y2 = xyxy[i]
+            detections.append(Detection(
+                bbox=(int(x1), int(y1), int(x2), int(y2)),
+                confidence=float(confs[i]),
+                person_id=int(ids[i]) if ids is not None else None,
+            ))
+
+        return detections
 
     def detect(self, image: np.ndarray, confidence: float | None = None) -> list[Detection]:
         """
@@ -123,39 +186,16 @@ class PersonDetector:
         model = self._load_model()
         conf_threshold = self.confidence_threshold if confidence is None else float(confidence)
 
-        import sys
-        if sys.platform == "darwin":
-            device = "cpu"  # Force CPU to prevent MPS threading segfaults on Mac
-        else:
-            import torch
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        # Resize if the image is too large (preserves aspect ratio internally)
         results = model.predict(
             source=image,
             conf=conf_threshold,
-            classes=[self.PERSON_CLASS_ID],  # Only detect people
+            classes=[self.PERSON_CLASS_ID],
             imgsz=self.max_image_size,
-            device=device,
+            device=self._device,
             verbose=False,
         )
 
-        detections = []
-        if results and len(results) > 0:
-            result = results[0]
-            if result.boxes is not None and len(result.boxes) > 0:
-                boxes = result.boxes
-                for i in range(len(boxes)):
-                    # Get bounding box coordinates in original image space
-                    x1, y1, x2, y2 = boxes.xyxy[i].cpu().numpy().astype(int)
-                    conf = float(boxes.conf[i].cpu().numpy())
-
-                    detections.append(Detection(
-                        bbox=(int(x1), int(y1), int(x2), int(y2)),
-                        confidence=conf,
-                    ))
-
-        return detections
+        return self._parse_results(results)
 
     def track(
         self,
@@ -180,44 +220,18 @@ class PersonDetector:
         model = self._load_model()
         conf_threshold = self.confidence_threshold if confidence is None else float(confidence)
 
-        import sys
-        if sys.platform == "darwin":
-            device = "cpu"
-        else:
-            import torch
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-
         results = model.track(
             source=image,
             conf=conf_threshold,
             classes=[self.PERSON_CLASS_ID],
             imgsz=self.max_image_size,
-            device=device,
+            device=self._device,
             tracker="bytetrack.yaml",
             persist=persist,
             verbose=False,
         )
 
-        detections = []
-        if results and len(results) > 0:
-            result = results[0]
-            if result.boxes is not None and len(result.boxes) > 0:
-                boxes = result.boxes
-                for i in range(len(boxes)):
-                    x1, y1, x2, y2 = boxes.xyxy[i].cpu().numpy().astype(int)
-                    conf = float(boxes.conf[i].cpu().numpy())
-                    
-                    person_id = None
-                    if boxes.id is not None:
-                        person_id = int(boxes.id[i].cpu().numpy())
-
-                    detections.append(Detection(
-                        bbox=(int(x1), int(y1), int(x2), int(y2)),
-                        confidence=conf,
-                        person_id=person_id,
-                    ))
-
-        return detections
+        return self._parse_results(results)
 
     def detect_and_draw(
         self,

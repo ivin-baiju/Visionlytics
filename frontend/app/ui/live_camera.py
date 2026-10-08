@@ -48,8 +48,9 @@ def _draw_track_ids(frame_bgr: np.ndarray, detections: list) -> np.ndarray:
 
 def render_live_camera():
     """Render the Live Camera page."""
-    st.markdown(header_html(), unsafe_allow_html=True)
+    st.html(header_html())
     st.header("Live camera analytics", icon=":material/videocam:")
+
     st.markdown(
         "Stream live video from your local webcam to perform real-time person detection, "
         "spatial feature extraction, and instant crowd density inference."

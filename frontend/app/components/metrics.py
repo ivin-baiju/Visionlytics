@@ -12,7 +12,7 @@ from app.components.styles import (
     density_badge_html,
     metric_card_html,
 )
-from app.components.theme import INK, LIME_DARK, MUTED
+from app.components.theme import INK
 
 
 def render_metric_row(metrics: dict):

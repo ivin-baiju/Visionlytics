@@ -4,6 +4,10 @@ __pycache__/
 *$py.class
 *.so
 
+# Test & Linting Caches
+.pytest_cache/
+.ruff_cache/
+
 # Virtual environment
 .venv/
 venv/

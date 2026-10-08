@@ -1,28 +1,16 @@
 """
-Flat vector SVG icons for Visionlytics.
+Brand and vector assets for Visionlytics.
 
-Ronas IT delivery-tracking design language: monochrome line icons that
-inherit `currentColor` from their parent, plus a flat brand mark in solid
-ink with a lime lens accent. No gradients, no glows, no fill tints baked
-into the markup — the CSS layer owns color.
+Provides the animated brand logo and component icons.
 """
 
-# ── Brand Identity Logo ──────────────────────────────────────────────────
-# Flat: solid ink rounded square, lime lens dot, ink ring. Sized by CSS.
-BRAND_LOGO_SVG = """<svg class="brand-logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <rect x="4" y="4" width="40" height="40" rx="10" fill="currentColor"/>
-  <circle cx="24" cy="24" r="10" stroke="#FFFFFF" stroke-width="2.5"/>
-  <circle cx="24" cy="24" r="4.5" fill="#B4E04C"/>
-  <line x1="24" y1="8" x2="24" y2="11" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-  <line x1="24" y1="37" x2="24" y2="40" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-  <line x1="8" y1="24" x2="11" y2="24" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-  <line x1="37" y1="24" x2="40" y2="24" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
-</svg>"""
+# HTML embedding the animated SVG logo with fallbacks
+BRAND_LOGO_HTML = '<img class="brand-logo-img" src="app/static/logo.svg" alt="Visionlytics" width="48" height="48" />'
 
-# ── Icon template ────────────────────────────────────────────────────────
-# Each feature icon is a 24x24 line icon using currentColor so page CSS can
-# tint by density or section without touching this file.
+# Inline SVG string kept for backward compatibility with existing imports
+BRAND_LOGO_SVG = BRAND_LOGO_HTML
 
+# ── Feature Icons ─────────────────────────────────────────────────────────
 ICON_IMAGE_ANALYSIS = """<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <rect x="3" y="3" width="18" height="18" rx="3"/>
   <circle cx="9" cy="9" r="1.8"/>

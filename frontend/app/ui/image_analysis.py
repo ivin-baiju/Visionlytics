@@ -28,8 +28,9 @@ from app.utils.draw import draw_boxes, draw_heatmap
 
 def render_image_analysis():
     """Render the Image Analysis page."""
-    st.markdown(header_html(), unsafe_allow_html=True)
+    st.html(header_html())
     st.header("Image analysis", icon=":material/image:")
+
     st.markdown(
         "Upload a photo to detect people, extract spatial features, "
         "and predict crowd density using trained ML algorithms."
@@ -39,7 +40,7 @@ def render_image_analysis():
     with st.expander("Analysis Settings", icon=":material/tune:"):
         col_s1, col_s2, col_s3 = st.columns(3)
         with col_s1:
-            st.slider(
+            min_confidence = st.slider(
                 "Detection Confidence",
                 min_value=0.1,
                 max_value=0.9,
@@ -109,42 +110,64 @@ def render_image_analysis():
 
     # ── Detection & Analysis ─────────────────────────────────────────
     # Streamlit no longer loads ML models. FastAPI does.
+    analysis_key = (
+        hash(image_bytes),
+        crop_top,
+        crop_bottom,
+        crop_left,
+        crop_right,
+        min_confidence,
+        enable_attributes,
+    )
+    cached_analysis = st.session_state.get("image_analysis_cache")
+    if cached_analysis and cached_analysis["key"] == analysis_key:
+        api_response = cached_analysis["response"]
+        detection_time = cached_analysis.get("detection_time", 0.0)
+    else:
+        with st.spinner("Processing image and running ML inference..."):
+            t_start = time.time()
+            api_response = analyze_frame_api(
+                frame_bgr,
+                confidence=min_confidence,
+                attributes=enable_attributes,
+            )
+            detection_time = (time.time() - t_start) * 1000.0
+            if api_response is None:
+                st.error("API offline.")
+                return
+            st.session_state["image_analysis_cache"] = {
+                "key": analysis_key,
+                "response": api_response,
+                "detection_time": detection_time,
+            }
 
-    with st.spinner("Processing image and running ML inference..."):
-        t_start = time.time()
-        api_response = analyze_frame_api(frame_bgr)
-        detection_time = (time.time() - t_start) * 1000.0
-        if api_response is None:
-            st.error("API offline.")
-            return
-            
-        density_label = api_response["density_label"]
-        ml_confidence = api_response["confidence"]
-        proba = api_response.get("probabilities", {"LOW":0, "MEDIUM":0, "HIGH":0})
-        features = api_response["features"]
-        detections = api_response["detections"]
-        attributes_list = []
+    density_label = api_response["density_label"]
+    ml_confidence = api_response["confidence"]
+    proba = api_response.get("probabilities", {"LOW": 0, "MEDIUM": 0, "HIGH": 0})
+    features = api_response["features"]
+    detections = api_response["detections"]
+    attributes_list = api_response.get("attributes") or []
 
-        # Prepare visualizations
-        if vis_mode == "Heatmap":
-            vis_bgr = draw_heatmap(frame_bgr, detections)
-        elif vis_mode == "Combined (Boxes + Heatmap)":
-            heat_bgr = draw_heatmap(frame_bgr, detections)
-            vis_bgr = draw_boxes(heat_bgr, detections, density_label)
-        else:
-            vis_bgr = draw_boxes(frame_bgr.copy(), detections, density_label)
+    # Prepare visualizations
+    if vis_mode == "Heatmap":
+        vis_bgr = draw_heatmap(frame_bgr, detections)
+    elif vis_mode == "Combined (Boxes + Heatmap)":
+        heat_bgr = draw_heatmap(frame_bgr, detections)
+        vis_bgr = draw_boxes(heat_bgr, detections, density_label)
+    else:
+        vis_bgr = draw_boxes(frame_bgr.copy(), detections, density_label)
 
-        vis_rgb = cv2.cvtColor(vis_bgr, cv2.COLOR_BGR2RGB)
+    vis_rgb = cv2.cvtColor(vis_bgr, cv2.COLOR_BGR2RGB)
 
-        # Update session state for current view
-        analysis_record = {
-            "people_count": features["people_count"],
-            "density": density_label,
-            "occupancy_ratio": features["occupancy_ratio"],
-            "confidence": ml_confidence,
-            "timestamp": time.time(),
-        }
-        st.session_state["last_analysis"] = analysis_record
+    # Update session state for current view
+    analysis_record = {
+        "people_count": features["people_count"],
+        "density": density_label,
+        "occupancy_ratio": features["occupancy_ratio"],
+        "confidence": ml_confidence,
+        "timestamp": time.time(),
+    }
+    st.session_state["last_analysis"] = analysis_record
 
     # ── Display Results ──────────────────────────────────────────────
     st.markdown("---")

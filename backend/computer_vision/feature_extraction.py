@@ -5,6 +5,11 @@ Extracts 10 numerical features from person detections in an image/frame.
 These features form the input to the statistical ML classifiers for
 crowd density prediction (LOW / MEDIUM / HIGH).
 
+Performance Notes:
+    - Occupancy ratio is computed analytically (no full-resolution pixel mask)
+    - Pairwise distances use vectorized NumPy operations
+    - All features computed in a single pass over detections
+
 Feature List:
     1. people_count          — Number of detected people
     2. occupancy_ratio       — Fraction of frame area covered by bounding boxes
@@ -23,9 +28,93 @@ are comparable across different image resolutions.
 
 
 import numpy as np
-from scipy.spatial.distance import pdist
 
 from computer_vision.person_detection import Detection
+
+
+def _compute_union_area(boxes: np.ndarray, frame_w: int, frame_h: int) -> int:
+    """Compute the pixel-area union of axis-aligned bounding boxes analytically.
+
+    Uses a sweep-line algorithm on the Y-axis with an interval-union on the
+    X-axis.  For typical crowd counts (< 200 boxes) this is dramatically faster
+    than allocating a full-resolution boolean mask (which can be 8+ MB for 4K).
+
+    Args:
+        boxes: (N, 4) array of [x1, y1, x2, y2] clipped to frame bounds.
+        frame_w: Frame width in pixels.
+        frame_h: Frame height in pixels.
+
+    Returns:
+        Total number of unique pixels covered by at least one box.
+    """
+    n = len(boxes)
+    if n == 0:
+        return 0
+
+    # For very few boxes the simple inclusion-exclusion via a small mask is fine
+    # and avoids the sweep-line overhead.  The threshold is chosen so that the
+    # mask allocation stays under ~1 MB.
+    total_box_pixels = int(np.sum((boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])))
+    if total_box_pixels == 0:
+        return 0
+
+    # ── Fast path: single box ────────────────────────────────────────────
+    if n == 1:
+        x1, y1, x2, y2 = boxes[0]
+        return int((x2 - x1) * (y2 - y1))
+
+    # ── Fast path: if frame is small enough, use a mask ──────────────────
+    if frame_w * frame_h < 1_000_000:  # < 1 MP
+        mask = np.zeros((frame_h, frame_w), dtype=np.uint8)
+        for i in range(n):
+            x1, y1, x2, y2 = boxes[i]
+            mask[y1:y2, x1:x2] = 1
+        return int(np.count_nonzero(mask))
+
+    # ── General path: coordinate-compression sweep ───────────────────────
+    # Collect all unique Y coordinates (events)
+    y_coords = np.unique(np.concatenate([boxes[:, 1], boxes[:, 3]]))
+    y_coords = np.clip(y_coords, 0, frame_h)
+    y_coords = np.unique(y_coords)
+
+    union_area = 0
+    for k in range(len(y_coords) - 1):
+        y_lo = int(y_coords[k])
+        y_hi = int(y_coords[k + 1])
+        band_height = y_hi - y_lo
+        if band_height <= 0:
+            continue
+
+        # Find boxes that overlap this Y band
+        active = (boxes[:, 1] < y_hi) & (boxes[:, 3] > y_lo)
+        if not np.any(active):
+            continue
+
+        # Compute union of X intervals for active boxes
+        x_intervals = boxes[active][:, [0, 2]].astype(int)
+        x_intervals = x_intervals[x_intervals[:, 0] < x_intervals[:, 1]]
+        if len(x_intervals) == 0:
+            continue
+
+        # Sort by start
+        order = np.argsort(x_intervals[:, 0])
+        x_intervals = x_intervals[order]
+
+        # Merge overlapping intervals
+        x_union = 0
+        cur_start, cur_end = x_intervals[0]
+        for j in range(1, len(x_intervals)):
+            s, e = x_intervals[j]
+            if s <= cur_end:
+                cur_end = max(cur_end, e)
+            else:
+                x_union += cur_end - cur_start
+                cur_start, cur_end = s, e
+        x_union += cur_end - cur_start
+
+        union_area += x_union * band_height
+
+    return union_area
 
 
 class FeatureExtractor:
@@ -98,42 +187,47 @@ class FeatureExtractor:
             # No people detected — return zeros for all features
             return {name: 0.0 for name in self.FEATURE_NAMES}
 
-        # Collect centers and areas
-        centers = np.array([det.center for det in detections])  # shape (n, 2)
-        areas = np.array([det.area for det in detections])       # shape (n,)
+        # ── Vectorized extraction of centers, areas, bboxes ──────────────
+        bboxes = np.array([det.bbox for det in detections], dtype=np.int32)
+        centers = np.column_stack([
+            (bboxes[:, 0] + bboxes[:, 2]) / 2.0,
+            (bboxes[:, 1] + bboxes[:, 3]) / 2.0,
+        ])
+        widths = np.maximum(0, bboxes[:, 2] - bboxes[:, 0])
+        heights = np.maximum(0, bboxes[:, 3] - bboxes[:, 1])
+        areas = widths * heights
 
-        # ── Feature 2: Occupancy Ratio ───────────────────────────────────
-        # Fraction of frame area covered by all bounding boxes (geometric union)
-        mask = np.zeros((frame_height, frame_width), dtype=np.uint8)
-        for det in detections:
-            x1, y1, x2, y2 = map(int, det.bbox)
-            x1, y1 = max(0, x1), max(0, y1)
-            x2, y2 = min(frame_width, x2), min(frame_height, y2)
-            mask[y1:y2, x1:x2] = 1
-            
-        covered_area = np.count_nonzero(mask)
+        # ── Feature 2: Occupancy Ratio (ANALYTIC — no pixel mask) ────────
+        # Clip bboxes to frame bounds for union-area computation
+        clipped = bboxes.copy()
+        clipped[:, 0] = np.clip(clipped[:, 0], 0, frame_width)
+        clipped[:, 1] = np.clip(clipped[:, 1], 0, frame_height)
+        clipped[:, 2] = np.clip(clipped[:, 2], 0, frame_width)
+        clipped[:, 3] = np.clip(clipped[:, 3], 0, frame_height)
+
+        covered_area = _compute_union_area(clipped, frame_width, frame_height)
         occupancy_ratio = covered_area / frame_area
 
         # ── Feature 3: Average Person Area ───────────────────────────────
-        # Mean bounding box area as a fraction of the total frame area
         avg_person_area = float(np.mean(areas)) / frame_area
 
-        # ── Features 4 & 5: Average and Minimum Pairwise Distance ───────
+        # ── Features 4 & 5: Vectorized pairwise distances ───────────────
         if n >= 2:
-            # pdist computes all pairwise Euclidean distances
-            pairwise_distances = pdist(centers, metric="euclidean")
+            # Compute pairwise distances using broadcasting (faster than pdist for small N)
+            diff = centers[:, np.newaxis, :] - centers[np.newaxis, :, :]
+            dist_matrix = np.sqrt(np.sum(diff**2, axis=2))
+            # Extract upper triangle (no self-pairs)
+            triu_indices = np.triu_indices(n, k=1)
+            pairwise_distances = dist_matrix[triu_indices]
             # Normalize by frame diagonal so values are in [0, 1]
             normalized_distances = pairwise_distances / frame_diagonal
             avg_distance = float(np.mean(normalized_distances))
             min_distance = float(np.min(normalized_distances))
         else:
-            # Only one person — set distances to maximum (1.0)
             avg_distance = 1.0
             min_distance = 1.0
 
         # ── Feature 6: Spatial Spread ────────────────────────────────────
-        # Standard deviation of person center positions (normalized)
-        # High spread → people are spread out; low spread → clustered
         if n >= 2:
             std_x = np.std(centers[:, 0]) / frame_width
             std_y = np.std(centers[:, 1]) / frame_height
@@ -141,31 +235,18 @@ class FeatureExtractor:
         else:
             spatial_spread = 0.0
 
-        # ── Features 7–9: Regional Counts ────────────────────────────────
-        # Divide frame into top, middle, bottom thirds
-        third_h = frame_height / 3
-        top_region_count = 0
-        middle_region_count = 0
-        bottom_region_count = 0
+        # ── Features 7–9: Regional Counts (vectorized) ───────────────────
+        third_h = frame_height / 3.0
+        cy_values = centers[:, 1]
 
-        weighted_people_count = 0.0
-        for det in detections:
-            cy = det.center[1]
-            # Perspective weighting: assume camera is looking slightly down.
-            # People near the top (cy -> 0) are further away and represent higher physical density.
-            # Weight = 1.0 (bottom) to 4.0 (top)
-            depth_weight = 1.0 + 3.0 * (1.0 - (cy / frame_height))
-            weighted_people_count += depth_weight
+        top_region_count = int(np.sum(cy_values < third_h))
+        middle_region_count = int(np.sum((cy_values >= third_h) & (cy_values < 2 * third_h)))
+        bottom_region_count = int(np.sum(cy_values >= 2 * third_h))
 
-            if cy < third_h:
-                top_region_count += 1
-            elif cy < 2 * third_h:
-                middle_region_count += 1
-            else:
-                bottom_region_count += 1
-
-        # ── Feature 10: Frame Occupancy Density ──────────────────────────
-        # Weighted people count normalized by frame area (per 1000x1000 pixel block)
+        # ── Feature 10: Frame Occupancy Density (vectorized) ─────────────
+        # Perspective weighting: people near the top are further away
+        depth_weights = 1.0 + 3.0 * (1.0 - (cy_values / frame_height))
+        weighted_people_count = float(np.sum(depth_weights))
         frame_occupancy_density = weighted_people_count / (frame_area / 1_000_000)
 
         return {

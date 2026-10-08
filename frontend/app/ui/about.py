@@ -14,8 +14,9 @@ from app.components.styles import header_html
 
 def render_about():
     """Render the About & Documentation page."""
-    st.markdown(header_html(), unsafe_allow_html=True)
+    st.html(header_html())
     st.header("About Visionlytics", icon=":material/info:")
+
     st.markdown(
         "**VISIONLYTICS: Intelligent Visual Crowd Analytics** is a comprehensive "
         "Computer Vision and Statistical Machine Learning project engineered for "

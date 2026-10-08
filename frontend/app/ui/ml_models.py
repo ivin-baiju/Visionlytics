@@ -69,8 +69,9 @@ def _local_results_fallback():
 
 def render_ml_models():
     """Render the ML Models evaluation and training page."""
-    st.markdown(header_html(), unsafe_allow_html=True)
+    st.html(header_html())
     st.header("Statistical machine learning models", icon=":material/psychology:")
+
     st.markdown(
         "Train, benchmark, and compare 7 classical ML classification algorithms "
         "on the extracted spatial crowd features."

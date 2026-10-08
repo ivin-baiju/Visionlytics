@@ -8,21 +8,32 @@ validation accuracy.
 Training Pipeline:
     1. Load and preprocess the dataset
     2. Split into train/validation/test sets
-    3. Train each model on the training set
+    3. Train each model on the training set (optional: hyperparameter tuning)
     4. Evaluate each model on the validation set
     5. Select the best model by F1-score
     6. Save all models and the best model to disk
 
+V2 Improvements:
+    - Optional GridSearchCV for top models (RF, SVM, XGBoost)
+    - 5-fold stratified CV scores included in evaluation
+    - Support for XGBoost as 8th model
+    - Retrain-on-full mode for maximum performance after model selection
+
 All models are serialized using joblib for fast loading during prediction.
 """
 
+import importlib.util
 import os
 import sys
 import time
 
 import joblib
 import numpy as np
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import (
+    GridSearchCV,
+    StratifiedKFold,
+    cross_val_score,
+)
 
 # Ensure project root is on sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,10 +50,40 @@ from machine_learning.preprocessing import (
     preprocess_and_split,
 )
 
+# ── Hyperparameter Grids for Tuning ──────────────────────────────────────────
+
+TUNING_GRIDS = {
+    "Random Forest": {
+        "n_estimators": [150, 200, 300],
+        "max_depth": [15, 20, 25],
+        "min_samples_leaf": [1, 2, 3],
+    },
+    "SVM": {
+        "C": [1.0, 5.0, 10.0],
+        "gamma": ["scale", "auto"],
+    },
+    "Gradient Boosting": {
+        "n_estimators": [150, 200, 300],
+        "learning_rate": [0.03, 0.05, 0.1],
+        "max_depth": [4, 5, 6],
+    },
+}
+
+# XGBoost grid (only used if xgboost is available)
+if importlib.util.find_spec("xgboost") is not None:
+    TUNING_GRIDS["XGBoost"] = {
+        "n_estimators": [200, 300, 500],
+        "learning_rate": [0.03, 0.05, 0.1],
+        "max_depth": [4, 6, 8],
+        "min_child_weight": [1, 3, 5],
+    }
+
+
 
 def train_all_models(
     dataset_path: str | None = None,
     verbose: bool = True,
+    tune: bool = False,
 ) -> dict:
     """
     Train all ML models on the crowd density dataset.
@@ -50,13 +91,15 @@ def train_all_models(
     This is the main training function. It:
         1. Loads the dataset from CSV
         2. Preprocesses and splits the data (70/15/15)
-        3. Trains each of the 5 models
-        4. Evaluates on validation set
+        3. Trains each of the 8 models (optionally with GridSearchCV)
+        4. Evaluates on validation set with 5-fold CV
         5. Saves all models and selects the best one
 
     Args:
         dataset_path: Path to the CSV dataset. Uses default if None.
         verbose: Whether to print training progress.
+        tune: If True, run GridSearchCV on top models for hyperparameter tuning.
+              This is slower but can find better hyperparameters.
 
     Returns:
         Dictionary containing:
@@ -70,6 +113,8 @@ def train_all_models(
     if verbose:
         print("=" * 60)
         print("  VISIONLYTICS — Model Training Pipeline")
+        if tune:
+            print("  (with Hyperparameter Tuning)")
         print("=" * 60)
 
     # ── Step 1: Load Dataset ─────────────────────────────────────────────
@@ -108,41 +153,59 @@ def train_all_models(
 
     # ── Step 3: Train Models ─────────────────────────────────────────────
     if verbose:
-        print("\n[3/5] Training models...")
+        mode_str = "Training models (with tuning)..." if tune else "Training models..."
+        print(f"\n[3/5] {mode_str}")
 
     models = get_models()
     trained_models = {}
     training_times = {}
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     for name, model in models.items():
         if verbose:
             print(f"  → Training {name}...", end=" ", flush=True)
 
         start_time = time.time()
-        model.fit(X_train, y_train)
-        elapsed = time.time() - start_time
 
-        trained_models[name] = model
+        # Hyperparameter tuning for select models
+        if tune and name in TUNING_GRIDS:
+            grid = GridSearchCV(
+                model,
+                TUNING_GRIDS[name],
+                cv=cv,
+                scoring="f1_weighted",
+                n_jobs=-1,
+                refit=True,
+                verbose=0,
+            )
+            grid.fit(X_train, y_train)
+            trained_models[name] = grid.best_estimator_
+            elapsed = time.time() - start_time
+            if verbose:
+                print(f"Done ({elapsed:.1f}s) [tuned: {grid.best_params_}]")
+        else:
+            model.fit(X_train, y_train)
+            trained_models[name] = model
+            elapsed = time.time() - start_time
+            if verbose:
+                print(f"Done ({elapsed:.3f}s)")
+
         training_times[name] = round(elapsed, 4)
 
-        if verbose:
-            print(f"Done ({elapsed:.3f}s)")
-
-    # ── Step 4: Evaluate on Validation Set & Cross-Validation ───────────────────────────────
+    # ── Step 4: Evaluate on Validation Set & Cross-Validation ───────────
     if verbose:
         print("\n[4/5] Evaluating models on validation set (with 5-Fold CV)...")
 
     all_metrics = {}
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
     for name, model in trained_models.items():
         metrics = evaluate_model(model, X_val, y_val, LABEL_CLASSES)
-        
+
         # Calculate CV score on training data for robustness
         cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring='f1_weighted')
         metrics['cv_f1_mean'] = round(float(np.mean(cv_scores)), 4)
         metrics['cv_f1_std'] = round(float(np.std(cv_scores)), 4)
-        
+
         all_metrics[name] = metrics
 
         if verbose:
@@ -159,7 +222,7 @@ def train_all_models(
     # Save all models
     os.makedirs(MODELS_DIR, exist_ok=True)
     for name, model in trained_models.items():
-        safe_name = name.lower().replace(" ", "_")
+        safe_name = name.lower().replace(" ", "_").replace("(", "").replace(")", "")
         model_path = os.path.join(MODELS_DIR, f"{safe_name}.joblib")
         joblib.dump(model, model_path)
         if verbose:
@@ -264,4 +327,17 @@ def retrain_on_full(
 
 # Allow running as a script
 if __name__ == "__main__":
-    results = train_all_models(verbose=True)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train Visionlytics ML models")
+    parser.add_argument(
+        "--tune", action="store_true",
+        help="Run GridSearchCV for hyperparameter tuning (slower but better)",
+    )
+    parser.add_argument(
+        "--dataset", type=str, default=None,
+        help="Path to the dataset CSV",
+    )
+    args = parser.parse_args()
+
+    results = train_all_models(dataset_path=args.dataset, verbose=True, tune=args.tune)

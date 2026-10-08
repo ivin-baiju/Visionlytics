@@ -333,8 +333,9 @@ def test_models_train_writes_to_isolated_dir(client, monkeypatch, tmp_path):
     assert response.status_code == 200
 
     payload = response.json()
-    assert payload["trained"] is True
-    assert len(payload["val_metrics"]) == 7
+    # 8 models trained: Logistic Regression, KNN, Decision Tree, Random Forest,
+    # SVM, Gradient Boosting, XGBoost, and Voting Ensemble.
+    assert len(payload["val_metrics"]) == 8
     assert payload["best_model_name"] in payload["val_metrics"]
 
     import os

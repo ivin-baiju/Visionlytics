@@ -40,47 +40,40 @@ from app.database import get_recent_history
 
 def render_dashboard():
     """Render the main dashboard page."""
-    st.markdown(header_html(), unsafe_allow_html=True)
+    st.html(header_html())
 
     # ── Quick Start Section ─────────────────────────────────────────
+
     st.subheader("Quick start", icon=":material/rocket_launch:")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
         st.markdown(
-            feature_card_html(
-                ICON_IMAGE_ANALYSIS,
-                "Image Analysis",
-                "Upload a photo to detect people and analyze crowd density with spatial heatmaps",
-                "#14161A",
-            ),
+            f'<a href="/?page=image_analysis" target="_self" style="text-decoration:none; display:block;">'
+            f'{feature_card_html(ICON_IMAGE_ANALYSIS, "Image Analysis", "Upload a photo to detect people and analyze crowd density with spatial heatmaps", "#1877F2")}'
+            f'</a>',
             unsafe_allow_html=True,
         )
 
     with col2:
         st.markdown(
-            feature_card_html(
-                ICON_VIDEO_ANALYSIS,
-                "Video Analysis",
-                "Upload a video to track people and view density changes over time",
-                "#14161A",
-            ),
+            f'<a href="/?page=video_analysis" target="_self" style="text-decoration:none; display:block;">'
+            f'{feature_card_html(ICON_VIDEO_ANALYSIS, "Video Analysis", "Upload a video to track people and view density changes over time", "#1877F2")}'
+            f'</a>',
             unsafe_allow_html=True,
         )
 
     with col3:
         st.markdown(
-            feature_card_html(
-                ICON_LIVE_CAMERA,
-                "Live Camera",
-                "Real-time crowd analysis using your webcam feed with instant density classification",
-                "#14161A",
-            ),
+            f'<a href="/?page=live_camera" target="_self" style="text-decoration:none; display:block;">'
+            f'{feature_card_html(ICON_LIVE_CAMERA, "Live Camera", "Real-time crowd analysis using your webcam feed with instant density classification", "#1877F2")}'
+            f'</a>',
             unsafe_allow_html=True,
         )
 
     st.markdown("---")
+
 
     # ── Latest Analysis Summary ────────────────────────────────────
     history = get_recent_history(limit=50)
@@ -216,11 +209,12 @@ def render_dashboard():
         st.markdown("""
         <div class="info-box">
             <strong>Welcome to Visionlytics!</strong><br>
-            No analysis has been performed yet. Use the sidebar to navigate to
-            <strong>Image analysis</strong>, <strong>Video analysis</strong>, or
-            <strong>Live camera</strong> to get started.
+            No analysis has been recorded yet. Use the top navigation bar to select
+            <strong>Image Analysis</strong>, <strong>Video Analysis</strong>, or
+            <strong>Live Camera</strong> to get started.
         </div>
         """, unsafe_allow_html=True)
+
 
     # ── System Status Panel (live API values, not hardcoded) ─────────
     st.markdown("---")

@@ -384,8 +384,9 @@ def _render_video_results(results: dict) -> None:
 
 def render_video_analysis():
     """Render the Video Analysis page."""
-    st.markdown(header_html(), unsafe_allow_html=True)
+    st.html(header_html())
     st.header("Video analysis", icon=":material/movie:")
+
     st.markdown(
         "Upload a video file to perform automated frame-by-frame crowd tracking, "
         "density classification over time, and temporal analytics."

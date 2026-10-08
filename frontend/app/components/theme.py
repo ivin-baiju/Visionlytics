@@ -17,29 +17,30 @@ FAINT = "#9CA3AF"                       # Faint gray tertiary text
 HAIRLINE = "#E9EAEC"                    # Legacy border grey (kept for compat)
 HOVER_BG = "#F1F5F9"                    # Soft grey hover state
 
-# ── The One Accent: Indigo ───────────────────────────────────────────────
-# Indigo is reserved for interactivity only (never for status/density).
-INDIGO = "#4F46E5"                      # Primary actions, links, focus rings
-INDIGO_DARK = "#4338CA"                # Pressed / hover indigo
-INDIGO_TINT = "#EEF0FE"                # Tinted indigo wash
-ACCENT_PRIMARY = "#14161A"              # Deep ink primary (legacy alias)
-ACCENT_BLUE = "#4F46E5"                 # Re-pointed at indigo (legacy alias)
-LIME = "#14161A"                        # Legacy alias, kept for imports
-LIME_DARK = "#2A2E35"                   # Legacy alias, kept for imports
-LIME_TINT = "#F1F5F9"                   # Legacy alias, kept for imports
+# ── The Primary Accent: Royal Blue ──────────────────────────────────────────
+# Royal blue matching the pill navbar (#1877F2)
+INDIGO = "#1877F2"                      # Primary actions, active pill, links
+INDIGO_DARK = "#1464CC"                 # Pressed / hover blue
+INDIGO_TINT = "#EBF3FE"                 # Tinted blue wash
+ACCENT_PRIMARY = "#1877F2"             # Brand primary
+ACCENT_BLUE = "#1877F2"                 # Primary blue
+LIME = "#1877F2"                        # Legacy alias, kept for imports
+LIME_DARK = "#1464CC"                   # Legacy alias, kept for imports
+LIME_TINT = "#EBF3FE"                   # Legacy alias, kept for imports
 
-# ── Density Semantics (ink ramp + shape, never hue) ──────────────────────
+# ── Density Semantics ────────────────────────────────────────────────────────
 DENSITY = {
-    "LOW": "#9CA3AF",       # Light ink
-    "MEDIUM": "#4B5563",    # Mid ink
-    "HIGH": "#14161A",      # Full ink
+    "LOW": "#10B981",       # Emerald
+    "MEDIUM": "#F59E0B",    # Amber
+    "HIGH": "#EF4444",      # Rose/Red
 }
 
 DENSITY_BG = {
-    "LOW": "#F3F4F6",
-    "MEDIUM": "#E5E7EB",
-    "HIGH": "#D1D5DB",
+    "LOW": "#ECFDF5",
+    "MEDIUM": "#FFFBEB",
+    "HIGH": "#FEF2F2",
 }
+
 
 DENSITY_SHAPE = {
     "LOW": "circle",

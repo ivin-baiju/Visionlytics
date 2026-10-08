@@ -58,8 +58,9 @@ def _local_dataset_fallback():
 
 def render_dataset_page():
     """Render the Dataset Exploration page."""
-    st.markdown(header_html(), unsafe_allow_html=True)
+    st.html(header_html())
     st.header("Dataset exploration & analytics", icon=":material/dataset:")
+
     st.markdown(
         "Inspect the training dataset, examine feature distributions, "
         "verify class balance, and study spatial correlation patterns."
@@ -142,13 +143,15 @@ def render_dataset_page():
     st.caption(f"Data source: **{source_label}** · {len(df):,} rows loaded")
 
 
+    available_features = [c for c in feature_columns if c in df.columns]
+
     # ── High Level Overview Cards ────────────────────────────────────
     st.markdown("---")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.markdown(metric_card_html("Total Samples", f"{len(df):,}", INK), unsafe_allow_html=True)
     with c2:
-        st.markdown(metric_card_html("Feature Count", f"{len(feature_columns)}", MUTED), unsafe_allow_html=True)
+        st.markdown(metric_card_html("Feature Count", f"{len(available_features)}", MUTED), unsafe_allow_html=True)
     with c3:
         st.markdown(metric_card_html("Classes", f"{len(label_classes)}", INK), unsafe_allow_html=True)
     with c4:
@@ -174,45 +177,51 @@ def render_dataset_page():
     col_d1, col_d2 = st.columns([1, 1])
 
     with col_d1:
-        st.subheader("Class Balance", icon=":material/balance:")
-        class_counts = df["density_label"].value_counts().to_dict()
-        fig_class = class_distribution_bar(class_counts)
-        st.plotly_chart(fig_class, width="stretch")
+        if "density_label" in df.columns:
+            st.subheader("Class Balance", icon=":material/balance:")
+            class_counts = df["density_label"].value_counts().to_dict()
+            fig_class = class_distribution_bar(class_counts)
+            st.plotly_chart(fig_class, width="stretch")
+        else:
+            st.info("Class label column 'density_label' not present in dataset.")
 
     with col_d2:
-        st.subheader("Feature Correlation Matrix", icon=":material/hub:")
-        fig_corr = feature_correlation_heatmap(df, feature_columns)
-        st.plotly_chart(fig_corr, width="stretch")
+        if available_features:
+            st.subheader("Feature Correlation Matrix", icon=":material/hub:")
+            fig_corr = feature_correlation_heatmap(df, available_features)
+            st.plotly_chart(fig_corr, width="stretch")
 
     # ── Interactive Feature Analysis ─────────────────────────────────
-    st.markdown("---")
-    st.subheader("Interactive Feature Distribution Analysis", icon=":material/stacked_line_chart:")
+    if available_features:
+        st.markdown("---")
+        st.subheader("Interactive Feature Distribution Analysis", icon=":material/stacked_line_chart:")
 
-    col_h1, col_h2 = st.columns([1, 1])
+        col_h1, col_h2 = st.columns([1, 1])
 
-    with col_h1:
-        st.markdown("##### Histogram by Class")
-        selected_feat = st.selectbox(
-            "Select Feature for Histogram",
-            feature_columns,
-            index=0,
-            key="hist_feat",
-        )
-        fig_hist = feature_distribution_histogram(df, selected_feat)
-        st.plotly_chart(fig_hist, width="stretch")
+        with col_h1:
+            st.markdown("##### Histogram by Class")
+            selected_feat = st.selectbox(
+                "Select Feature for Histogram",
+                available_features,
+                index=0,
+                key="hist_feat",
+            )
+            fig_hist = feature_distribution_histogram(df, selected_feat)
+            st.plotly_chart(fig_hist, width="stretch")
 
-    with col_h2:
-        st.markdown("##### Feature Scatter Relationship")
-        col_x, col_y = st.columns(2)
-        with col_x:
-            feat_x = st.selectbox("X Axis", feature_columns, index=0, key="scatter_x")
-        with col_y:
-            feat_y = st.selectbox("Y Axis", feature_columns, index=1, key="scatter_y")
+        with col_h2:
+            st.markdown("##### Feature Scatter Relationship")
+            col_x, col_y = st.columns(2)
+            with col_x:
+                feat_x = st.selectbox("X Axis", available_features, index=0, key="scatter_x")
+            with col_y:
+                feat_y = st.selectbox("Y Axis", available_features, index=min(1, len(available_features) - 1), key="scatter_y")
 
-        fig_scat = scatter_feature_vs_density(df, feat_x, feat_y)
-        st.plotly_chart(fig_scat, width="stretch")
+            fig_scat = scatter_feature_vs_density(df, feat_x, feat_y)
+            st.plotly_chart(fig_scat, width="stretch")
 
-    # ── Summary Statistics Table ─────────────────────────────────────
-    st.markdown("---")
-    with st.expander("Numerical Descriptive Statistics (Mean, Std, Min, Max)", icon=":material/analytics:"):
-        st.dataframe(df[feature_columns].describe().T.style.format("{:.4f}"), width="stretch")
+        # ── Summary Statistics Table ─────────────────────────────────────
+        st.markdown("---")
+        with st.expander("Numerical Descriptive Statistics (Mean, Std, Min, Max)", icon=":material/analytics:"):
+            st.dataframe(df[available_features].describe().T.style.format("{:.4f}"), width="stretch")
+
