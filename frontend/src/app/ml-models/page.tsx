@@ -23,7 +23,7 @@ export default function MlModelsPage() {
   const [isRetraining, setIsRetraining] = useState<boolean>(false);
   const [retrainSuccess, setRetrainSuccess] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [demoMode] = useState<boolean>(() => isDemoMode());
+  const [demoMode, setDemoMode] = useState<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,12 +35,16 @@ export default function MlModelsPage() {
         ]);
         if (cancelled) return;
         setModels(metrics);
+        setDemoMode(false);
         if (feat) {
           setImportances(feat.importances);
           setImportanceModel(feat.model_name);
         }
       } catch (err) {
-        if (!cancelled) setApiError(err instanceof Error ? err.message : "Failed to load model metrics");
+        if (!cancelled) {
+          setApiError(err instanceof Error ? err.message : "Failed to load model metrics");
+          setDemoMode(isDemoMode());
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
