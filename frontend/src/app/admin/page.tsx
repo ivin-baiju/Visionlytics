@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ShieldAlert,
   Database,
@@ -15,6 +14,7 @@ import {
   Server,
   Image as ImageIcon,
   FileCheck2,
+  LogOut,
 } from "lucide-react";
 
 interface AdminUser {
@@ -63,7 +63,6 @@ interface AdminConsentLog {
 }
 
 export default function AdminPortalPage() {
-  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,13 +127,51 @@ export default function AdminPortalPage() {
     }
   }, []);
 
+  // Admin direct login form state
+  const [adminIdentifier, setAdminIdentifier] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
+
+  const handleAdminLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminLoginLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/py/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: adminIdentifier,
+          password: adminPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Authentication failed.");
+      }
+      if (data.user?.role !== "admin") {
+        throw new Error("Access Denied: This account does not possess administrator privileges.");
+      }
+
+      localStorage.setItem("visionlytics_token", data.access_token);
+      localStorage.setItem("visionlytics_user", JSON.stringify(data.user));
+      setToken(data.access_token);
+      setCurrentUser(data.user);
+      await loadAdminData(data.access_token);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to authenticate administrator.");
+    } finally {
+      setAdminLoginLoading(false);
+    }
+  };
+
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
       const savedToken = localStorage.getItem("visionlytics_token");
       const savedUserStr = localStorage.getItem("visionlytics_user");
 
       if (!savedToken) {
-        router.push("/login?error=admin_required");
+        setLoading(false);
         return;
       }
 
@@ -149,12 +186,12 @@ export default function AdminPortalPage() {
         setCurrentUser(parsedUser);
         loadAdminData(savedToken);
       } catch {
-        router.push("/login");
+        setLoading(false);
       }
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [router, loadAdminData]);
+  }, [loadAdminData]);
 
   const handleDeleteUser = async (userId: number | string) => {
     if (!token || !confirm("Are you sure you want to permanently delete this user?")) return;
@@ -193,21 +230,133 @@ export default function AdminPortalPage() {
     );
   }
 
-  if (errorMsg) {
+  // ── DEDICATED HIGH-SECURITY ADMIN LOGIN CONSOLE ─────────────────────────────
+  if (!token || !currentUser || currentUser?.role !== "admin") {
     return (
-      <div className="vl-container" style={{ maxWidth: "600px", paddingTop: "4rem" }}>
-        <div className="vl-card" style={{ textAlign: "center", padding: "2.5rem" }}>
-          <ShieldAlert size={44} color="#EF4444" style={{ margin: "0 auto 1rem" }} />
-          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "1.5rem", fontWeight: 800 }}>
-            Restricted Admin Console
-          </h2>
-          <p style={{ color: "var(--text-secondary)", margin: "1rem 0 1.5rem" }}>{errorMsg}</p>
-          <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-            <Link href="/login" className="vl-btn vl-btn-primary">
-              Sign In as Admin
-            </Link>
-            <Link href="/" className="vl-btn vl-btn-secondary">
-              Back to Dashboard
+      <div className="vl-container" style={{ maxWidth: "480px", paddingTop: "3.5rem" }}>
+        <div
+          className="vl-card"
+          style={{
+            padding: "2.5rem",
+            border: "1px solid rgba(20, 184, 166, 0.25)",
+            boxShadow: "0 12px 32px rgba(15, 23, 42, 0.08)",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "14px",
+                backgroundColor: "var(--accent-teal-light)",
+                color: "var(--accent-teal)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 14px",
+              }}
+            >
+              <Server size={30} strokeWidth={2.2} />
+            </div>
+            <div
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "var(--accent-teal)",
+                marginBottom: "4px",
+              }}
+            >
+              Restricted Identity & Database Access
+            </div>
+            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.75rem", fontWeight: 800 }}>
+              System Console
+            </h1>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", marginTop: "4px" }}>
+              Authenticate with authorized credentials to access the internal database and management tools.
+            </p>
+          </div>
+
+          {errorMsg && (
+            <div
+              className="vl-fade-in"
+              style={{
+                backgroundColor: "#FEF2F2",
+                border: "1px solid #FCA5A5",
+                color: "#B91C1C",
+                padding: "10px 14px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "0.85rem",
+                marginBottom: "1.25rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <ShieldAlert size={16} />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAdminLoginSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div>
+              <label htmlFor="sys-console-id" style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>
+                Email or Username
+              </label>
+              <input
+                id="sys-console-id"
+                type="text"
+                required
+                value={adminIdentifier}
+                onChange={(e) => setAdminIdentifier(e.target.value)}
+                placeholder="Enter your credentials"
+                className="vl-input"
+                style={{ padding: "10px 12px" }}
+                aria-label="Email or Username"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="sys-console-pw" style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>
+                Password
+              </label>
+              <input
+                id="sys-console-pw"
+                type="password"
+                required
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="••••••••••••"
+                className="vl-input"
+                style={{ padding: "10px 12px" }}
+                aria-label="Password"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={adminLoginLoading}
+              className="vl-btn vl-btn-primary"
+              style={{ width: "100%", padding: "12px", marginTop: "6px" }}
+            >
+              {adminLoginLoading ? "Verifying Credentials..." : "Unlock Console"}
+            </button>
+          </form>
+
+          <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
+            <Link
+              href="/"
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--text-secondary)",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <ArrowLeft size={14} /> Back to Public Dashboard
             </Link>
           </div>
         </div>
@@ -222,10 +371,10 @@ export default function AdminPortalPage() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--accent-teal)", fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
             <Server size={18} />
-            Master Database & Identity Console
+            Database & Identity Console
           </div>
           <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "2rem", fontWeight: 800 }}>
-            Administrator Portal
+            System Portal
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", marginTop: "4px" }}>
             Full access to users registry, live Supabase tables, and crowd analytics records.
@@ -246,6 +395,20 @@ export default function AdminPortalPage() {
             <ArrowLeft size={16} />
             <span>Dashboard</span>
           </Link>
+          <button
+            type="button"
+            className="vl-btn vl-btn-outline"
+            onClick={() => {
+              localStorage.removeItem("visionlytics_token");
+              localStorage.removeItem("visionlytics_user");
+              setToken(null);
+              setCurrentUser(null);
+            }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#EF4444", borderColor: "#FCA5A5" }}
+          >
+            <LogOut size={16} />
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
 
@@ -640,8 +803,10 @@ export default function AdminPortalPage() {
                           <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{up.content_type}</div>
                         </td>
                         <td>
-                          <div style={{ fontWeight: 500 }}>{up.username}</div>
-                          <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>{up.email}</div>
+                          <div style={{ fontWeight: 500 }}>{up.username || "Public User"}</div>
+                          {up.email && !up.email.includes("anonymous") ? (
+                            <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>{up.email}</div>
+                          ) : null}
                         </td>
                         <td style={{ fontWeight: 700, color: "var(--text-primary)" }}>{up.people_count}</td>
                         <td>

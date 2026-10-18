@@ -298,14 +298,10 @@ def seed_default_admin():
     count = cursor.fetchone()[0]
     if count == 0:
         # Clean previous seed records if any
-        cursor.execute("DELETE FROM users WHERE role = 'admin' OR email = 'admin@visionlytics.ai'")
+        cursor.execute("DELETE FROM users WHERE email = 'user@visionlytics.ai' OR email = 'admin@visionlytics.ai'")
         cursor.execute(
             "INSERT OR IGNORE INTO users (username, email, phone, hashed_password, role, is_verified) VALUES (?, ?, ?, ?, ?, ?)",
             ("admin", "lightningspeed.flh@gmail.com", None, hash_password("sydney@2026"), "admin", 1),
-        )
-        cursor.execute(
-            "INSERT OR IGNORE INTO users (username, email, phone, hashed_password, role, is_verified) VALUES (?, ?, ?, ?, ?, ?)",
-            ("testuser", "user@visionlytics.ai", "+10000000001", hash_password("UserPass2026!"), "user", 1),
         )
         conn.commit()
     conn.close()

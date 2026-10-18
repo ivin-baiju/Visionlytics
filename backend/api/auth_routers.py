@@ -290,9 +290,10 @@ def admin_list_consent_logs(limit: int = 100, admin: dict = Depends(require_admi
 def security_audit(admin: dict = Depends(require_admin)):
     """Admin-only: return security posture checklist and system parameters."""
     import sys
+    from datetime import datetime, timezone
     return {
         "audit_status": "SECURE",
-        "timestamp": "2026-10-18T14:00:00Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "system": {
             "python_version": sys.version,
             "database_engine": "Supabase PostgreSQL" if supabase_client.use_supabase else "Encrypted SQLite",

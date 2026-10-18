@@ -59,7 +59,18 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ destination: dest, channel }),
       });
-      const data = await res.json();
+      let data: any = {};
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status === 404 || text.includes("page could not be found")
+            ? "API backend service is currently offline. Verification codes cannot be sent right now."
+            : text.slice(0, 100)
+        );
+      }
       if (!res.ok) throw new Error(data.detail || "Failed to send OTP");
       setOtpSent(true);
       setOtpChannel(channel);
@@ -101,8 +112,21 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Authentication failed");
+
+      let data: any = {};
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status === 404 || text.includes("page could not be found")
+            ? "API backend service is temporarily offline. Please ensure the backend server is running."
+            : text.slice(0, 100)
+        );
+      }
+
+      if (!res.ok) throw new Error(data.detail || "Authentication failed. Check your credentials.");
 
       // Save token in secure session storage
       localStorage.setItem("visionlytics_token", data.access_token);
@@ -147,7 +171,18 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      let data: any = {};
+      const regCt = res.headers.get("content-type") || "";
+      if (regCt.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status === 404 || text.includes("page could not be found")
+            ? "API backend service is currently offline. Please try again later."
+            : text.slice(0, 100)
+        );
+      }
       if (!res.ok) throw new Error(data.detail || "Registration failed");
 
       setSuccessMsg("Account created successfully! You can now sign in.");
@@ -300,7 +335,7 @@ export default function LoginPage() {
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="user@domain.com or +1234567890"
+                  placeholder="Enter email, username, or phone"
                   className="vl-input"
                   style={{ paddingLeft: "38px" }}
                 />
