@@ -13,6 +13,8 @@ import {
   Search,
   ArrowLeft,
   Server,
+  Image as ImageIcon,
+  FileCheck2,
 } from "lucide-react";
 
 interface AdminUser {
@@ -37,6 +39,29 @@ interface AdminAnalysis {
   features?: Record<string, unknown>;
 }
 
+interface AdminUpload {
+  id: number | string;
+  username: string;
+  email: string;
+  filename: string;
+  file_size_bytes: number;
+  content_type: string;
+  thumbnail_base64?: string;
+  people_count: number;
+  density_label: string;
+  confidence: number;
+  created_at: string;
+}
+
+interface AdminConsentLog {
+  id: number | string;
+  consent_type: string;
+  analytics_allowed: boolean | number;
+  ip_hash: string;
+  user_agent?: string;
+  created_at: string;
+}
+
 export default function AdminPortalPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
@@ -44,15 +69,18 @@ export default function AdminPortalPage() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Database Tab
-  const [activeTab, setActiveTab] = useState<"users" | "database" | "security">("users");
+  // Tab
+  const [activeTab, setActiveTab] = useState<"users" | "database" | "uploads" | "consent">("users");
 
   // Data states
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [analyses, setAnalyses] = useState<AdminAnalysis[]>([]);
+  const [uploads, setUploads] = useState<AdminUpload[]>([]);
+  const [consentLogs, setConsentLogs] = useState<AdminConsentLog[]>([]);
   const [overview, setOverview] = useState<{
     total_users: number;
     total_analyses: number;
+    total_uploads: number;
     total_people_detected: number;
     database_engine: string;
   } | null>(null);
@@ -60,6 +88,7 @@ export default function AdminPortalPage() {
   // Search filter
   const [userSearch, setUserSearch] = useState("");
   const [analysisFilter, setAnalysisFilter] = useState("ALL");
+  const [uploadSearch, setUploadSearch] = useState("");
 
   const loadAdminData = React.useCallback(async (authToken: string) => {
     setLoading(true);
@@ -67,10 +96,12 @@ export default function AdminPortalPage() {
     try {
       const headers = { Authorization: `Bearer ${authToken}` };
 
-      const [ovRes, uRes, aRes] = await Promise.all([
+      const [ovRes, uRes, aRes, upRes, cRes] = await Promise.all([
         fetch("/api/py/admin/database/overview", { headers }),
         fetch("/api/py/admin/users", { headers }),
         fetch("/api/py/admin/database/analyses", { headers }),
+        fetch("/api/py/admin/uploads", { headers }),
+        fetch("/api/py/admin/consent-logs", { headers }),
       ]);
 
       if (ovRes.status === 401 || ovRes.status === 403) {
@@ -82,10 +113,14 @@ export default function AdminPortalPage() {
       const ovData = await ovRes.json();
       const uData = await uRes.json();
       const aData = await aRes.json();
+      const upData = await upRes.json();
+      const cData = await cRes.json();
 
       setOverview(ovData);
       setUsers(uData.users || []);
       setAnalyses(aData.analyses || []);
+      setUploads(upData.uploads || []);
+      setConsentLogs(cData.consent_logs || []);
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "Failed to load database records.");
     } finally {
@@ -239,6 +274,16 @@ export default function AdminPortalPage() {
 
           <div className="vl-stat-box">
             <div className="vl-stat-icon-wrap" style={{ background: "var(--accent-purple-light)", color: "var(--accent-purple)" }}>
+              <ImageIcon size={24} />
+            </div>
+            <div>
+              <div className="vl-stat-value">{overview.total_uploads ?? uploads.length}</div>
+              <div className="vl-stat-label">User Image Uploads</div>
+            </div>
+          </div>
+
+          <div className="vl-stat-box">
+            <div className="vl-stat-icon-wrap" style={{ background: "rgba(16, 185, 129, 0.12)", color: "#059669" }}>
               <Activity size={24} />
             </div>
             <div>
@@ -256,6 +301,7 @@ export default function AdminPortalPage() {
           gap: "8px",
           borderBottom: "1px solid var(--border-subtle)",
           marginBottom: "1.5rem",
+          overflowX: "auto",
         }}
       >
         <button
@@ -270,6 +316,7 @@ export default function AdminPortalPage() {
             fontWeight: 700,
             fontSize: "0.95rem",
             cursor: "pointer",
+            whiteSpace: "nowrap",
           }}
         >
           Users Registry ({users.length})
@@ -287,9 +334,46 @@ export default function AdminPortalPage() {
             fontWeight: 700,
             fontSize: "0.95rem",
             cursor: "pointer",
+            whiteSpace: "nowrap",
           }}
         >
           Analysis History ({analyses.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("uploads")}
+          style={{
+            padding: "10px 18px",
+            border: "none",
+            background: "transparent",
+            color: activeTab === "uploads" ? "var(--accent-teal)" : "var(--text-secondary)",
+            borderBottom: activeTab === "uploads" ? "2px solid var(--accent-teal)" : "2px solid transparent",
+            fontWeight: 700,
+            fontSize: "0.95rem",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          User Uploads ({uploads.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("consent")}
+          style={{
+            padding: "10px 18px",
+            border: "none",
+            background: "transparent",
+            color: activeTab === "consent" ? "var(--accent-teal)" : "var(--text-secondary)",
+            borderBottom: activeTab === "consent" ? "2px solid var(--accent-teal)" : "2px solid transparent",
+            fontWeight: 700,
+            fontSize: "0.95rem",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Consent Logs ({consentLogs.length})
         </button>
       </div>
 
@@ -455,6 +539,191 @@ export default function AdminPortalPage() {
                       <td>{(a.confidence * 100).toFixed(0)}%</td>
                       <td style={{ fontSize: "0.82rem" }}>
                         {a.created_at || a.timestamp ? new Date(a.created_at || a.timestamp!).toLocaleString() : "Recent"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: USER UPLOADS & IMAGES ────────────────────────────────────── */}
+      {activeTab === "uploads" && (
+        <div className="vl-card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "10px" }}>
+            <div>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "1.15rem", fontWeight: 700 }}>
+                User Uploaded Images & Scans
+              </h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "2px" }}>
+                Full visibility into uploaded frames, thumbnails, detected crowd density, and file metadata.
+              </p>
+            </div>
+            <div style={{ position: "relative", width: "260px" }}>
+              <input
+                type="text"
+                placeholder="Search file, user, email..."
+                value={uploadSearch}
+                onChange={(e) => setUploadSearch(e.target.value)}
+                className="vl-input"
+                style={{ paddingLeft: "34px", fontSize: "0.85rem", padding: "8px 12px 8px 34px" }}
+              />
+              <Search size={15} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)" }} />
+            </div>
+          </div>
+
+          {uploads.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-secondary)" }}>
+              <ImageIcon size={40} style={{ margin: "0 auto 10px", opacity: 0.4 }} />
+              <p>No user image uploads recorded in database yet.</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="vl-table">
+                <thead>
+                  <tr>
+                    <th>Preview</th>
+                    <th>Filename</th>
+                    <th>Uploader</th>
+                    <th>People</th>
+                    <th>Density</th>
+                    <th>Size</th>
+                    <th>Uploaded At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uploads
+                    .filter((u) => {
+                      const q = uploadSearch.toLowerCase();
+                      return (
+                        u.filename.toLowerCase().includes(q) ||
+                        u.username.toLowerCase().includes(q) ||
+                        u.email.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((up) => (
+                      <tr key={up.id}>
+                        <td>
+                          {up.thumbnail_base64 ? (
+                            <img
+                              src={up.thumbnail_base64}
+                              alt={up.filename}
+                              style={{
+                                width: "64px",
+                                height: "48px",
+                                objectFit: "cover",
+                                borderRadius: "4px",
+                                border: "1px solid var(--border-subtle)",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "64px",
+                                height: "48px",
+                                borderRadius: "4px",
+                                background: "#F1F5F9",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#94A3B8",
+                              }}
+                            >
+                              <ImageIcon size={18} />
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{up.filename}</div>
+                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{up.content_type}</div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 500 }}>{up.username}</div>
+                          <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>{up.email}</div>
+                        </td>
+                        <td style={{ fontWeight: 700, color: "var(--text-primary)" }}>{up.people_count}</td>
+                        <td>
+                          <span className={`vl-density-badge vl-density-${up.density_label}`}>
+                            {up.density_label}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: "0.82rem" }}>
+                          {(up.file_size_bytes / 1024).toFixed(1)} KB
+                        </td>
+                        <td style={{ fontSize: "0.82rem" }}>
+                          {new Date(up.created_at).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB 4: CONSENT LOGS ──────────────────────────────────────────────── */}
+      {activeTab === "consent" && (
+        <div className="vl-card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "10px" }}>
+            <div>
+              <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "1.15rem", fontWeight: 700 }}>
+                Cookie & GDPR Consent Audit Logs
+              </h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "2px" }}>
+                Immutable consent audit logs with SHA-256 anonymized IP addresses.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ overflowX: "auto" }}>
+            <table className="vl-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Consent Category</th>
+                  <th>Analytics Permitted</th>
+                  <th>Anonymized Hash</th>
+                  <th>Recorded At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {consentLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "2rem" }}>
+                      No consent logs recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  consentLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td style={{ fontWeight: 700 }}>#{log.id}</td>
+                      <td>
+                        <span style={{ fontWeight: 600, textTransform: "capitalize" }}>
+                          {log.consent_type}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            fontSize: "0.78rem",
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: "4px",
+                            background: log.analytics_allowed ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                            color: log.analytics_allowed ? "#059669" : "#DC2626",
+                          }}
+                        >
+                          {log.analytics_allowed ? "Opted In" : "Declined"}
+                        </span>
+                      </td>
+                      <td style={{ fontFamily: "monospace", fontSize: "0.82rem", color: "var(--text-secondary)" }}>
+                        {log.ip_hash}
+                      </td>
+                      <td style={{ fontSize: "0.82rem" }}>
+                        {new Date(log.created_at).toLocaleString()}
                       </td>
                     </tr>
                   ))

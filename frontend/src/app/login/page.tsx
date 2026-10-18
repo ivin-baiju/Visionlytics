@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Lock,
@@ -30,11 +30,20 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpChannel, setOtpChannel] = useState<"email" | "phone">("email");
   const [devOtpHint, setDevOtpHint] = useState<string | null>(null);
+  const [otpCooldown, setOtpCooldown] = useState(0);
 
   // Status
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [otpCooldown]);
 
   const handleSendOtp = async (dest: string, channel: "email" | "phone") => {
     if (!dest) {
@@ -43,6 +52,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     setErrorMsg(null);
+    setDevOtpHint(null);
     try {
       const res = await fetch("/api/py/auth/send-otp", {
         method: "POST",
@@ -53,9 +63,15 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.detail || "Failed to send OTP");
       setOtpSent(true);
       setOtpChannel(channel);
-      setSuccessMsg(`Verification code sent to ${dest}!`);
-      if (data.dev_code) {
+      setOtpCooldown(60); // 60s resend cooldown
+
+      if (data.delivered) {
+        setSuccessMsg(`Real-time 6-digit OTP delivered to ${dest}. Check your inbox!`);
+      } else if (data.dev_code) {
+        setSuccessMsg(`Verification code generated for ${dest}.`);
         setDevOtpHint(data.dev_code);
+      } else {
+        setSuccessMsg(`Verification code dispatched to ${dest}.`);
       }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "Failed to dispatch verification code");
@@ -343,18 +359,20 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => handleSendOtp(identifier, identifier.includes("@") ? "email" : "phone")}
-                    disabled={loading || !identifier}
+                    disabled={loading || !identifier || otpCooldown > 0}
                     style={{
                       background: "transparent",
                       border: "none",
-                      color: "var(--accent-teal)",
+                      color: otpCooldown > 0 ? "var(--text-muted)" : "var(--accent-teal)",
                       fontSize: "0.82rem",
                       fontWeight: 700,
-                      cursor: "pointer",
-                      textDecoration: "underline",
+                      cursor: otpCooldown > 0 ? "default" : "pointer",
+                      textDecoration: otpCooldown > 0 ? "none" : "underline",
                     }}
                   >
-                    Send OTP to {identifier ? identifier : "Identifier"}
+                    {otpCooldown > 0
+                      ? `Resend in ${otpCooldown}s`
+                      : `Send OTP to ${identifier ? identifier : "Identifier"}`}
                   </button>
                 </div>
                 <div style={{ position: "relative" }}>
@@ -447,11 +465,11 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => handleSendOtp(phone || email, phone ? "phone" : "email")}
-                  disabled={loading || (!phone && !email)}
+                  disabled={loading || (!phone && !email) || otpCooldown > 0}
                   className="vl-btn vl-btn-secondary"
                   style={{ fontSize: "0.82rem", whiteSpace: "nowrap" }}
                 >
-                  Send OTP
+                  {otpCooldown > 0 ? `Resend (${otpCooldown}s)` : "Send OTP"}
                 </button>
               </div>
             </div>

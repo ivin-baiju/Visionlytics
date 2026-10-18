@@ -1,3 +1,4 @@
+import base64
 import os
 
 import cv2
@@ -7,6 +8,7 @@ from computer_vision.attributes import estimate_all_attributes
 from computer_vision.csrnet import CSRNet, estimate_dense_crowd
 from computer_vision.feature_extraction import FeatureExtractor
 from computer_vision.person_detection import PersonDetector
+from db.supabase_client import supabase_client
 from fastapi import APIRouter, File, Query, UploadFile
 from fastapi.responses import JSONResponse
 from machine_learning.predict import CrowdPredictor
@@ -181,8 +183,29 @@ async def analyze_frame(
             people_count = csr_count
             features["people_count"] = people_count
 
-    # 4. Save to Firebase (or SQLite fallback)
-    # db_client.save_analysis("api", features, density_label, conf)
+    # 4. Save to Database (Supabase with SQLite fallback) & Store upload record
+    try:
+        supabase_client.save_analysis("api", features, density_label, float(conf))
+        
+        # Generate lightweight preview thumbnail (max 200px width/height)
+        thumb_h, thumb_w = frame.shape[:2]
+        thumb_max = 200
+        thumb_scale = min(thumb_max / float(max(thumb_h, thumb_w)), 1.0)
+        thumb_img = cv2.resize(frame, (int(thumb_w * thumb_scale), int(thumb_h * thumb_scale)), interpolation=cv2.INTER_AREA)
+        _, thumb_buf = cv2.imencode(".jpg", thumb_img, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+        thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf).decode("utf-8")
+        
+        supabase_client.save_upload(
+            filename=file.filename or "upload.jpg",
+            file_size_bytes=len(contents),
+            content_type=file.content_type or "image/jpeg",
+            thumbnail_base64=thumb_b64,
+            people_count=int(people_count),
+            density_label=str(density_label),
+            confidence=float(conf),
+        )
+    except Exception as exc:
+        pass  # Non-blocking for inference response
 
     # Convert detections to serializable format
     det_list = []

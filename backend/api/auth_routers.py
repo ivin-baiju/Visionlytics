@@ -13,10 +13,11 @@ Admin Endpoints (Strict Admin RBAC):
 - DELETE /admin/users/{user_id}: Delete user from database.
 - GET /admin/database/analyses: View full crowd analysis history from Supabase / database.
 - GET /admin/database/overview: Aggregate database statistics (total users, total scans, detections).
+- GET /admin/uploads: View all user uploads with thumbnails and metadata.
+- GET /admin/consent-logs: View all consent log records.
 """
 
-from typing import Dict, List, Optional
-import sqlite3
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
@@ -25,13 +26,13 @@ from api.security import (
     generate_otp,
     get_current_user,
     get_user_by_identifier,
-    hash_password,
     register_user,
     require_admin,
     sanitize_string,
     verify_otp,
     verify_password,
 )
+from api.email_service import send_otp_email, send_otp_sms, EMAIL_CONFIGURED
 from db.supabase_client import DB_PATH, supabase_client
 
 router = APIRouter(tags=["auth", "admin", "otp"])
@@ -74,32 +75,44 @@ class RegisterRequest(BaseModel):
     otp_code: Optional[str] = None
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user: Dict[str, Any]
-
-
 # ── Real-Time OTP Endpoints ───────────────────────────────────────────────────
 
 @router.post("/auth/send-otp")
 def send_otp_endpoint(req: SendOtpRequest):
     """
     Generate and dispatch a 6-digit OTP code to email or phone number.
-    In cloud environment, connects to Supabase/Twilio/SendGrid; in local dev, returns code for instant testing.
+    Uses Gmail SMTP for email, Twilio for SMS, with dev fallback.
     """
     dest = sanitize_string(req.destination)
     code = generate_otp(dest, req.channel)
 
-    # In production with Twilio/SendGrid, you would dispatch SMS/Email here.
-    return {
-        "status": "sent",
+    email_sent = False
+    sms_sent = False
+
+    if req.channel == "email":
+        email_sent = send_otp_email(dest, code)
+    elif req.channel == "phone":
+        sms_sent = send_otp_sms(dest, code)
+
+    delivered = email_sent or sms_sent
+
+    response: Dict[str, Any] = {
+        "status": "sent" if delivered else "generated",
         "destination": dest,
         "channel": req.channel,
-        "message": f"6-digit verification code sent to {dest}",
-        # Exposed for instant local testing & seamless verification
-        "dev_code": code,
+        "delivered": delivered,
+        "message": (
+            f"Verification code sent to {dest}"
+            if delivered
+            else f"Verification code generated for {dest} (configure SMTP/Twilio for real delivery)"
+        ),
     }
+
+    # Only expose dev_code when email delivery is NOT configured (local dev only)
+    if not EMAIL_CONFIGURED:
+        response["dev_code"] = code
+
+    return response
 
 
 @router.post("/auth/verify-otp")
@@ -132,12 +145,15 @@ def register(body: RegisterRequest):
             raise HTTPException(status_code=400, detail="Invalid or expired OTP code for registration.")
         is_verified = True
 
+    # Prevent regular users from registering as admin
+    role = "user"
+
     created = register_user(
         clean_username,
         clean_email,
         body.password,
         phone=clean_phone if clean_phone else None,
-        role=body.role or "user",
+        role=role,
         is_verified=is_verified,
     )
     return {"message": "User registered successfully", "user": created}
@@ -212,6 +228,7 @@ def admin_overview(admin: dict = Depends(require_admin)):
     """Admin-only: Aggregate system stats across all database tables."""
     users = supabase_client.get_all_users(limit=500)
     analyses = supabase_client.get_recent(limit=500)
+    uploads = supabase_client.get_all_uploads(limit=500)
 
     total_people = sum(a.get("people_count", 0) for a in analyses)
 
@@ -219,6 +236,7 @@ def admin_overview(admin: dict = Depends(require_admin)):
         "status": "success",
         "total_users": len(users),
         "total_analyses": len(analyses),
+        "total_uploads": len(uploads),
         "total_people_detected": total_people,
         "database_engine": "Supabase PostgreSQL" if supabase_client.use_supabase else "Encrypted SQLite",
     }
@@ -245,6 +263,20 @@ def admin_list_analyses(limit: int = 100, admin: dict = Depends(require_admin)):
     return {"analyses": records}
 
 
+@router.get("/admin/uploads")
+def admin_list_uploads(limit: int = 200, admin: dict = Depends(require_admin)):
+    """Admin-only: View all user-uploaded images with metadata and thumbnails."""
+    uploads = supabase_client.get_all_uploads(limit=min(limit, 500))
+    return {"uploads": uploads}
+
+
+@router.get("/admin/consent-logs")
+def admin_list_consent_logs(limit: int = 100, admin: dict = Depends(require_admin)):
+    """Admin-only: View all consent log records."""
+    logs = supabase_client.get_consent_logs(limit=min(limit, 300))
+    return {"consent_logs": logs}
+
+
 @router.get("/admin/security-audit")
 def security_audit(admin: dict = Depends(require_admin)):
     """Admin-only: return security posture checklist and system parameters."""
@@ -258,6 +290,7 @@ def security_audit(admin: dict = Depends(require_admin)):
             "cors_hardened": True,
             "rate_limiting_active": True,
             "debug_mode": False,
+            "email_otp_configured": EMAIL_CONFIGURED,
         },
     }
 
@@ -269,6 +302,10 @@ def record_consent(consent: ConsentRequest, request: Request):
     ip = request.client.host if request.client else "127.0.0.1"
     ip_hash = hashlib.sha256(ip.encode()).hexdigest()[:16]
     clean_type = sanitize_string(consent.consent_type)
+
+    # Save to database
+    supabase_client.save_consent_log(clean_type, consent.analytics_allowed, ip_hash)
+
     return {
         "status": "recorded",
         "consent_type": clean_type,
