@@ -1,30 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
-import { Database, Download, RefreshCw, Filter, Layers, CheckCircle } from "lucide-react";
-
-const SAMPLE_ROWS = [
-  { id: 1, people_count: 3, occupancy_ratio: 0.08, avg_distance: 0.52, min_distance: 0.31, density: "LOW" },
-  { id: 2, people_count: 4, occupancy_ratio: 0.11, avg_distance: 0.44, min_distance: 0.22, density: "LOW" },
-  { id: 3, people_count: 8, occupancy_ratio: 0.24, avg_distance: 0.29, min_distance: 0.15, density: "MEDIUM" },
-  { id: 4, people_count: 11, occupancy_ratio: 0.32, avg_distance: 0.23, min_distance: 0.09, density: "MEDIUM" },
-  { id: 5, people_count: 18, occupancy_ratio: 0.56, avg_distance: 0.14, min_distance: 0.04, density: "HIGH" },
-  { id: 6, people_count: 22, occupancy_ratio: 0.68, avg_distance: 0.11, min_distance: 0.02, density: "HIGH" },
-  { id: 7, people_count: 2, occupancy_ratio: 0.05, avg_distance: 0.65, min_distance: 0.65, density: "LOW" },
-  { id: 8, people_count: 9, occupancy_ratio: 0.28, avg_distance: 0.26, min_distance: 0.12, density: "MEDIUM" },
-];
+import React, { useState, useEffect } from "react";
+import { Database, RefreshCw, Filter, Layers, CheckCircle, AlertTriangle } from "lucide-react";
+import { getDatasetInfoApi, getDatasetPreviewApi, triggerDatasetGenerateApi } from "@/lib/api";
 
 export default function DatasetPage() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [success, setSuccess] = useState<boolean>(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [info, setInfo] = useState<{ total: number; classCounts: Record<string, number> } | null>(null);
+  const [columns, setColumns] = useState<string[]>([]);
+  const [rows, setRows] = useState<(number | string)[][]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [meta, preview] = await Promise.all([getDatasetInfoApi(), getDatasetPreviewApi(8)]);
+        if (cancelled) return;
+        setInfo({ total: meta.n_rows, classCounts: meta.class_counts });
+        setColumns(preview.columns);
+        setRows(preview.rows);
+      } catch (err) {
+        if (!cancelled) setApiError(err instanceof Error ? err.message : "Failed to load dataset");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    setApiError(null);
+    try {
+      const preview = await triggerDatasetGenerateApi(500);
+      setInfo({ total: preview.n_rows, classCounts: preview.class_counts });
+      setColumns(preview.columns);
+      setRows(preview.rows.slice(0, 8));
+      setSuccess(`Dataset regenerated! ${preview.n_rows} spatial records re-computed and saved.`);
+      setTimeout(() => setSuccess(null), 4000);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Dataset regeneration failed");
+    } finally {
       setIsGenerating(false);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 4000);
-    }, 1500);
+    }
   };
 
   return (
@@ -74,7 +95,13 @@ export default function DatasetPage() {
           }}
         >
           <CheckCircle size={18} />
-          Dataset regenerated! 3,000 spatial records re-computed and saved to repository.
+          {success}
+        </div>
+      )}
+
+      {apiError && (
+        <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#DC2626", padding: "12px 18px", borderRadius: "12px", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.9rem", fontWeight: 600 }}>
+          <AlertTriangle size={18} /> {apiError} — start the backend with `python start_local.py`.
         </div>
       )}
 
@@ -85,7 +112,7 @@ export default function DatasetPage() {
             <span className="vl-card-label">Total Sample Size</span>
             <Database size={18} color="var(--accent-blue)" />
           </div>
-          <div className="vl-kpi-value">3,000</div>
+          <div className="vl-kpi-value">{isLoading ? "…" : (info?.total.toLocaleString() ?? "—")}</div>
           <div className="vl-kpi-subtitle">Balanced across 3 regimes</div>
         </div>
 
@@ -103,8 +130,10 @@ export default function DatasetPage() {
             <span className="vl-card-label">Class Balance</span>
             <Filter size={18} color="var(--accent-purple)" />
           </div>
-          <div className="vl-kpi-value">1:1:1</div>
-          <div className="vl-kpi-subtitle">1,000 per density class</div>
+          <div className="vl-kpi-value">
+            {info ? ["LOW", "MEDIUM", "HIGH"].map((k) => info.classCounts[k] ?? 0).join(" / ") : "—"}
+          </div>
+          <div className="vl-kpi-subtitle">LOW / MEDIUM / HIGH counts</div>
         </div>
       </div>
 
@@ -112,38 +141,44 @@ export default function DatasetPage() {
       <div className="vl-card">
         <div className="vl-card-header">
           <span className="vl-card-label">Feature Vector Samples</span>
-          <span style={{ fontSize: "0.78rem", color: "var(--text-tertiary)" }}>Showing 8 of 3,000 rows</span>
+          <span style={{ fontSize: "0.78rem", color: "var(--text-tertiary)" }}>
+            {rows.length > 0 && info ? `Showing ${rows.length} of ${info.total.toLocaleString()} rows` : "Live preview from backend"}
+          </span>
         </div>
 
         <div style={{ overflowX: "auto" }}>
+          {isLoading ? (
+            <p style={{ padding: "1.5rem", textAlign: "center" }}>Loading dataset preview…</p>
+          ) : rows.length === 0 ? (
+            <p style={{ padding: "1.5rem", textAlign: "center" }}>No rows available.</p>
+          ) : (
           <table className="vl-table">
             <thead>
               <tr>
-                <th>Sample ID</th>
-                <th>People Count</th>
-                <th>Occupancy Ratio</th>
-                <th>Avg Distance</th>
-                <th>Min Distance</th>
-                <th>Density Target</th>
+                {columns.map((c) => (
+                  <th key={c}>{c}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {SAMPLE_ROWS.map((row) => (
-                <tr key={row.id}>
-                  <td><code>#{row.id}</code></td>
-                  <td><strong>{row.people_count}</strong></td>
-                  <td>{(row.occupancy_ratio * 100).toFixed(1)}%</td>
-                  <td>{row.avg_distance.toFixed(3)}</td>
-                  <td>{row.min_distance.toFixed(3)}</td>
-                  <td>
-                    <span className={`vl-density-badge vl-density-${row.density}`}>
-                      {row.density}
-                    </span>
-                  </td>
+              {rows.map((row, i) => (
+                <tr key={i}>
+                  {row.map((cell, j) => {
+                    const col = columns[j] ?? "";
+                    if (col === "density_label") {
+                      return (
+                        <td key={j}>
+                          <span className={`vl-density-badge vl-density-${cell}`}>{cell}</span>
+                        </td>
+                      );
+                    }
+                    return <td key={j}>{typeof cell === "number" ? (Number.isInteger(cell) ? cell : cell.toFixed(4)) : cell}</td>;
+                  })}
                 </tr>
               ))}
             </tbody>
           </table>
+          )}
         </div>
       </div>
     </div>

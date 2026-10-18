@@ -95,7 +95,7 @@ export default function BoundingBoxCanvas({
           ctx.restore();
 
           // Label Badge
-          const personId = det.person_id ? `ID #${det.person_id}` : `Person ${(det.confidence * 100).toFixed(0)}%`;
+          const personId = det.person_id != null ? `ID #${det.person_id}` : `Person ${(det.confidence * 100).toFixed(0)}%`;
           const attr = attributes && attributes[idx];
           const labelText = showAttributes && attr 
             ? `${personId} • ${attr.clothing_color}`
@@ -104,10 +104,15 @@ export default function BoundingBoxCanvas({
           ctx.font = "600 11px Inter, sans-serif";
           const textWidth = ctx.measureText(labelText).width;
 
-          // Label background pill
+          // Label background pill (roundRect with fallback for older browsers)
           ctx.fillStyle = "#0F172A";
           ctx.beginPath();
-          ctx.roundRect(x1, Math.max(0, y1 - 22), textWidth + 14, 20, 4);
+          const pillY = Math.max(0, y1 - 22);
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(x1, pillY, textWidth + 14, 20, 4);
+          } else {
+            ctx.rect(x1, pillY, textWidth + 14, 20);
+          }
           ctx.fill();
 
           // Accent color pip

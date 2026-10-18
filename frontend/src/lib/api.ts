@@ -2,6 +2,25 @@ import { FrameAnalysisResult, DatasetInfo, ModelMetric } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/py";
 
+export class ApiOfflineError extends Error {
+  constructor(message = "Backend unreachable") {
+    super(message);
+    this.name = "ApiOfflineError";
+  }
+}
+
+async function fetchJson<T>(url: string, init?: RequestInit, timeoutMs = 8000): Promise<T> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    return (await res.json()) as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Check if the FastAPI backend microservice is online.
  */
@@ -20,6 +39,8 @@ export async function checkApiHealth(): Promise<boolean> {
 
 /**
  * Send an image blob / file to the backend for frame analysis.
+ * Throws ApiOfflineError when the backend is unreachable — callers must
+ * surface an offline banner instead of rendering fabricated detections.
  */
 export async function analyzeFrameApi(
   imageBlob: Blob,
@@ -38,21 +59,17 @@ export async function analyzeFrameApi(
   const url = `${API_BASE}/analyze/frame?${query.toString()}`;
 
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      body: formData,
-    });
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return await res.json();
+    return await fetchJson<FrameAnalysisResult>(url, { method: "POST", body: formData }, 30000);
   } catch (err) {
-    console.warn("API request failed, falling back to simulated inference:", err);
-    // Return realistic client-side fallback simulation if FastAPI is unreachable
-    return createSimulatedResult(confidence);
+    throw err instanceof Error && err.message.startsWith("HTTP error")
+      ? err
+      : new ApiOfflineError(`Frame analysis failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
 /**
- * Generate simulated fallback inference when the backend is offline.
+ * Explicit demo fallback for offline development. Never used implicitly —
+ * pages must only call this behind a "Demo mode" toggle with a watermark.
  */
 export function createSimulatedResult(confidence: number = 0.3): FrameAnalysisResult {
   const count = Math.floor(Math.random() * 8) + 3;
@@ -104,32 +121,102 @@ export function createSimulatedResult(confidence: number = 0.3): FrameAnalysisRe
   };
 }
 
-export async function getModelsEvaluationApi(): Promise<ModelMetric[]> {
-  try {
-    const res = await fetch(`${API_BASE}/models/evaluation`);
-    if (res.ok) {
-      const data = await res.json();
-      // Transform backend format into standard array
-      return Object.entries(data).map(([name, m]: [string, any]) => ({
-        name,
-        accuracy: m.accuracy || 0.92,
-        precision: m.precision || 0.91,
-        recall: m.recall || 0.90,
-        f1: m.f1_score || m.f1 || 0.91,
-        is_champion: name.toLowerCase().includes("random forest"),
-      }));
-    }
-  } catch {
-    // Fallback benchmark data
-  }
+interface ModelsEvaluationResponse {
+  val_metrics: Record<string, { accuracy: number; f1_weighted: number; precision_weighted?: number; recall_weighted?: number }>;
+  test_metrics: Record<string, { accuracy: number; f1_weighted: number; precision_weighted?: number; recall_weighted?: number }>;
+  best_model_name?: string;
+}
 
-  return [
-    { name: "Random Forest Classifier", accuracy: 0.942, precision: 0.938, recall: 0.945, f1: 0.941, is_champion: true },
-    { name: "Voting Ensemble", accuracy: 0.935, precision: 0.931, recall: 0.939, f1: 0.935 },
-    { name: "Gradient Boosting", accuracy: 0.928, precision: 0.925, recall: 0.930, f1: 0.927 },
-    { name: "Support Vector Machine (SVM)", accuracy: 0.914, precision: 0.908, recall: 0.919, f1: 0.913 },
-    { name: "Multinomial Logistic Regression", accuracy: 0.876, precision: 0.869, recall: 0.880, f1: 0.874 },
-    { name: "K-Nearest Neighbors (KNN)", accuracy: 0.862, precision: 0.855, recall: 0.867, f1: 0.861 },
-    { name: "Decision Trees (CART)", accuracy: 0.841, precision: 0.835, recall: 0.848, f1: 0.841 },
-  ];
+export async function getModelsEvaluationApi(): Promise<ModelMetric[]> {
+  const data = await fetchJson<ModelsEvaluationResponse>(`${API_BASE}/models/evaluation`);
+  // Backend shape: { val_metrics: { [name]: { accuracy, f1_weighted, ... } }, best_model_name }
+  const metrics = data.test_metrics && Object.keys(data.test_metrics).length > 0 ? data.test_metrics : data.val_metrics;
+  const champion = (data.best_model_name || "Random Forest").toLowerCase();
+  return Object.entries(metrics).map(([name, m]) => ({
+    name,
+    accuracy: m.accuracy ?? 0,
+    precision: m.precision_weighted ?? 0,
+    recall: m.recall_weighted ?? 0,
+    f1: m.f1_weighted ?? 0,
+    is_champion: name.toLowerCase() === champion,
+  }));
+}
+
+export async function getModelsEvaluationApiSafe(): Promise<{ models: ModelMetric[]; offline: boolean }> {
+  try {
+    return { models: await getModelsEvaluationApi(), offline: false };
+  } catch {
+    return { models: [], offline: true };
+  }
+}
+
+export interface FeatureImportanceItem {
+  feature: string;
+  importance: number;
+  desc?: string;
+}
+
+export async function getModelsFeatureImportanceApi(modelName?: string): Promise<{ model_name: string; importances: FeatureImportanceItem[] }> {
+  const q = modelName ? `?model_name=${encodeURIComponent(modelName)}` : "";
+  const data = await fetchJson<{ model_name: string; feature_names: string[]; importances: number[] }>(
+    `${API_BASE}/models/feature-importance${q}`
+  );
+  const total = data.importances.reduce((s, v) => s + Math.abs(v), 0) || 1;
+  return {
+    model_name: data.model_name,
+    importances: data.feature_names.map((f, i) => ({
+      feature: f,
+      importance: Math.abs(data.importances[i] ?? 0) / total,
+    })),
+  };
+}
+
+export interface RetrainResponse {
+  best_model_name: string;
+  val_metrics: Record<string, { accuracy: number; f1_weighted: number; precision_weighted?: number; recall_weighted?: number }>;
+  test_metrics: Record<string, { accuracy: number; f1_weighted: number; precision_weighted?: number; recall_weighted?: number }>;
+}
+
+export async function triggerModelsRetrainApi(): Promise<RetrainResponse> {
+  try {
+    // Synchronous on the backend and slow (minutes) — allow a long timeout.
+    return await fetchJson<RetrainResponse>(`${API_BASE}/models/train`, { method: "POST" }, 600000);
+  } catch (err) {
+    throw err instanceof Error && err.message.startsWith("HTTP error")
+      ? err
+      : new ApiOfflineError(`Retrain request failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+export interface DatasetInfoResponse {
+  n_rows: number;
+  n_columns: number;
+  feature_columns: string[];
+  class_labels: string[];
+  class_counts: Record<string, number>;
+  missing_values: number;
+}
+
+export async function getDatasetInfoApi(): Promise<DatasetInfoResponse> {
+  return fetchJson<DatasetInfoResponse>(`${API_BASE}/dataset/info`);
+}
+
+export interface DatasetPreviewResponse extends DatasetInfoResponse {
+  columns: string[];
+  rows: (number | string)[][];
+  n_preview_rows: number;
+}
+
+export async function getDatasetPreviewApi(limit = 50): Promise<DatasetPreviewResponse> {
+  return fetchJson<DatasetPreviewResponse>(`${API_BASE}/dataset/preview?limit=${limit}`);
+}
+
+export async function triggerDatasetGenerateApi(nPerClass = 500): Promise<DatasetPreviewResponse> {
+  try {
+    return await fetchJson<DatasetPreviewResponse>(`${API_BASE}/dataset/generate?n_per_class=${nPerClass}`, { method: "POST" }, 120000);
+  } catch (err) {
+    throw err instanceof Error && err.message.startsWith("HTTP error")
+      ? err
+      : new ApiOfflineError(`Dataset generation failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }

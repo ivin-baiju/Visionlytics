@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Award, Brain, BarChart2, RefreshCw, CheckCircle2, TrendingUp } from "lucide-react";
-import { getModelsEvaluationApi } from "@/lib/api";
-import { ModelMetric } from "@/types";
+import { Award, Brain, BarChart2, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import { getModelsEvaluationApi, getModelsFeatureImportanceApi, triggerModelsRetrainApi, ApiOfflineError } from "@/lib/api";
+import { ModelMetric, FeatureImportance } from "@/types";
 
 const FEATURE_IMPORTANCES = [
   { feature: "people_count", importance: 0.38, desc: "Primary crowd volume count" },
@@ -17,21 +17,58 @@ const FEATURE_IMPORTANCES = [
 
 export default function MlModelsPage() {
   const [models, setModels] = useState<ModelMetric[]>([]);
+  const [importances, setImportances] = useState<FeatureImportance[]>([]);
+  const [importanceModel, setImportanceModel] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRetraining, setIsRetraining] = useState<boolean>(false);
   const [retrainSuccess, setRetrainSuccess] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
-    getModelsEvaluationApi().then(setModels);
+    let cancelled = false;
+    (async () => {
+      try {
+        const [metrics, feat] = await Promise.all([
+          getModelsEvaluationApi(),
+          getModelsFeatureImportanceApi().catch(() => null),
+        ]);
+        if (cancelled) return;
+        setModels(metrics);
+        if (feat) {
+          setImportances(feat.importances);
+          setImportanceModel(feat.model_name);
+        }
+      } catch (err) {
+        if (!cancelled) setApiError(err instanceof Error ? err.message : "Failed to load model metrics");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  const handleRetrain = () => {
+  const handleRetrain = async () => {
     setIsRetraining(true);
     setRetrainSuccess(false);
-    setTimeout(() => {
-      setIsRetraining(false);
+    setApiError(null);
+    try {
+      const res = await triggerModelsRetrainApi();
+      setModels(res.test_metrics && Object.keys(res.test_metrics).length > 0
+        ? Object.entries(res.test_metrics).map(([name, m]) => ({
+            name, accuracy: m.accuracy ?? 0, precision: m.precision_weighted ?? 0,
+            recall: m.recall_weighted ?? 0, f1: m.f1_weighted ?? 0,
+            is_champion: name === res.best_model_name,
+          }))
+        : models);
       setRetrainSuccess(true);
       setTimeout(() => setRetrainSuccess(false), 4000);
-    }, 2000);
+    } catch (err) {
+      setApiError(err instanceof ApiOfflineError
+        ? "Retraining needs the backend (slow, minutes). Start it with `python start_local.py`."
+        : err instanceof Error ? err.message : "Retraining failed");
+    } finally {
+      setIsRetraining(false);
+    }
   };
 
   return (
@@ -85,7 +122,18 @@ export default function MlModelsPage() {
         </div>
       )}
 
-      {/* Model Leaderboard Table */}
+      {apiError && (
+        <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#DC2626", padding: "12px 18px", borderRadius: "12px", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.9rem", fontWeight: 600 }}>
+          <AlertTriangle size={18} /> {apiError}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="vl-card" style={{ textAlign: "center", padding: "2rem" }}>Loading model metrics from backend…</div>
+      ) : models.length === 0 && !apiError ? (
+        <div className="vl-card" style={{ textAlign: "center", padding: "2rem" }}>No trained models found. Train the models first.</div>
+      ) : (
+      <>
       <div className="vl-card" style={{ marginBottom: "2rem" }}>
         <div className="vl-card-header">
           <span className="vl-card-label">Model Leaderboard (Held-Out Test Set)</span>
@@ -105,7 +153,7 @@ export default function MlModelsPage() {
               </tr>
             </thead>
             <tbody>
-              {models.map((m) => (
+              {[...models].sort((a, b) => b.f1 - a.f1).map((m) => (
                 <tr key={m.name}>
                   <td style={{ fontWeight: 600, color: m.is_champion ? "var(--accent-blue)" : undefined }}>
                     {m.name}
@@ -137,11 +185,11 @@ export default function MlModelsPage() {
         {/* Feature Importances */}
         <div className="vl-card">
           <div className="vl-card-header">
-            <span className="vl-card-label">Champion Feature Importances (Random Forest)</span>
+            <span className="vl-card-label">Feature Importances{importanceModel ? ` (${importanceModel})` : ""}</span>
             <BarChart2 size={18} color="var(--accent-purple)" />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "10px" }}>
-            {FEATURE_IMPORTANCES.map((f) => (
+            {(importances.length > 0 ? importances : FEATURE_IMPORTANCES.map((f) => ({ feature: f.feature, importance: f.importance, desc: f.desc }))).map((f) => (
               <div key={f.feature}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", marginBottom: "4px" }}>
                   <code style={{ color: "var(--accent-blue)", fontFamily: "var(--font-mono)" }}>{f.feature}</code>
@@ -194,6 +242,8 @@ export default function MlModelsPage() {
           </ul>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

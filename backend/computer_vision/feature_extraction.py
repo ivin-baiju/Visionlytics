@@ -223,9 +223,12 @@ class FeatureExtractor:
             normalized_distances = pairwise_distances / frame_diagonal
             avg_distance = float(np.mean(normalized_distances))
             min_distance = float(np.min(normalized_distances))
-        else:
-            avg_distance = 1.0
-            min_distance = 1.0
+        elif n == 1:
+            # Single person: no pairwise distance exists. Use 0.0 (not 1.0)
+            # so the model can distinguish singleton frames from empty ones
+            # and from truly sparse multi-person frames.
+            avg_distance = 0.0
+            min_distance = 0.0
 
         # ── Feature 6: Spatial Spread ────────────────────────────────────
         if n >= 2:
@@ -250,15 +253,15 @@ class FeatureExtractor:
         frame_occupancy_density = weighted_people_count / (frame_area / 1_000_000)
 
         return {
-            "people_count": float(people_count),
+            "people_count": int(people_count),
             "occupancy_ratio": round(occupancy_ratio, 6),
             "avg_person_area": round(avg_person_area, 6),
             "avg_distance": round(avg_distance, 6),
             "min_distance": round(min_distance, 6),
             "spatial_spread": round(spatial_spread, 6),
-            "top_region_count": float(top_region_count),
-            "middle_region_count": float(middle_region_count),
-            "bottom_region_count": float(bottom_region_count),
+            "top_region_count": int(top_region_count),
+            "middle_region_count": int(middle_region_count),
+            "bottom_region_count": int(bottom_region_count),
             "frame_occupancy_density": round(frame_occupancy_density, 6),
         }
 

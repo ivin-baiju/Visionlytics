@@ -220,7 +220,12 @@ def scale_features(features: dict[str, float], scaler: StandardScaler | None = N
             raise FileNotFoundError("Scaler not found. Train the models first.")
         scaler = joblib.load(scaler_path)
 
-    # Build feature vector in the correct column order
-    feature_vector = np.array([[features.get(col, 0.0) for col in FEATURE_COLUMNS]])
+    # Build feature vector in the correct column order.
+    # Fail loudly on missing features instead of silently imputing 0.0,
+    # which would corrupt density predictions.
+    missing = [col for col in FEATURE_COLUMNS if col not in features]
+    if missing:
+        raise KeyError(f"Missing required features: {missing}")
+    feature_vector = np.array([[float(features[col]) for col in FEATURE_COLUMNS]])
 
     return scaler.transform(feature_vector)

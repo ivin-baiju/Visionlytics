@@ -57,18 +57,25 @@ def generate_heatmap(
             # but a simple +1 impulse is fastest.
             heat[cy, cx] += 1.0
 
-    # Apply a single large Gaussian blur to spread the impulses
-    ksize = int(radius * 2)
+    # Apply a single large Gaussian blur to spread the impulses.
+    # Cap kernel size: radius is scaled to frame diagonal by callers, but
+    # guard here so 4K frames cannot trigger a 300px+ blur.
+    ksize = int(min(radius, max(h, w) // 4) * 2)
     if ksize % 2 == 0:
         ksize += 1
-    
+    ksize = max(3, ksize)
+
     heat = cv2.GaussianBlur(heat, (ksize, ksize), 0)
 
-    # Normalize heatmap to [0, 255]
-    if heat.max() > 0:
-        heat = (heat / heat.max() * 255).astype(np.uint8)
-    else:
+    # Normalize heatmap to [0, 255] with a fixed reference so that sparse
+    # and dense crowds remain visually distinguishable. Normalizing by the
+    # per-frame max made a 5-person and 50-person crowd look identical.
+    # Reference: ~4 overlapping blobs at full strength saturates red.
+    ref_max = 4.0
+    if float(heat.max()) <= 0:
         heat = heat.astype(np.uint8)
+    else:
+        heat = np.clip(heat / ref_max * 255.0, 0, 255).astype(np.uint8)
 
     # Apply colormap: COLORMAP_JET gives green → yellow → red
     heatmap_colored = cv2.applyColorMap(heat, cv2.COLORMAP_JET)

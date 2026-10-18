@@ -12,6 +12,7 @@ Usage:
 
 import os
 import sys
+import threading
 
 import joblib
 
@@ -49,34 +50,41 @@ class CrowdPredictor:
         self._scaler = None
         self._model_name = model_name
         self._meta = None
+        self._lock = threading.Lock()
 
     def _load(self):
-        """Lazily load model and scaler on first prediction."""
+        """Lazily load model and scaler on first prediction (thread-safe)."""
         if self._model is not None:
             return
+        with self._lock:
+            if self._model is not None:
+                return
 
-        if self._model_name:
-            safe_name = self._model_name.lower().replace(" ", "_")
-            model_path = os.path.join(MODELS_DIR, f"{safe_name}.joblib")
-        else:
-            model_path = os.path.join(MODELS_DIR, "best_model.joblib")
+            if self._model_name:
+                safe_name = self._model_name.lower().replace(" ", "_")
+                model_path = os.path.join(MODELS_DIR, f"{safe_name}.joblib")
+            else:
+                model_path = os.path.join(MODELS_DIR, "best_model.joblib")
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(
-                f"Model not found at '{model_path}'. "
-                "Train the models first using the ML Models page or "
-                "run: python -m machine_learning.train"
-            )
+            if not os.path.exists(model_path):
+                raise FileNotFoundError(
+                    f"Model not found at '{model_path}'. "
+                    "Train the models first using the ML Models page or "
+                    "run: python -m machine_learning.train"
+                )
 
-        self._model = joblib.load(model_path)
+            self._model = joblib.load(model_path)
 
-        scaler_path = os.path.join(MODELS_DIR, "scaler.joblib")
-        if os.path.exists(scaler_path):
-            self._scaler = joblib.load(scaler_path)
+            scaler_path = os.path.join(MODELS_DIR, "scaler.joblib")
+            if os.path.exists(scaler_path):
+                self._scaler = joblib.load(scaler_path)
 
-        meta_path = os.path.join(MODELS_DIR, "best_model_meta.joblib")
-        if os.path.exists(meta_path):
-            self._meta = joblib.load(meta_path)
+            meta_path = os.path.join(MODELS_DIR, "best_model_meta.joblib")
+            if os.path.exists(meta_path):
+                try:
+                    self._meta = joblib.load(meta_path)
+                except Exception:
+                    self._meta = None
 
     @property
     def model_name(self) -> str:
@@ -88,9 +96,14 @@ class CrowdPredictor:
 
     @property
     def is_loaded(self) -> bool:
-        """Check if models exist on disk."""
-        model_path = os.path.join(MODELS_DIR, "best_model.joblib")
-        return os.path.exists(model_path)
+        """Check if model + scaler artifacts exist on disk."""
+        if self._model_name:
+            safe = self._model_name.lower().replace(" ", "_")
+            model_path = os.path.join(MODELS_DIR, f"{safe}.joblib")
+        else:
+            model_path = os.path.join(MODELS_DIR, "best_model.joblib")
+        scaler_path = os.path.join(MODELS_DIR, "scaler.joblib")
+        return os.path.exists(model_path) and os.path.exists(scaler_path)
 
     def predict(self, features: dict[str, float]) -> tuple[str, float]:
         """

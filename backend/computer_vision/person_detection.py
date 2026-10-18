@@ -22,8 +22,6 @@ from functools import lru_cache
 
 import cv2
 import numpy as np
-
-
 @dataclass
 class Detection:
     """
@@ -76,6 +74,12 @@ def _resolve_device() -> str:
 @lru_cache(maxsize=1)
 def _resolve_model_paths() -> tuple[str | None, str]:
     """Find ONNX and PT model paths once and cache the result."""
+    # Explicit override wins (useful for tests / custom deployments).
+    env_path = os.environ.get("YOLO_MODEL_PATH")
+    if env_path and os.path.exists(env_path):
+        if env_path.endswith(".onnx"):
+            return env_path, env_path
+        return None, env_path
     PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     search_dirs = [PROJECT_ROOT, os.path.dirname(PROJECT_ROOT)]
 
@@ -98,7 +102,9 @@ class PersonDetector:
     Detects people in images using YOLOv8s.
 
     Performance Notes:
-        - ONNX Runtime is preferred over PyTorch for 2-4x CPU speedup
+        - PyTorch (.pt) is the current inference backend. ONNX Runtime
+          remains the preferred speedup when a yolov8s.onnx export is
+          present next to the .pt weights.
         - Model is loaded eagerly on first use and cached for the process lifetime
         - Device detection is cached globally (no per-frame overhead)
 
@@ -128,9 +134,11 @@ class PersonDetector:
             onnx_path, pt_path = _resolve_model_paths()
 
             if onnx_path and os.path.exists(onnx_path):
-                # ONNX Runtime: 2-4x faster than PyTorch on CPU
+                # ONNX Runtime: 2-4x faster than PyTorch on CPU (when exported)
                 self._model = YOLO(onnx_path, task='detect')
             else:
+                # PyTorch fallback — auto-downloads yolov8s.pt on first run
+                # when no local weights are found.
                 self._model = YOLO(pt_path)
         return self._model
 

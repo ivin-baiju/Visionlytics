@@ -11,11 +11,15 @@ export default function VideoAnalysisPage() {
   const [currentCount, setCurrentCount] = useState<number>(0);
   const [densityLabel, setDensityLabel] = useState<string>("LOW");
   const [history, setHistory] = useState<{ time: string; count: number }[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const captureRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<number>(0);
+  const inFlightRef = useRef<boolean>(false);
   const prevVideoUrl = useRef<string | null>(null);
 
   const togglePlay = () => {
@@ -43,16 +47,19 @@ export default function VideoAnalysisPage() {
     }
   };
 
-  // Video frame extraction — throttled to ~4fps for smooth performance
+  // Video frame extraction — real backend inference at ~2fps (500ms throttle).
+  // Skips while a request is in flight so slow backends can't pile up.
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
+    if (!captureRef.current) captureRef.current = document.createElement("canvas");
+    const capture = captureRef.current;
 
     const processFrame = (timestamp: number) => {
       if (!video.paused && !video.ended) {
-        // Throttle to max ~4 updates per second (250ms) to avoid re-render storm
-        if (timestamp - lastUpdateRef.current >= 250) {
+        // Throttle to ~2 inference calls per second to protect the backend.
+        if (timestamp - lastUpdateRef.current >= 500 && !inFlightRef.current) {
           lastUpdateRef.current = timestamp;
 
           const ctx = canvas.getContext("2d");
@@ -60,16 +67,33 @@ export default function VideoAnalysisPage() {
             canvas.width = video.videoWidth || 640;
             canvas.height = video.videoHeight || 360;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            const fakeCount = Math.floor(Math.sin(video.currentTime) * 5 + 8);
-            setCurrentCount(fakeCount);
-            const newDensity = fakeCount > 10 ? "HIGH" : fakeCount > 5 ? "MEDIUM" : "LOW";
-            setDensityLabel(newDensity);
-
-            setHistory((prev) => {
-              const now = new Date().toLocaleTimeString().slice(-5);
-              return [...prev.slice(-14), { time: now, count: fakeCount }];
-            });
+          }
+          // Snapshot to an offscreen canvas so overlays never feed back in.
+          capture.width = video.videoWidth || 640;
+          capture.height = video.videoHeight || 360;
+          const capCtx = capture.getContext("2d");
+          if (capCtx) {
+            capCtx.drawImage(video, 0, 0, capture.width, capture.height);
+            inFlightRef.current = true;
+            setIsAnalyzing(true);
+            capture.toBlob(async (blob) => {
+              try {
+                if (!blob) return;
+                const res: FrameAnalysisResult = await analyzeFrameApi(blob, 0.3, false, false);
+                setCurrentCount(res.people_count);
+                setDensityLabel(res.density_label);
+                setApiError(null);
+                setHistory((prev) => {
+                  const now = new Date().toLocaleTimeString().slice(-5);
+                  return [...prev.slice(-29), { time: now, count: res.people_count }];
+                });
+              } catch (err) {
+                setApiError(err instanceof Error ? err.message : "Video inference failed");
+              } finally {
+                inFlightRef.current = false;
+                setIsAnalyzing(false);
+              }
+            }, "image/jpeg", 0.8);
           }
         }
       }
@@ -103,6 +127,14 @@ export default function VideoAnalysisPage() {
       </div>
 
       <div className="vl-responsive-grid-sidebar">
+        {apiError && (
+          <div role="alert" className="vl-card" style={{ borderColor: "rgba(239,68,68,0.4)", gridColumn: "1 / -1" }}>
+            <span style={{ fontSize: "0.85rem", color: "#DC2626", fontWeight: 600 }}>
+              Backend unreachable: {apiError}. Start it with `python start_local.py` — video shows preview only until then.
+              {isAnalyzing ? " (retrying…)" : ""}
+            </span>
+          </div>
+        )}
         {/* Left Column: Player & Stream */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           <div className="vl-card" style={{ padding: "1.25rem" }}>

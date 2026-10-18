@@ -48,8 +48,9 @@ def _dataset_payload(df, limit: int = MAX_PREVIEW_ROWS) -> dict:
 # ── Dataset endpoints ────────────────────────────────────────────────────────
 
 @router.get("/dataset/preview")
-def dataset_preview(limit: int = MAX_PREVIEW_ROWS):
+def dataset_preview(limit: int = 500):
     """Return dataset rows (capped) plus summary counts for the UI."""
+    limit = max(1, min(int(limit), MAX_PREVIEW_ROWS))
     try:
         df = load_dataset(DATASET_PATH)
     except (FileNotFoundError, ValueError) as exc:
@@ -88,10 +89,10 @@ def dataset_info():
 @router.post("/dataset/generate")
 def dataset_generate(n_per_class: int = 500):
     """Regenerate the synthetic dataset and return a fresh preview payload."""
-    if n_per_class < 100 or n_per_class > 50000:
+    if n_per_class < 100 or n_per_class > 5000:
         return JSONResponse(
             status_code=400,
-            content={"error": "n_per_class must be between 100 and 50000"},
+            content={"error": "n_per_class must be between 100 and 5000"},
         )
 
     try:
@@ -107,18 +108,22 @@ def dataset_generate(n_per_class: int = 500):
 
 # ── Model registry endpoints ─────────────────────────────────────────────────
 
+# tests/test_backend_api.py::test_models_list asserts exactly 7 artifacts.
+EXPECTED_MODEL_ARTIFACTS = {
+    "Logistic Regression": "logistic_regression.joblib",
+    "KNN": "knn.joblib",
+    "Decision Tree": "decision_tree.joblib",
+    "Random Forest": "random_forest.joblib",
+    "SVM": "svm.joblib",
+    "Gradient Boosting": "gradient_boosting.joblib",
+    "Voting Ensemble": "voting_ensemble.joblib",
+}
+
+
 @router.get("/models/list")
 def models_list():
     """Return which trained model artifacts exist on disk plus the champion."""
-    expected = {
-        "Logistic Regression": "logistic_regression.joblib",
-        "KNN": "knn.joblib",
-        "Decision Tree": "decision_tree.joblib",
-        "Random Forest": "random_forest.joblib",
-        "SVM": "svm.joblib",
-        "Gradient Boosting": "gradient_boosting.joblib",
-        "Voting Ensemble": "voting_ensemble.joblib",
-    }
+    expected = EXPECTED_MODEL_ARTIFACTS
 
     artifacts = {}
     for name, fname in expected.items():
@@ -186,7 +191,8 @@ def models_feature_importance(model_name: str | None = None):
         meta_path = os.path.join(MODELS_DIR, "best_model_meta.joblib")
         if os.path.exists(meta_path):
             try:
-                resolved_name = joblib.load(meta_path).get("name")
+                loaded = joblib.load(meta_path)
+                resolved_name = loaded.get("name") if isinstance(loaded, dict) else None
             except Exception:  # pragma: no cover - defensive
                 resolved_name = None
 
@@ -224,7 +230,11 @@ def models_feature_importance(model_name: str | None = None):
 
 @router.post("/models/train")
 def models_train():
-    """Retrain all 7 models and return metrics plus the refreshed registry."""
+    """Retrain all models and return metrics plus the refreshed registry.
+
+    NOTE: synchronous and slow (minutes). Callers should treat this as an
+    admin action; a BackgroundTasks + job-polling variant is the follow-up.
+    """
     try:
         results = train_all_models(verbose=False)
     except FileNotFoundError as exc:

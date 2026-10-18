@@ -4,21 +4,59 @@ import sqlite3
 import logging
 from typing import Any, Dict
 
-import firebase_admin
-from firebase_admin import credentials, firestore
-
 logger = logging.getLogger(__name__)
 
-# Fallback SQLite config
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "visionlytics_fallback.db")
+# firebase_admin is optional — backend must boot without it.
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    _HAS_FIREBASE = True
+except ImportError:
+    firebase_admin = None  # type: ignore
+    credentials = None  # type: ignore
+    firestore = None  # type: ignore
+    _HAS_FIREBASE = False
+
+# Fallback SQLite config — overridable via VISIONLYTICS_DB_PATH for tests.
+DB_PATH = os.environ.get(
+    "VISIONLYTICS_DB_PATH",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "visionlytics_fallback.db"),
+)
 
 class DatabaseClient:
-    def __init__(self):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        # Singleton: importing db.firebase_client must not open connections.
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, lazy: bool = True):
+        if getattr(self, "_initialized", False):
+            return
+        self._initialized = True
         self.use_firebase = False
         self.db = None
-        self._init_connection()
+        if not lazy and os.environ.get("VISIONLYTICS_EAGER_DB", "0") == "1":
+            self._init_connection()
+
+    def _ensure_connection(self):
+        if self.db is None and not self.use_firebase:
+            # Check if sqlite already initialized (table exists)
+            if not os.path.exists(DB_PATH):
+                self._init_connection()
+            else:
+                self.use_firebase = False
+        elif self.db is None:
+            self._init_connection()
 
     def _init_connection(self):
+        if not _HAS_FIREBASE:
+            logger.warning("firebase_admin not installed. Falling back to SQLite.")
+            self._init_sqlite()
+            return
         # Attempt to load Firebase credentials
         # We look in the root folder (two levels up from backend/db)
         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -61,6 +99,7 @@ class DatabaseClient:
         conn.close()
 
     def save_analysis(self, source_type: str, features: Dict[str, Any], density_label: str, confidence: float):
+        self._ensure_connection()
         features_subset = {
             "top_region_count": features.get("top_region_count", 0),
             "middle_region_count": features.get("middle_region_count", 0),
@@ -100,6 +139,8 @@ class DatabaseClient:
             conn.close()
 
     def get_recent(self, limit: int = 100) -> list[Dict[str, Any]]:
+        limit = max(1, min(int(limit), 500))
+        self._ensure_connection()
         if self.use_firebase:
             try:
                 docs = self.db.collection('analysis_history').order_by('timestamp', direction=firestore.Query.DESCENDING).limit(limit).stream()
@@ -124,13 +165,18 @@ class DatabaseClient:
             cursor.execute('SELECT * FROM analysis_history ORDER BY timestamp DESC LIMIT ?', (limit,))
             rows = cursor.fetchall()
             conn.close()
-            
+
             result = []
             for row in rows:
                 record = dict(row)
                 if record.get('features_json'):
-                    record['features'] = json.loads(record['features_json'])
+                    try:
+                        record['features'] = json.loads(record['features_json'])
+                    except (json.JSONDecodeError, TypeError):
+                        record['features'] = {}
                 result.append(record)
             return result
 
-db_client = DatabaseClient()
+
+# Lazy singleton — no connections opened at import time.
+db_client = DatabaseClient(lazy=True)

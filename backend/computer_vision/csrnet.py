@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torchvision import models
 
 class CSRNet(nn.Module):
     def __init__(self, load_weights=False):
@@ -13,11 +12,12 @@ class CSRNet(nn.Module):
         
         if not load_weights:
             # Initialize with standard ImageNet weights for the frontend VGG
-            mod = models.vgg16(weights=models.VGG16_Weights.DEFAULT)
+            # via named-parameter matching (order-independent).
             self._initialize_weights()
-            # Copy frontend weights
-            for i in range(len(self.frontend.state_dict().items())):
-                list(self.frontend.state_dict().items())[i][1].data[:] = list(mod.state_dict().items())[i][1].data[:]
+            try:
+                load_frontend_vgg_weights(self)
+            except Exception as exc:
+                print(f"[CSRNet] VGG weight init skipped (offline?): {exc}")
 
     def forward(self, x):
         x = self.frontend(x)
@@ -52,6 +52,22 @@ def make_layers(cfg, in_channels=3, batch_norm=False, dilation=False):
                 layers += [conv2d, nn.ReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
+
+
+def load_frontend_vgg_weights(model: "CSRNet") -> None:
+    """Copy ImageNet VGG16 frontend weights without order-dependent hacks.
+
+    Uses named-parameter matching with strict=False so future
+    torchvision layer-ordering changes cannot silently misalign weights.
+    """
+    from torchvision import models as tv_models
+
+    mod = tv_models.vgg16(weights=tv_models.VGG16_Weights.DEFAULT)
+    frontend_state = model.frontend.state_dict()
+    vgg_state = mod.features.state_dict()
+    matched = {k: v for k, v in vgg_state.items() if k in frontend_state}
+    frontend_state.update(matched)
+    model.frontend.load_state_dict(frontend_state, strict=False)
 
 # Mock inference wrapper since the model isn't trained yet
 # A real implementation would load trained weights here.

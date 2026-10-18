@@ -164,8 +164,8 @@ def process_images(
 
             h, w = image.shape[:2]
 
-            # Detect people
-            detections = detector.detect(image)
+            # Detect people (honour the caller's confidence threshold)
+            detections = detector.detect(image, confidence=confidence)
 
             # Extract features
             features = extractor.extract(detections, (h, w))

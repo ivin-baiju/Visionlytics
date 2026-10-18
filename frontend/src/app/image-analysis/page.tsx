@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import {
   Upload,
   Sliders,
@@ -41,7 +41,7 @@ export default function ImageAnalysisPage() {
   const [confidence, setConfidence] = useState<number>(0.3);
   const [tracking, setTracking] = useState<boolean>(true);
   const [attributes, setAttributes] = useState<boolean>(true);
-  
+
   // Power Controls
   const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
   const [showBoxes, setShowBoxes] = useState<boolean>(true);
@@ -51,27 +51,39 @@ export default function ImageAnalysisPage() {
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [result, setResult] = useState<FrameAnalysisResult | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const prevObjectUrl = useRef<string | null>(null);
 
-  const setImageWithCleanup = useCallback((url: string) => {
+  const revokePrevUrl = useCallback(() => {
     if (prevObjectUrl.current) {
       URL.revokeObjectURL(prevObjectUrl.current);
       prevObjectUrl.current = null;
     }
-    setSelectedImage(url);
   }, []);
+
+  // Revoke blob URLs on unmount to avoid leaks.
+  useEffect(() => {
+    return () => {
+      if (prevObjectUrl.current) URL.revokeObjectURL(prevObjectUrl.current);
+    };
+  }, []);
+
+  const setImageWithCleanup = useCallback((url: string, objectUrl: string | null) => {
+    revokePrevUrl();
+    prevObjectUrl.current = objectUrl;
+    setSelectedImage(url);
+  }, [revokePrevUrl]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      prevObjectUrl.current = url;
-      setImageWithCleanup(url);
-      prevObjectUrl.current = url;
-      setSelectedImage(url);
+      setImageWithCleanup(url, url);
       runAnalysis(file);
     }
+    // Reset so the same file can be picked twice in a row.
+    e.target.value = "";
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -80,20 +92,21 @@ export default function ImageAnalysisPage() {
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith("image/")) {
       const url = URL.createObjectURL(file);
-      prevObjectUrl.current = url;
-      setSelectedImage(url);
+      setImageWithCleanup(url, url);
       runAnalysis(file);
     }
   };
 
   const runAnalysis = async (fileOrBlob?: Blob) => {
     setIsAnalyzing(true);
+    setApiError(null);
     try {
       let blob: Blob;
       if (fileOrBlob) {
         blob = fileOrBlob;
       } else {
         const res = await fetch(selectedImage);
+        if (!res.ok) throw new Error(`Sample image fetch failed (${res.status})`);
         blob = await res.blob();
       }
 
@@ -101,6 +114,8 @@ export default function ImageAnalysisPage() {
       setResult(data);
     } catch (err) {
       console.error(err);
+      setResult(null);
+      setApiError(err instanceof Error ? err.message : "Analysis failed. Is the backend running?");
     } finally {
       setIsAnalyzing(false);
     }
@@ -265,7 +280,7 @@ export default function ImageAnalysisPage() {
                       color: selectedImage === sample.url ? "var(--accent-teal)" : "var(--text-secondary)",
                     }}
                     onClick={() => {
-                      setImageWithCleanup(sample.url);
+                      setImageWithCleanup(sample.url, null);
                       setResult(null);
                     }}
                   >
@@ -423,7 +438,16 @@ export default function ImageAnalysisPage() {
           </div>
 
           {/* Results Summary Card */}
-          {result ? (
+          {apiError ? (
+            <div className="vl-card" role="alert" style={{ borderColor: "rgba(239,68,68,0.4)" }}>
+              <div className="vl-card-header">
+                <span className="vl-card-label">Backend Unreachable</span>
+              </div>
+              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                {apiError} Start the FastAPI service (`python start_local.py`) and retry.
+              </p>
+            </div>
+          ) : result ? (
             <div className="vl-card">
               <div className="vl-card-header">
                 <span className="vl-card-label">Inference Result</span>

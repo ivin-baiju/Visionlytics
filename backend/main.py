@@ -14,10 +14,17 @@ from api.data_routers import router as data_router
 async def lifespan(app: FastAPI):
     # Pre-load ML predictor and YOLO detector so first request is instant
     try:
-        from api.routers import detector, predictor
-        if not predictor.is_loaded:
-            predictor._load()
-        detector.warm_up()
+        from api.routers import get_detector, get_predictor
+        _predictor = get_predictor()
+        if not _predictor.is_loaded:
+            try:
+                _predictor._load()
+            except FileNotFoundError:
+                pass
+        try:
+            get_detector().warm_up()
+        except Exception as warm_err:
+            print(f"[Visionlytics API] Detector warm-up skipped: {warm_err}")
     except Exception as e:
         print(f"[Visionlytics API] Warm-up warning: {e}")
     yield
@@ -35,7 +42,10 @@ app = FastAPI(
 # Enable CORS for Next.js frontend running locally or on Vercel
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -49,6 +49,12 @@ export interface ModelMetric {
   is_champion?: boolean;
 }
 
+export interface FeatureImportance {
+  feature: string;
+  importance: number;
+  desc?: string;
+}
+
 export interface DatasetInfo {
   total_samples: number;
   feature_names: string[];
