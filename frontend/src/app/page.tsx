@@ -6,7 +6,6 @@ import {
   Users,
   Activity,
   Award,
-  Server,
   Image as ImageIcon,
   Video as VideoIcon,
   Camera,
@@ -22,6 +21,7 @@ import {
   Lightbulb,
   Sparkles,
   Search,
+  Download,
 } from "lucide-react";
 import { checkApiHealth } from "@/lib/api";
 
@@ -35,16 +35,16 @@ export default function DashboardPage() {
   return (
     <div className="vl-container">
       <div className="vl-dashboard-layout">
-        {/* ── Left Sidebar (Directly matching Lordicon layout) ───────────────── */}
+        {/* ── Left Sidebar (Clean Lordicon Layout) ─────────────────────────── */}
         <aside className="vl-sidebar">
           <Link href="/" className="vl-sidebar-item active">
             Dashboard
           </Link>
           <Link href="/image-analysis" className="vl-sidebar-item">
-            Image Analysis
+            Image Inspector
           </Link>
           <Link href="/video-analysis" className="vl-sidebar-item">
-            Video Analysis
+            Video Surveillance
           </Link>
           <Link href="/live-camera" className="vl-sidebar-item">
             Live Camera
@@ -53,10 +53,7 @@ export default function DashboardPage() {
             ML Models
           </Link>
           <Link href="/dataset" className="vl-sidebar-item">
-            Dataset
-          </Link>
-          <Link href="/about" className="vl-sidebar-item">
-            Documentation
+            Dataset Explorer
           </Link>
         </aside>
 
@@ -90,7 +87,7 @@ export default function DashboardPage() {
             </button>
           </section>
 
-          {/* ── 3-Up KPI Stat Cards (Directly matching Lordicon layout) ────────── */}
+          {/* ── 3-Up KPI Stat Cards (Matching Lordicon layout) ───────────────── */}
           <section className="vl-stats-row">
             <div className="vl-stat-box">
               <div className="vl-stat-icon-wrap">
@@ -118,10 +115,10 @@ export default function DashboardPage() {
               </div>
               <div>
                 <div className="vl-stat-value">
-                  {apiOnline === null ? "..." : apiOnline ? "Online" : "Local"}
+                  {apiOnline === null ? "..." : apiOnline ? "Online" : "Simulated"}
                 </div>
                 <div className="vl-stat-label">
-                  {apiOnline ? "FastAPI localhost:8000" : "simulation fallback"}
+                  {apiOnline ? "FastAPI localhost:8000" : "client engine active"}
                 </div>
               </div>
             </div>
@@ -144,16 +141,16 @@ export default function DashboardPage() {
             </Link>
           </section>
 
-          {/* ── Learn more / Workspaces (Matching Lordicon 3-Grid) ─────────────── */}
+          {/* ── Workspaces & Analysis (Matching Lordicon 3-Grid) ───────────────── */}
           <h2 className="vl-section-header">Workspaces & Analysis</h2>
           <section className="vl-feature-grid">
             <Link href="/image-analysis" className="vl-feature-card">
               <div className="vl-feature-icon-circle vl-feature-icon-purple">
                 <Lightbulb size={22} />
               </div>
-              <h3 className="vl-feature-title">Image Analysis</h3>
+              <h3 className="vl-feature-title">Image Inspector</h3>
               <p className="vl-feature-desc">
-                Upload crowd photography to generate spatial density contours, 10 geometric features, and regime labels.
+                High-resolution crowd analyzer with live spatial density heatmaps, 10D geometric vectors, and data export.
               </p>
               <div className="vl-feature-arrow">
                 Launch tool <ArrowRight size={14} />
@@ -166,7 +163,7 @@ export default function DashboardPage() {
               </div>
               <h3 className="vl-feature-title">Video Surveillance</h3>
               <p className="vl-feature-desc">
-                Process video clips with centroid trajectory tracking, crowd flow charts, and threshold alert triggers.
+                Surveillance stream evaluation with centroid trajectory tracking, crowd flow charts, and threshold alert triggers.
               </p>
               <div className="vl-feature-arrow">
                 Launch stream <ArrowRight size={14} />
@@ -187,11 +184,11 @@ export default function DashboardPage() {
             </Link>
           </section>
 
-          {/* ── Technical Overview ────────────────────────────────────────────── */}
+          {/* ── Technical Specs Grid ──────────────────────────────────────────── */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginTop: "0.5rem" }}>
             <div className="vl-card">
               <div className="vl-card-header">
-                <span className="vl-card-label">Density Regimes Breakdown</span>
+                <span className="vl-card-label">Density Classification Regimes</span>
                 <Layers size={18} color="var(--accent-teal)" />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>

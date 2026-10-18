@@ -3,21 +3,21 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Menu, X } from "lucide-react";
+import { User, Menu, X, Sliders, Bell } from "lucide-react";
 
 interface NavLink {
   href: string;
   label: string;
 }
 
+// Streamlined navigation: focused exclusively on core high-value analytical workspaces
 const NAV_LINKS: NavLink[] = [
   { href: "/", label: "Dashboard" },
-  { href: "/image-analysis", label: "Image Analysis" },
-  { href: "/video-analysis", label: "Video Analysis" },
+  { href: "/image-analysis", label: "Image Inspector" },
+  { href: "/video-analysis", label: "Video Surveillance" },
   { href: "/live-camera", label: "Live Camera" },
   { href: "/ml-models", label: "ML Suite" },
   { href: "/dataset", label: "Dataset" },
-  { href: "/about", label: "Docs & Architecture" },
 ];
 
 export default function Navbar() {

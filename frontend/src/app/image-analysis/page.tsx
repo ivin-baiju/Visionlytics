@@ -1,12 +1,26 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
-import { Upload, Sliders, RefreshCw, Sparkles, Eye, Info, ImageIcon } from "lucide-react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
+import {
+  Upload,
+  Sliders,
+  RefreshCw,
+  Sparkles,
+  Eye,
+  Info,
+  ImageIcon,
+  Flame,
+  Download,
+  Filter,
+  Layers,
+  CheckCircle,
+  FileSpreadsheet,
+  FileJson,
+} from "lucide-react";
 import BoundingBoxCanvas from "@/components/BoundingBoxCanvas";
 import { analyzeFrameApi } from "@/lib/api";
 import { FrameAnalysisResult, DensityLabel } from "@/types";
 
-// High quality sample crowd images (free unsplash samples)
 const SAMPLES = [
   {
     name: "Urban Crossing (Moderate)",
@@ -27,13 +41,19 @@ export default function ImageAnalysisPage() {
   const [confidence, setConfidence] = useState<number>(0.3);
   const [tracking, setTracking] = useState<boolean>(true);
   const [attributes, setAttributes] = useState<boolean>(true);
+  
+  // Power Controls
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
+  const [showBoxes, setShowBoxes] = useState<boolean>(true);
+  const [showCentroids, setShowCentroids] = useState<boolean>(true);
+  const [minConfidenceFilter, setMinConfidenceFilter] = useState<number>(0.2);
+
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [result, setResult] = useState<FrameAnalysisResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const prevObjectUrl = useRef<string | null>(null);
 
-  // Revoke previous object URL to prevent memory leak
   const setImageWithCleanup = useCallback((url: string) => {
     if (prevObjectUrl.current) {
       URL.revokeObjectURL(prevObjectUrl.current);
@@ -48,7 +68,6 @@ export default function ImageAnalysisPage() {
       const url = URL.createObjectURL(file);
       prevObjectUrl.current = url;
       setImageWithCleanup(url);
-      // Re-set since cleanup just ran
       prevObjectUrl.current = url;
       setSelectedImage(url);
       runAnalysis(file);
@@ -87,138 +106,249 @@ export default function ImageAnalysisPage() {
     }
   };
 
+  // Filter detections live
+  const filteredDetections = useMemo(() => {
+    if (!result?.detections) return [];
+    return result.detections.filter((d) => d.confidence >= minConfidenceFilter);
+  }, [result?.detections, minConfidenceFilter]);
+
+  // Export JSON Report
+  const exportJsonReport = () => {
+    if (!result) return;
+    const jsonStr = JSON.stringify(result, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `visionlytics_analysis_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export CSV Report
+  const exportCsvReport = () => {
+    if (!result) return;
+    let csv = "person_id,confidence,x1,y1,x2,y2,hair_color,clothing_color\n";
+    filteredDetections.forEach((d, idx) => {
+      const [x1, y1, x2, y2] = d.bbox;
+      const attr = result.attributes?.[idx];
+      csv += `${d.person_id ?? idx + 1},${d.confidence},${x1.toFixed(1)},${y1.toFixed(1)},${x2.toFixed(1)},${y2.toFixed(1)},${attr?.hair_color ?? "N/A"},${attr?.clothing_color ?? "N/A"}\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `visionlytics_detections_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="vl-main-content">
-      <div style={{ marginBottom: "1.75rem" }}>
-        <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.85rem", fontWeight: 800 }}>
-          Image Analysis Workspace
-        </h1>
-        <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", marginTop: "4px" }}>
-          Upload crowd photographs to run YOLOv8s person detection, spatial feature extraction, and density regime classification.
-        </p>
+    <div className="vl-container">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem", flexWrap: "wrap", gap: "1rem" }}>
+        <div>
+          <h1 className="vl-page-title">Image Inspector</h1>
+          <p className="vl-page-subtitle">
+            Upload crowd photography to run YOLOv8s person detection, spatial density heatmaps, and 10D feature vector extraction.
+          </p>
+        </div>
+
+        {/* Export Actions */}
+        {result && (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              className="vl-btn-outline"
+              onClick={exportCsvReport}
+              title="Download CSV"
+            >
+              <FileSpreadsheet size={15} color="#0D9488" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              type="button"
+              className="vl-btn-outline"
+              onClick={exportJsonReport}
+              title="Download JSON Report"
+            >
+              <FileJson size={15} color="#8B5CF6" />
+              <span>Export JSON</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="vl-responsive-grid-sidebar">
-        {/* Left Column: Image Canvas & Preview */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.75rem", alignItems: "start" }}>
+        {/* Left Column: Canvas + Visual Toggles */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {/* Main Visual Display */}
+          {/* Main Visualizer Canvas */}
           <div className="vl-card" style={{ padding: "1.25rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Eye size={18} color="var(--accent-blue)" />
-                <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>Perception Canvas</span>
+                <ImageIcon size={18} color="var(--accent-teal)" />
+                <span style={{ fontWeight: 700, fontSize: "0.95rem" }}>Live Canvas View</span>
               </div>
-              {result && (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                    Count: <strong style={{ color: "#FFF" }}>{result.people_count}</strong>
-                  </span>
-                  <span className={`vl-density-badge vl-density-${result.density_label}`}>
-                    {result.density_label} DENSITY
-                  </span>
-                </div>
-              )}
+
+              {/* Visualization Mode Toggles */}
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  type="button"
+                  className={`vl-btn-outline ${showHeatmap ? "active" : ""}`}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.82rem",
+                    borderColor: showHeatmap ? "var(--accent-teal)" : "var(--border-subtle)",
+                    backgroundColor: showHeatmap ? "var(--accent-teal-light)" : "#FFFFFF",
+                    color: showHeatmap ? "var(--accent-teal)" : "var(--text-secondary)",
+                  }}
+                  onClick={() => setShowHeatmap((prev) => !prev)}
+                >
+                  <Flame size={14} /> Heatmap
+                </button>
+                <button
+                  type="button"
+                  className="vl-btn-outline"
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.82rem",
+                    borderColor: showBoxes ? "var(--accent-teal)" : "var(--border-subtle)",
+                    backgroundColor: showBoxes ? "var(--accent-teal-light)" : "#FFFFFF",
+                    color: showBoxes ? "var(--accent-teal)" : "var(--text-secondary)",
+                  }}
+                  onClick={() => setShowBoxes((prev) => !prev)}
+                >
+                  Boxes
+                </button>
+                <button
+                  type="button"
+                  className="vl-btn-outline"
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.82rem",
+                    borderColor: showCentroids ? "var(--accent-teal)" : "var(--border-subtle)",
+                    backgroundColor: showCentroids ? "var(--accent-teal-light)" : "#FFFFFF",
+                    color: showCentroids ? "var(--accent-teal)" : "var(--text-secondary)",
+                  }}
+                  onClick={() => setShowCentroids((prev) => !prev)}
+                >
+                  Centroids
+                </button>
+              </div>
             </div>
 
             <BoundingBoxCanvas
               imageSrc={selectedImage}
-              detections={result?.detections || []}
+              detections={filteredDetections}
               attributes={result?.attributes}
               showAttributes={attributes}
+              showHeatmap={showHeatmap}
+              showBoxes={showBoxes}
+              showCentroids={showCentroids}
             />
 
-            {/* Run Analysis Action Button */}
-            <div style={{ display: "flex", gap: "12px", marginTop: "1rem" }}>
-              <button
-                type="button"
-                className="vl-btn vl-btn-primary"
-                style={{ flex: 1 }}
-                onClick={() => runAnalysis()}
-                disabled={isAnalyzing}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <RefreshCw className="vl-spin" size={16} /> Analyzing Frame...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={16} /> Run Full Detection Pipeline
-                  </>
-                )}
-              </button>
+            {/* Quick Presets */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "1rem" }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--text-tertiary)", fontWeight: 600 }}>
+                Sample Presets:
+              </span>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {SAMPLES.map((sample, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className="vl-btn-outline"
+                    style={{
+                      padding: "5px 12px",
+                      fontSize: "0.8rem",
+                      borderColor: selectedImage === sample.url ? "var(--accent-teal)" : "var(--border-subtle)",
+                      background: selectedImage === sample.url ? "var(--accent-teal-light)" : "#FFFFFF",
+                      color: selectedImage === sample.url ? "var(--accent-teal)" : "var(--text-secondary)",
+                    }}
+                    onClick={() => {
+                      setImageWithCleanup(sample.url);
+                      setResult(null);
+                    }}
+                  >
+                    {sample.name}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Sample Presets */}
-          <div className="vl-card">
-            <span className="vl-card-label" style={{ marginBottom: "0.75rem", display: "block" }}>
-              Or Try A Curated Sample Image:
-            </span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px" }}>
-              {SAMPLES.map((s) => (
-                <button
-                  type="button"
-                  key={s.name}
-                  onClick={() => {
-                    setImageWithCleanup(s.url);
-                    setResult(null);
-                  }}
-                  className="vl-btn vl-btn-secondary"
-                  style={{
-                    fontSize: "0.75rem",
-                    padding: "8px 10px",
-                    borderColor: selectedImage === s.url ? "var(--accent-blue)" : undefined,
-                  }}
-                >
-                  {s.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Parameters & Analysis Results */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {/* File Upload Box — with drag & drop */}
+          {/* Drag & Drop Upload Box */}
           <div
             className={`vl-upload-box ${isDragging ? "dragging" : ""}`}
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            role="button"
-            tabIndex={0}
-            aria-label="Upload crowd photo"
-            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+            onClick={() => fileInputRef.current?.click()}
           >
             <input
               type="file"
               ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*"
               style={{ display: "none" }}
+              accept="image/*"
+              onChange={handleFileUpload}
             />
-            <Upload size={32} color="var(--accent-blue)" style={{ margin: "0 auto 10px" }} />
-            <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
-              {isDragging ? "Drop Image Here" : "Upload Crowd Photo"}
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "4px" }}>
-              Drag & drop or click — JPG, PNG, WebP up to 20MB
-            </div>
+            <Upload size={32} strokeWidth={1.8} style={{ margin: "0 auto 10px", color: "var(--accent-teal)" }} />
+            <h4 style={{ fontWeight: 700, fontSize: "0.98rem", marginBottom: "4px" }}>
+              Click or drag a crowd image to upload
+            </h4>
+            <p style={{ color: "var(--text-tertiary)", fontSize: "0.84rem" }}>
+              Supports JPG, PNG, WebP up to 25MB
+            </p>
           </div>
 
-          {/* Hyperparameters Card */}
+          {/* 10-Dimensional Spatial Features Breakdown */}
+          {result && (
+            <div className="vl-card">
+              <div className="vl-card-header">
+                <span className="vl-card-label">10-Dimensional Spatial Feature Vector</span>
+                <Layers size={18} color="var(--accent-teal)" />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px" }}>
+                {Object.entries(result.features).map(([key, val]) => (
+                  <div
+                    key={key}
+                    style={{
+                      padding: "10px 14px",
+                      background: "#F8FAFC",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-subtle)",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.74rem", color: "var(--text-tertiary)", textTransform: "uppercase", display: "block" }}>
+                      {key.replace(/_/g, " ")}
+                    </span>
+                    <strong style={{ fontSize: "1.05rem", color: "#0F172A" }}>
+                      {typeof val === "number" ? val.toFixed(3) : String(val)}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Execution Controls & Instant Inference Metrics */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* Pipeline Parameters Card */}
           <div className="vl-card">
             <div className="vl-card-header">
-              <span className="vl-card-label">Detection Settings</span>
-              <Sliders size={16} color="var(--accent-blue)" />
+              <span className="vl-card-label">Pipeline Controls</span>
+              <Sliders size={18} color="var(--accent-teal)" />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "10px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {/* Confidence Threshold */}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "6px" }}>
-                  <span>Confidence Threshold</span>
-                  <strong style={{ color: "var(--accent-blue)" }}>{confidence.toFixed(2)}</strong>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                  <span style={{ fontWeight: 600 }}>YOLO Confidence</span>
+                  <span style={{ color: "var(--accent-teal)", fontWeight: 700 }}>{confidence}</span>
                 </div>
                 <input
                   type="range"
@@ -227,84 +357,136 @@ export default function ImageAnalysisPage() {
                   step="0.05"
                   value={confidence}
                   onChange={(e) => setConfidence(parseFloat(e.target.value))}
-                  className="vl-range-input"
-                  aria-label="Confidence threshold slider"
+                  style={{ width: "100%", accentColor: "var(--accent-teal)" }}
                 />
               </div>
 
-              <label style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", cursor: "pointer" }}>
+              {/* Live Confidence Filter */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                  <span style={{ fontWeight: 600 }}>View Filter Cutoff</span>
+                  <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>{minConfidenceFilter}</span>
+                </div>
                 <input
-                  type="checkbox"
-                  checked={tracking}
-                  onChange={(e) => setTracking(e.target.checked)}
-                  style={{ accentColor: "var(--accent-blue)", width: "16px", height: "16px" }}
+                  type="range"
+                  min="0.05"
+                  max="0.85"
+                  step="0.05"
+                  value={minConfidenceFilter}
+                  onChange={(e) => setMinConfidenceFilter(parseFloat(e.target.value))}
+                  style={{ width: "100%", accentColor: "#8B5CF6" }}
                 />
-                <span>ByteTrack ID Assignment</span>
-              </label>
+              </div>
 
-              <label style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={attributes}
-                  onChange={(e) => setAttributes(e.target.checked)}
-                  style={{ accentColor: "var(--accent-blue)", width: "16px", height: "16px" }}
-                />
-                <span>Estimate Clothing & Hair Colors</span>
-              </label>
+              {/* Toggles */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.88rem" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={tracking}
+                    onChange={(e) => setTracking(e.target.checked)}
+                    style={{ accentColor: "var(--accent-teal)" }}
+                  />
+                  <span>ByteTrack Persistent IDs</span>
+                </label>
+
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={attributes}
+                    onChange={(e) => setAttributes(e.target.checked)}
+                    style={{ accentColor: "var(--accent-teal)" }}
+                  />
+                  <span>Clothing / Appearance Attributes</span>
+                </label>
+              </div>
+
+              {/* Run Trigger Button */}
+              <button
+                type="button"
+                className="vl-btn vl-btn-primary"
+                style={{ width: "100%", marginTop: "0.5rem" }}
+                onClick={() => runAnalysis()}
+                disabled={isAnalyzing}
+              >
+                {isAnalyzing ? (
+                  <>
+                    <RefreshCw size={16} className="vl-pulse-dot" /> Computing Inference...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} /> Run Analysis Pipeline
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Results Overview */}
-          {result && (
-            <div className="vl-card vl-fade-in">
+          {/* Results Summary Card */}
+          {result ? (
+            <div className="vl-card">
               <div className="vl-card-header">
-                <span className="vl-card-label">Spatial Descriptors</span>
-                <Info size={16} color="var(--accent-purple)" />
+                <span className="vl-card-label">Inference Result</span>
+                <span className={`vl-density-badge vl-density-${result.density_label}`}>
+                  {result.density_label} DENSITY
+                </span>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.82rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-secondary)" }}>Occupancy Ratio:</span>
-                  <strong>{(result.features.occupancy_ratio * 100).toFixed(1)}%</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-secondary)" }}>Mean Spacing:</span>
-                  <strong>{(result.features.avg_distance * 100).toFixed(1)}%</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-secondary)" }}>Nearest Bottleneck:</span>
-                  <strong>{(result.features.min_distance * 100).toFixed(1)}%</strong>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-secondary)" }}>ML Classifier:</span>
-                  <strong style={{ color: "var(--accent-blue)" }}>{result.model_name}</strong>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div>
+                  <div style={{ fontSize: "0.78rem", color: "var(--text-tertiary)", textTransform: "uppercase" }}>
+                    Detected Crowd Volume
+                  </div>
+                  <div style={{ fontSize: "2rem", fontWeight: 800, color: "#0F172A", lineHeight: 1.1 }}>
+                    {filteredDetections.length}{" "}
+                    <span style={{ fontSize: "0.9rem", color: "var(--text-tertiary)", fontWeight: 500 }}>
+                      persons (total: {result.people_count})
+                    </span>
+                  </div>
                 </div>
 
-                <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid var(--border-subtle)" }}>
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", display: "block", marginBottom: "6px" }}>
-                    Calibrated Probabilities
-                  </span>
-                  {(["LOW", "MEDIUM", "HIGH"] as DensityLabel[]).map((label) => (
-                    <div key={label} style={{ marginBottom: "6px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", marginBottom: "2px" }}>
-                        <span>{label}</span>
-                        <span>{((result.probabilities[label] || 0) * 100).toFixed(0)}%</span>
+                {/* Probability Distribution */}
+                <div>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 600, marginBottom: "8px" }}>
+                    Regime Probabilities
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {Object.entries(result.probabilities).map(([label, prob]) => (
+                      <div key={label}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginBottom: "3px" }}>
+                          <span style={{ fontWeight: 600 }}>{label}</span>
+                          <span>{(prob * 100).toFixed(1)}%</span>
+                        </div>
+                        <div style={{ height: "5px", background: "#F1F5F9", borderRadius: "4px", overflow: "hidden" }}>
+                          <div
+                            style={{
+                              width: `${prob * 100}%`,
+                              height: "100%",
+                              background:
+                                label === "LOW" ? "#10B981" : label === "MEDIUM" ? "#F59E0B" : "#EF4444",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div style={{ height: "4px", background: "rgba(255,255,255,0.06)", borderRadius: "2px" }}>
-                        <div
-                          style={{
-                            width: `${(result.probabilities[label] || 0) * 100}%`,
-                            height: "100%",
-                            background: label === "LOW" ? "var(--accent-emerald)" : label === "MEDIUM" ? "var(--accent-amber)" : "var(--accent-rose)",
-                            borderRadius: "2px",
-                            transition: "width 0.4s ease",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ padding: "10px", background: "#F8FAFC", borderRadius: "8px", fontSize: "0.82rem", color: "var(--text-secondary)" }}>
+                  <strong>Model Used:</strong> {result.model_name ?? "Random Forest Ensemble"}
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="vl-card" style={{ textAlign: "center", padding: "2.5rem 1.5rem" }}>
+              <Info size={28} style={{ color: "var(--text-muted)", margin: "0 auto 10px" }} />
+              <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                Ready to Analyze
+              </h4>
+              <p style={{ color: "var(--text-tertiary)", fontSize: "0.84rem", marginTop: "4px" }}>
+                Click &ldquo;Run Analysis Pipeline&rdquo; or upload a custom photograph to inspect real-time crowd dynamics.
+              </p>
             </div>
           )}
         </div>
