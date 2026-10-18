@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, CameraOff, Video, Activity, Sparkles, RefreshCw } from "lucide-react";
 import { analyzeFrameApi } from "@/lib/api";
 import { FrameAnalysisResult } from "@/types";
@@ -14,7 +14,24 @@ export default function LiveCameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef<boolean>(true);
+
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (isMountedRef.current) {
+      setIsStreaming(false);
+      setResult(null);
+      setFps(0);
+    }
+  }, []);
 
   const startCamera = async () => {
     setErrorMsg(null);
@@ -25,25 +42,18 @@ export default function LiveCameraPage() {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
       }
       setIsStreaming(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
       console.error(err);
-      setErrorMsg("Camera access denied or unavailable. Check browser permissions.");
+      if (message.includes("Permission denied") || message.includes("NotAllowed")) {
+        setErrorMsg("Camera access denied. Please grant browser permissions and try again.");
+      } else {
+        setErrorMsg("Camera unavailable. Check if another application is using it.");
+      }
     }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    setIsStreaming(false);
-    setResult(null);
   };
 
   // Inference capture loop
@@ -52,8 +62,10 @@ export default function LiveCameraPage() {
 
     let lastTime = performance.now();
     let frameCount = 0;
+    let isProcessing = false;
 
     intervalRef.current = setInterval(async () => {
+      if (isProcessing) return; // prevent overlapping requests
       const video = videoRef.current;
       const canvas = canvasRef.current;
       if (!video || !canvas || video.readyState < 2) return;
@@ -69,41 +81,73 @@ export default function LiveCameraPage() {
       frameCount++;
       const now = performance.now();
       if (now - lastTime >= 1000) {
-        setFps(frameCount);
+        if (isMountedRef.current) setFps(frameCount);
         frameCount = 0;
         lastTime = now;
       }
 
       // Convert canvas snapshot to blob and send to backend
+      isProcessing = true;
       canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const res = await analyzeFrameApi(blob, 0.3, true, false);
-        setResult(res);
+        if (!blob) { isProcessing = false; return; }
+        try {
+          const res = await analyzeFrameApi(blob, 0.3, true, false);
+          if (isMountedRef.current) setResult(res);
 
-        // Draw bounding boxes on canvas
-        res.detections.forEach((det) => {
-          const [x1, y1, x2, y2] = det.bbox;
-          ctx.strokeStyle = "#38BDF8";
-          ctx.lineWidth = 3;
-          ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+          // Draw bounding boxes on visible canvas
+          const drawCtx = canvas.getContext("2d");
+          if (drawCtx && video.readyState >= 2) {
+            drawCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            res.detections.forEach((det) => {
+              const [x1, y1, x2, y2] = det.bbox;
 
-          ctx.fillStyle = "rgba(16, 21, 34, 0.85)";
-          ctx.fillRect(x1, Math.max(0, y1 - 20), 80, 18);
-          ctx.fillStyle = "#38BDF8";
-          ctx.font = "bold 11px Inter, sans-serif";
-          ctx.fillText(`Person ${(det.confidence * 100).toFixed(0)}%`, x1 + 6, Math.max(12, y1 - 6));
-        });
+              // Glow effect
+              drawCtx.save();
+              drawCtx.strokeStyle = "#38BDF8";
+              drawCtx.lineWidth = 2.5;
+              drawCtx.shadowColor = "rgba(56, 189, 248, 0.6)";
+              drawCtx.shadowBlur = 6;
+              drawCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+              drawCtx.restore();
+
+              // Label
+              drawCtx.fillStyle = "rgba(16, 21, 34, 0.85)";
+              drawCtx.fillRect(x1, Math.max(0, y1 - 20), 80, 18);
+              drawCtx.fillStyle = "#38BDF8";
+              drawCtx.font = "bold 11px Inter, sans-serif";
+              drawCtx.fillText(`Person ${(det.confidence * 100).toFixed(0)}%`, x1 + 6, Math.max(12, y1 - 6));
+            });
+          }
+        } catch (err) {
+          console.warn("Frame analysis error:", err);
+        } finally {
+          isProcessing = false;
+        }
       }, "image/jpeg", 0.7);
     }, 800);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, [isStreaming]);
 
+  // Clean up camera on unmount
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      stopCamera();
+      isMountedRef.current = false;
+      // Stop all tracks
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, []);
 
@@ -118,10 +162,10 @@ export default function LiveCameraPage() {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.5rem" }}>
+      <div className="vl-responsive-grid-sidebar">
         {/* Left Column: Camera View */}
         <div className="vl-card" style={{ padding: "1.25rem" }}>
-          <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden", background: "#050810", minHeight: "420px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden", background: "#050810", minHeight: "320px", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* Hidden Video Source */}
             <video
               ref={videoRef}
@@ -156,6 +200,7 @@ export default function LiveCameraPage() {
                   display: "flex",
                   gap: "10px",
                   zIndex: 10,
+                  flexWrap: "wrap",
                 }}
               >
                 <span className="vl-badge live">
@@ -171,7 +216,7 @@ export default function LiveCameraPage() {
           </div>
 
           {errorMsg && (
-            <div style={{ color: "var(--accent-rose)", fontSize: "0.85rem", marginTop: "10px" }}>
+            <div className="vl-alert-danger vl-fade-in" style={{ marginTop: "12px" }}>
               ⚠️ {errorMsg}
             </div>
           )}
@@ -207,7 +252,7 @@ export default function LiveCameraPage() {
               <span className="vl-card-label">Live Scene Count</span>
               <Activity size={16} color="var(--accent-blue)" />
             </div>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: "2.4rem", fontWeight: 800 }}>
+            <div className="vl-kpi-value" style={{ fontSize: "2.4rem" }}>
               {result ? result.people_count : 0}
             </div>
             <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
@@ -230,6 +275,30 @@ export default function LiveCameraPage() {
                 <strong style={{ color: "var(--accent-emerald)" }}>
                   {result ? `${(result.confidence * 100).toFixed(0)}%` : "N/A"}
                 </strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Tracker:</span>
+                <strong>{isStreaming ? "ByteTrack Active" : "Offline"}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Connection Status */}
+          <div className="vl-card">
+            <div className="vl-card-header">
+              <span className="vl-card-label">Connection</span>
+              <RefreshCw size={16} color={isStreaming ? "var(--accent-emerald)" : "var(--text-tertiary)"} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.82rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Status:</span>
+                <strong style={{ color: isStreaming ? "var(--accent-emerald)" : "var(--accent-rose)" }}>
+                  {isStreaming ? "Connected" : "Disconnected"}
+                </strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Capture Rate:</span>
+                <strong>{isStreaming ? "~1.25 fps (inference)" : "0 fps"}</strong>
               </div>
             </div>
           </div>

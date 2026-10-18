@@ -16,10 +16,10 @@ export default function KpiCard({ label, value, subtitle, icon, trend }: KpiCard
         <div className="vl-card-icon">{icon}</div>
       </div>
       <div className="vl-kpi-value">{value}</div>
-      {subtitle && (
+      {(subtitle || trend) && (
         <div className="vl-kpi-subtitle">
           {trend && <span style={{ color: "var(--accent-emerald)", fontWeight: 600 }}>{trend}</span>}
-          <span>{subtitle}</span>
+          {subtitle && <span>{subtitle}</span>}
         </div>
       )}
     </div>

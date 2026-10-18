@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { Upload, Sliders, RefreshCw, Sparkles, AlertCircle, Eye, Info } from "lucide-react";
+import React, { useState, useRef, useCallback } from "react";
+import { Upload, Sliders, RefreshCw, Sparkles, Eye, Info, ImageIcon } from "lucide-react";
 import BoundingBoxCanvas from "@/components/BoundingBoxCanvas";
 import { analyzeFrameApi } from "@/lib/api";
 import { FrameAnalysisResult, DensityLabel } from "@/types";
@@ -28,13 +28,40 @@ export default function ImageAnalysisPage() {
   const [tracking, setTracking] = useState<boolean>(true);
   const [attributes, setAttributes] = useState<boolean>(true);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [result, setResult] = useState<FrameAnalysisResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const prevObjectUrl = useRef<string | null>(null);
+
+  // Revoke previous object URL to prevent memory leak
+  const setImageWithCleanup = useCallback((url: string) => {
+    if (prevObjectUrl.current) {
+      URL.revokeObjectURL(prevObjectUrl.current);
+      prevObjectUrl.current = null;
+    }
+    setSelectedImage(url);
+  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
+      prevObjectUrl.current = url;
+      setImageWithCleanup(url);
+      // Re-set since cleanup just ran
+      prevObjectUrl.current = url;
+      setSelectedImage(url);
+      runAnalysis(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      prevObjectUrl.current = url;
       setSelectedImage(url);
       runAnalysis(file);
     }
@@ -71,12 +98,12 @@ export default function ImageAnalysisPage() {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.5rem", alignItems: "start" }}>
+      <div className="vl-responsive-grid-sidebar">
         {/* Left Column: Image Canvas & Preview */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           {/* Main Visual Display */}
           <div className="vl-card" style={{ padding: "1.25rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "8px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <Eye size={18} color="var(--accent-blue)" />
                 <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>Perception Canvas</span>
@@ -111,7 +138,7 @@ export default function ImageAnalysisPage() {
               >
                 {isAnalyzing ? (
                   <>
-                    <RefreshCw className="vl-pulse-dot" size={16} /> Analyzing Frame...
+                    <RefreshCw className="vl-spin" size={16} /> Analyzing Frame...
                   </>
                 ) : (
                   <>
@@ -127,13 +154,13 @@ export default function ImageAnalysisPage() {
             <span className="vl-card-label" style={{ marginBottom: "0.75rem", display: "block" }}>
               Or Try A Curated Sample Image:
             </span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px" }}>
               {SAMPLES.map((s) => (
                 <button
                   type="button"
                   key={s.name}
                   onClick={() => {
-                    setSelectedImage(s.url);
+                    setImageWithCleanup(s.url);
                     setResult(null);
                   }}
                   className="vl-btn vl-btn-secondary"
@@ -152,10 +179,17 @@ export default function ImageAnalysisPage() {
 
         {/* Right Column: Parameters & Analysis Results */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {/* File Upload Box */}
+          {/* File Upload Box — with drag & drop */}
           <div
-            className="vl-upload-box"
+            className={`vl-upload-box ${isDragging ? "dragging" : ""}`}
             onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            role="button"
+            tabIndex={0}
+            aria-label="Upload crowd photo"
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
           >
             <input
               type="file"
@@ -165,9 +199,11 @@ export default function ImageAnalysisPage() {
               style={{ display: "none" }}
             />
             <Upload size={32} color="var(--accent-blue)" style={{ margin: "0 auto 10px" }} />
-            <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>Upload Crowd Photo</div>
+            <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>
+              {isDragging ? "Drop Image Here" : "Upload Crowd Photo"}
+            </div>
             <div style={{ fontSize: "0.75rem", color: "var(--text-tertiary)", marginTop: "4px" }}>
-              JPG, PNG, WebP up to 20MB
+              Drag & drop or click — JPG, PNG, WebP up to 20MB
             </div>
           </div>
 
@@ -191,7 +227,8 @@ export default function ImageAnalysisPage() {
                   step="0.05"
                   value={confidence}
                   onChange={(e) => setConfidence(parseFloat(e.target.value))}
-                  style={{ width: "100%", accentColor: "var(--accent-blue)" }}
+                  className="vl-range-input"
+                  aria-label="Confidence threshold slider"
                 />
               </div>
 
@@ -219,7 +256,7 @@ export default function ImageAnalysisPage() {
 
           {/* Results Overview */}
           {result && (
-            <div className="vl-card">
+            <div className="vl-card vl-fade-in">
               <div className="vl-card-header">
                 <span className="vl-card-label">Spatial Descriptors</span>
                 <Info size={16} color="var(--accent-purple)" />
@@ -260,6 +297,7 @@ export default function ImageAnalysisPage() {
                             height: "100%",
                             background: label === "LOW" ? "var(--accent-emerald)" : label === "MEDIUM" ? "var(--accent-amber)" : "var(--accent-rose)",
                             borderRadius: "2px",
+                            transition: "width 0.4s ease",
                           }}
                         />
                       </div>

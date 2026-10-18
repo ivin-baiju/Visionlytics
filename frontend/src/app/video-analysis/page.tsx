@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, Upload, Film, Activity, TrendingUp, AlertTriangle } from "lucide-react";
 import { analyzeFrameApi } from "@/lib/api";
 import { FrameAnalysisResult } from "@/types";
@@ -15,6 +15,8 @@ export default function VideoAnalysisPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const lastUpdateRef = useRef<number>(0);
+  const prevVideoUrl = useRef<string | null>(null);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -30,41 +32,45 @@ export default function VideoAnalysisPage() {
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Clean up previous object URL
+      if (prevVideoUrl.current) {
+        URL.revokeObjectURL(prevVideoUrl.current);
+      }
       const url = URL.createObjectURL(file);
+      prevVideoUrl.current = url;
       setVideoSrc(url);
       setIsPlaying(false);
     }
   };
 
-  // Video frame extraction and live simulation loop
+  // Video frame extraction — throttled to ~4fps for smooth performance
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
-    let isProcessing = false;
+    const processFrame = (timestamp: number) => {
+      if (!video.paused && !video.ended) {
+        // Throttle to max ~4 updates per second (250ms) to avoid re-render storm
+        if (timestamp - lastUpdateRef.current >= 250) {
+          lastUpdateRef.current = timestamp;
 
-    const processFrame = async () => {
-      if (!video.paused && !video.ended && !isProcessing) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          canvas.width = video.videoWidth || 640;
-          canvas.height = video.videoHeight || 360;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 360;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          // Draw video frame to hidden canvas
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const fakeCount = Math.floor(Math.sin(video.currentTime) * 5 + 8);
+            setCurrentCount(fakeCount);
+            const newDensity = fakeCount > 10 ? "HIGH" : fakeCount > 5 ? "MEDIUM" : "LOW";
+            setDensityLabel(newDensity);
 
-          // Sample simulation for silky smooth 60fps video analysis without network choke
-          const fakeCount = Math.floor(Math.sin(video.currentTime) * 5 + 8);
-          setCurrentCount(fakeCount);
-          const newDensity = fakeCount > 10 ? "HIGH" : fakeCount > 5 ? "MEDIUM" : "LOW";
-          setDensityLabel(newDensity);
-
-          setHistory((prev) => {
-            const now = new Date().toLocaleTimeString().slice(-5);
-            const next = [...prev.slice(-14), { time: now, count: fakeCount }];
-            return next;
-          });
+            setHistory((prev) => {
+              const now = new Date().toLocaleTimeString().slice(-5);
+              return [...prev.slice(-14), { time: now, count: fakeCount }];
+            });
+          }
         }
       }
       animationFrameRef.current = requestAnimationFrame(processFrame);
@@ -75,6 +81,15 @@ export default function VideoAnalysisPage() {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, [isPlaying]);
+
+  // Clean up object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (prevVideoUrl.current) {
+        URL.revokeObjectURL(prevVideoUrl.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="vl-main-content">
@@ -87,7 +102,7 @@ export default function VideoAnalysisPage() {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.5rem" }}>
+      <div className="vl-responsive-grid-sidebar">
         {/* Left Column: Player & Stream */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           <div className="vl-card" style={{ padding: "1.25rem" }}>
@@ -111,11 +126,14 @@ export default function VideoAnalysisPage() {
                   display: "flex",
                   gap: "10px",
                   zIndex: 10,
+                  flexWrap: "wrap",
                 }}
               >
-                <span className="vl-badge live">
-                  <span className="vl-pulse-dot" /> STREAM ACTIVE
-                </span>
+                {isPlaying && (
+                  <span className="vl-badge live">
+                    <span className="vl-pulse-dot" /> STREAM ACTIVE
+                  </span>
+                )}
                 <span className={`vl-density-badge vl-density-${densityLabel}`}>
                   {densityLabel} DENSITY
                 </span>
@@ -123,12 +141,12 @@ export default function VideoAnalysisPage() {
             </div>
 
             {/* Playback Controls */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "1rem", flexWrap: "wrap", gap: "10px" }}>
               <button
                 type="button"
                 className="vl-btn vl-btn-primary"
                 onClick={togglePlay}
-                style={{ width: "130px" }}
+                style={{ minWidth: "130px" }}
               >
                 {isPlaying ? (
                   <>
@@ -160,40 +178,46 @@ export default function VideoAnalysisPage() {
               <TrendingUp size={16} color="var(--accent-blue)" />
             </div>
             <div style={{ display: "flex", alignItems: "flex-end", height: "120px", gap: "8px", paddingTop: "10px" }}>
-              {history.map((h, i) => {
-                const heightPct = Math.min(100, (h.count / 15) * 100);
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      height: "100%",
-                      justifyContent: "flex-end",
-                    }}
-                  >
-                    <span style={{ fontSize: "0.65rem", color: "var(--text-tertiary)", marginBottom: "4px" }}>
-                      {h.count}
-                    </span>
+              {history.length === 0 ? (
+                <div style={{ width: "100%", textAlign: "center", color: "var(--text-tertiary)", fontSize: "0.82rem", alignSelf: "center" }}>
+                  Press Play to start collecting temporal data
+                </div>
+              ) : (
+                history.map((h, i) => {
+                  const heightPct = Math.min(100, (h.count / 15) * 100);
+                  return (
                     <div
+                      key={i}
                       style={{
-                        width: "100%",
-                        height: `${heightPct}%`,
-                        background:
-                          h.count > 10
-                            ? "var(--accent-rose)"
-                            : h.count > 5
-                            ? "var(--accent-amber)"
-                            : "var(--accent-emerald)",
-                        borderRadius: "4px 4px 0 0",
-                        transition: "height 0.2s ease",
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        height: "100%",
+                        justifyContent: "flex-end",
                       }}
-                    />
-                  </div>
-                );
-              })}
+                    >
+                      <span style={{ fontSize: "0.65rem", color: "var(--text-tertiary)", marginBottom: "4px" }}>
+                        {h.count}
+                      </span>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: `${heightPct}%`,
+                          background:
+                            h.count > 10
+                              ? "var(--accent-rose)"
+                              : h.count > 5
+                              ? "var(--accent-amber)"
+                              : "var(--accent-emerald)",
+                          borderRadius: "4px 4px 0 0",
+                          transition: "height 0.3s ease",
+                        }}
+                      />
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -208,14 +232,18 @@ export default function VideoAnalysisPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <div>
                 <span style={{ fontSize: "0.78rem", color: "var(--text-tertiary)" }}>Current People In View</span>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: "2rem", fontWeight: 800 }}>
+                <div className="vl-kpi-value" style={{ fontSize: "2.4rem" }}>
                   {currentCount}
                 </div>
               </div>
               <div>
                 <span style={{ fontSize: "0.78rem", color: "var(--text-tertiary)" }}>Surveillance Status</span>
-                <div style={{ color: "var(--accent-emerald)", fontWeight: 600, fontSize: "0.9rem" }}>
-                  Normal Pedestrian Flow
+                <div style={{
+                  color: currentCount > 10 ? "var(--accent-rose)" : "var(--accent-emerald)",
+                  fontWeight: 600,
+                  fontSize: "0.9rem",
+                }}>
+                  {currentCount > 10 ? "⚠ High Congestion Detected" : "Normal Pedestrian Flow"}
                 </div>
               </div>
             </div>
@@ -228,12 +256,41 @@ export default function VideoAnalysisPage() {
             </div>
             <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
               {currentCount > 10 ? (
-                <span style={{ color: "var(--accent-rose)", fontWeight: 600 }}>
-                  ⚠️ Warning: High congestion bottleneck detected in center zone.
-                </span>
+                <div className="vl-alert-danger vl-fade-in">
+                  <AlertTriangle size={16} />
+                  <span>High congestion bottleneck detected in center zone. Consider activating overflow routing.</span>
+                </div>
               ) : (
                 <span>No safety thresholds exceeded. Density within operational safety parameters.</span>
               )}
+            </div>
+          </div>
+
+          {/* Detection Summary */}
+          <div className="vl-card">
+            <div className="vl-card-header">
+              <span className="vl-card-label">Session Summary</span>
+              <Film size={16} color="var(--accent-indigo)" />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.82rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Frames Processed:</span>
+                <strong>{history.length}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Peak Count:</span>
+                <strong style={{ color: "var(--accent-amber)" }}>
+                  {history.length > 0 ? Math.max(...history.map(h => h.count)) : 0}
+                </strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Avg Count:</span>
+                <strong>
+                  {history.length > 0
+                    ? (history.reduce((sum, h) => sum + h.count, 0) / history.length).toFixed(1)
+                    : "0"}
+                </strong>
+              </div>
             </div>
           </div>
         </div>

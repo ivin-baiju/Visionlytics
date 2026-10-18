@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import BackgroundVideo from "@/components/BackgroundVideo";
 import Navbar from "@/components/Navbar";
+import ScrollToTop from "@/components/ScrollToTop";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "VISIONLYTICS — Intelligent Visual Crowd Analytics",
+  title: "Visionlytics — Computer Vision & Crowd Intelligence",
   description:
-    "Production-grade computer vision and statistical machine learning platform for real-time crowd dynamics, spatial density estimation, and safety monitoring.",
+    "Enterprise crowd analysis platform with spatial feature extraction, YOLO perception, and statistical ML classifiers.",
   icons: {
     icon: "/logo.svg",
   },
@@ -20,32 +21,35 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/* Top Glowing Ambient Bar */}
-        <div className="vl-top-bar" />
+        <a href="#main-content" className="vl-skip-link">
+          Skip to main content
+        </a>
 
-        {/* Looping ambient background video + particles */}
-        <BackgroundVideo />
-
-        {/* Floating Pill Top Navbar */}
+        {/* Top Clean Navbar */}
         <Navbar />
 
         {/* Main Content Area */}
-        <main>{children}</main>
+        <main id="main-content">
+          <ErrorBoundary>
+            <ScrollToTop />
+            {children}
+          </ErrorBoundary>
+        </main>
 
-        {/* "Forged By Ivin Baiju" Floating Badge — Bottom Right */}
-        <a
-          href="https://github.com/ivin-baiju"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="vl-developer-badge"
-          title="Forged by Ivin Baiju"
-        >
-          <div className="vl-developer-avatar">IB</div>
-          <div className="vl-developer-text">
-            <span className="vl-forged-label">Forged By</span>
-            <span className="vl-developer-name">Ivin Baiju</span>
+        {/* Clean, authentic footer */}
+        <footer className="vl-footer">
+          <div className="vl-footer-inner">
+            <span>© {new Date().getFullYear()} Visionlytics Platform. All rights reserved.</span>
+            <a
+              href="https://github.com/ivin-baiju"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="vl-footer-author"
+            >
+              Created by Ivin Baiju
+            </a>
           </div>
-        </a>
+        </footer>
       </body>
     </html>
   );
