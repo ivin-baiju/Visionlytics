@@ -152,7 +152,7 @@ export default function LiveCameraPage() {
   }, []);
 
   return (
-    <div className="vl-main-content">
+    <div className="vl-container">
       <div style={{ marginBottom: "1.75rem" }}>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.85rem", fontWeight: 800 }}>
           Real-Time Camera Surveillance
