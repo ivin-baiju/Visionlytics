@@ -40,14 +40,9 @@ export default function RootLayout({
         <footer className="vl-footer">
           <div className="vl-footer-inner">
             <span>© {new Date().getFullYear()} Visionlytics Platform. All rights reserved.</span>
-            <a
-              href="https://github.com/ivin-baiju"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="vl-footer-author"
-            >
-              Created by Ivin Baiju
-            </a>
+            <span className="vl-footer-author">
+              Visionlytics Open Source Research
+            </span>
           </div>
         </footer>
       </body>

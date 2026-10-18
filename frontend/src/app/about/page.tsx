@@ -155,7 +155,7 @@ export default function AboutPage() {
         <div>
           <h4 style={{ fontSize: "1rem", fontWeight: 700 }}>Visionlytics Platform</h4>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "2px" }}>
-            Developed by <strong>Ivin Baiju</strong>. Open source on GitHub.
+            Open-source research and engineering platform.
           </p>
         </div>
         <a

@@ -76,7 +76,7 @@ export default function DashboardPage() {
               <div className="vl-profile-meta">
                 <span className="vl-tag-pill">STUDENT / RESEARCH</span>
                 <h2 className="vl-profile-greeting">Hi there!</h2>
-                <span className="vl-profile-id">ivin.baiju@visionlytics.ai</span>
+                <span className="vl-profile-id">analyst@visionlytics.ai</span>
               </div>
             </div>
 
