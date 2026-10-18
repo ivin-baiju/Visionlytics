@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Database, RefreshCw, Filter, Layers, CheckCircle, AlertTriangle } from "lucide-react";
-import { getDatasetInfoApi, getDatasetPreviewApi, triggerDatasetGenerateApi } from "@/lib/api";
+import { Database, RefreshCw, Filter, Layers, CheckCircle, AlertTriangle, FlaskConical } from "lucide-react";
+import { getDatasetInfoApi, getDatasetPreviewApi, triggerDatasetGenerateApi, isDemoMode } from "@/lib/api";
 
 export default function DatasetPage() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -12,6 +12,7 @@ export default function DatasetPage() {
   const [rows, setRows] = useState<(number | string)[][]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [demoMode] = useState<boolean>(() => isDemoMode());
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +59,11 @@ export default function DatasetPage() {
           <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", marginTop: "4px" }}>
             Synthetic and empirical spatial descriptor vectors used for training and testing statistical ML classifiers.
           </p>
+          {demoMode && (
+            <p style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "8px", fontSize: "0.8rem", fontWeight: 700, color: "#92400E", background: "#FEF3C7", border: "1px solid #FCD34D", padding: "4px 12px", borderRadius: "999px" }}>
+              <FlaskConical size={14} /> DEMO MODE — sample data, connect a backend for live results
+            </p>
+          )}
         </div>
 
         <button
@@ -99,7 +105,7 @@ export default function DatasetPage() {
         </div>
       )}
 
-      {apiError && (
+      {apiError && !demoMode && (
         <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#DC2626", padding: "12px 18px", borderRadius: "12px", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.9rem", fontWeight: 600 }}>
           <AlertTriangle size={18} /> {apiError} — start the backend with `python start_local.py`.
         </div>

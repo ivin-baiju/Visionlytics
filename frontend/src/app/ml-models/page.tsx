@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Award, Brain, BarChart2, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
-import { getModelsEvaluationApi, getModelsFeatureImportanceApi, triggerModelsRetrainApi, ApiOfflineError } from "@/lib/api";
+import { Award, Brain, BarChart2, RefreshCw, CheckCircle2, AlertTriangle, FlaskConical } from "lucide-react";
+import { getModelsEvaluationApi, getModelsFeatureImportanceApi, triggerModelsRetrainApi, ApiOfflineError, isDemoMode } from "@/lib/api";
 import { ModelMetric, FeatureImportance } from "@/types";
 
 const FEATURE_IMPORTANCES = [
@@ -23,6 +23,7 @@ export default function MlModelsPage() {
   const [isRetraining, setIsRetraining] = useState<boolean>(false);
   const [retrainSuccess, setRetrainSuccess] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [demoMode] = useState<boolean>(() => isDemoMode());
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +82,11 @@ export default function MlModelsPage() {
           <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", marginTop: "4px" }}>
             Comparative evaluation and benchmark ranking of 7 statistical classifiers on held-out test data.
           </p>
+          {demoMode && (
+            <p style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "8px", fontSize: "0.8rem", fontWeight: 700, color: "#92400E", background: "#FEF3C7", border: "1px solid #FCD34D", padding: "4px 12px", borderRadius: "999px" }}>
+              <FlaskConical size={14} /> DEMO MODE — benchmark snapshot, connect a backend for live metrics
+            </p>
+          )}
         </div>
 
         <button
@@ -122,7 +128,7 @@ export default function MlModelsPage() {
         </div>
       )}
 
-      {apiError && (
+      {apiError && !demoMode && (
         <div role="alert" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#DC2626", padding: "12px 18px", borderRadius: "12px", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "10px", fontSize: "0.9rem", fontWeight: 600 }}>
           <AlertTriangle size={18} /> {apiError}
         </div>
