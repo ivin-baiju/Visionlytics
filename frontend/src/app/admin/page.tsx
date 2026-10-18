@@ -417,10 +417,6 @@ export default function AdminPortalPage() {
             <RefreshCw size={16} />
             <span>Sync Database</span>
           </button>
-          <Link href="/" className="vl-btn vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-            <ArrowLeft size={16} />
-            <span>Dashboard</span>
-          </Link>
           <button
             type="button"
             className="vl-btn vl-btn-outline"
@@ -429,8 +425,9 @@ export default function AdminPortalPage() {
               localStorage.removeItem("visionlytics_user");
               setToken(null);
               setCurrentUser(null);
+              window.location.href = "/login";
             }}
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#EF4444", borderColor: "#FCA5A5" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#EF4444", borderColor: "#FCA5A5", cursor: "pointer" }}
           >
             <LogOut size={16} />
             <span>Sign Out</span>

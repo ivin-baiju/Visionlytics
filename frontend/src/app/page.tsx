@@ -102,10 +102,28 @@ export default function DashboardPage() {
                   <span>System Console</span>
                 </Link>
               )}
-              <Link href="/login" className="vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <LogOut size={16} />
-                <span>{currentUser ? "Switch / Sign Out" : "Sign In"}</span>
-              </Link>
+              {currentUser ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem("visionlytics_token");
+                    localStorage.removeItem("visionlytics_user");
+                    setCurrentUser(null);
+                    setIsAdmin(false);
+                    window.location.href = "/login";
+                  }}
+                  className="vl-btn-outline"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#EF4444", borderColor: "#FCA5A5", cursor: "pointer" }}
+                >
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
+              ) : (
+                <Link href="/login" className="vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <User size={16} />
+                  <span>Sign In</span>
+                </Link>
+              )}
             </div>
           </section>
 
