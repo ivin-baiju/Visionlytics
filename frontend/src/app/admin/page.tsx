@@ -109,11 +109,22 @@ export default function AdminPortalPage() {
         return;
       }
 
-      const ovData = await ovRes.json();
-      const uData = await uRes.json();
-      const aData = await aRes.json();
-      const upData = await upRes.json();
-      const cData = await cRes.json();
+      if (!ovRes.ok || !uRes.ok) {
+        throw new Error("Unable to fetch administrator database records. Backend may be unreachable.");
+      }
+
+      const parseJsonSafe = async (r: Response) => {
+        const ct = r.headers.get("content-type") || "";
+        return ct.includes("application/json") ? await r.json() : {};
+      };
+
+      const [ovData, uData, aData, upData, cData] = await Promise.all([
+        parseJsonSafe(ovRes),
+        parseJsonSafe(uRes),
+        parseJsonSafe(aRes),
+        parseJsonSafe(upRes),
+        parseJsonSafe(cRes),
+      ]);
 
       setOverview(ovData);
       setUsers(uData.users || []);
@@ -145,7 +156,18 @@ export default function AdminPortalPage() {
           password: adminPassword,
         }),
       });
-      const data = await res.json();
+      let data: any = {};
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(
+          res.status === 404 || text.includes("page could not be found") || text.includes("DNS_HOSTNAME_RESOLVED_PRIVATE")
+            ? "API backend service is unreachable from Vercel. Please ensure the backend is running and NEXT_PUBLIC_API_URL is configured."
+            : text.slice(0, 120)
+        );
+      }
       if (!res.ok) {
         throw new Error(data.detail || "Authentication failed.");
       }
