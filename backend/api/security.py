@@ -148,8 +148,32 @@ def generate_otp(destination: str, channel: str = "email") -> str:
 
 
 def verify_otp(destination: str, code: str) -> bool:
-    """Validate 6-digit OTP code against destination."""
+    """Validate 6-digit OTP code against destination with Supabase and SQLite support."""
     now = int(time.time())
+
+    # Check Supabase if configured
+    if supabase_client.use_supabase and supabase_client.client:
+        try:
+            res = (
+                supabase_client.client.table("otp_codes")
+                .select("id, expires_at")
+                .eq("destination", destination)
+                .eq("code", code)
+                .order("id", desc=True)
+                .limit(1)
+                .execute()
+            )
+            if res.data and len(res.data) > 0:
+                row = res.data[0]
+                if now <= row["expires_at"]:
+                    supabase_client.client.table("otp_codes").delete().eq("destination", destination).execute()
+                    return True
+                else:
+                    supabase_client.client.table("otp_codes").delete().eq("destination", destination).execute()
+                    return False
+        except Exception:
+            pass
+
     conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute(

@@ -140,8 +140,9 @@ def register(body: RegisterRequest):
 
     is_verified = False
     if body.otp_code:
-        dest = clean_phone if clean_phone else clean_email
-        if not verify_otp(dest, body.otp_code):
+        clean_code = body.otp_code.strip()
+        candidates = [c for c in [clean_email, clean_phone] if c]
+        if not any(verify_otp(c, clean_code) for c in candidates):
             raise HTTPException(status_code=400, detail="Invalid or expired OTP code for registration.")
         is_verified = True
 
@@ -181,8 +182,16 @@ def login(creds: LoginRequest):
 
     # Check OTP login if code provided
     if creds.otp_code:
-        dest = user.get("phone") or user.get("email") or clean_id
-        if not verify_otp(dest, creds.otp_code.strip()):
+        clean_code = creds.otp_code.strip()
+        # The OTP could have been requested for username/clean_id, email, or phone
+        possible_dests = [
+            clean_id,
+            user.get("email"),
+            user.get("phone"),
+            user.get("username"),
+        ]
+        otp_valid = any(d and verify_otp(d, clean_code) for d in set(possible_dests) if d)
+        if not otp_valid:
             raise HTTPException(status_code=401, detail="Invalid or expired OTP verification code.")
     elif creds.password:
         if not verify_password(creds.password, user["hashed_password"]):
