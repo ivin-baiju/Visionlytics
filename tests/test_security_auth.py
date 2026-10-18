@@ -39,16 +39,17 @@ def test_input_sanitization():
 
 
 def test_login_flow(client):
-    # Test seeded default admin
-    res = client.post("/auth/login", json={"username": "admin", "password": "Visionlytics@Admin2026!"})
+    # Test seeded default admin with email and updated password
+    res = client.post("/auth/login", json={"username": "lightningspeed.flh@gmail.com", "password": "sydney@2026"})
     assert res.status_code == 200
     data = res.json()
     assert "access_token" in data
     assert data["user"]["role"] == "admin"
+    assert data["user"]["email"] == "lightningspeed.flh@gmail.com"
 
 
 def test_login_invalid_credentials(client):
-    res = client.post("/auth/login", json={"username": "admin", "password": "WrongPassword!"})
+    res = client.post("/auth/login", json={"username": "lightningspeed.flh@gmail.com", "password": "WrongPassword!"})
     assert res.status_code == 401
 
 
@@ -70,7 +71,7 @@ def test_admin_route_protection_forbidden_for_standard_user(client):
 
 def test_admin_route_accessible_by_admin(client):
     # Log in as admin
-    res_login = client.post("/auth/login", json={"username": "admin", "password": "Visionlytics@Admin2026!"})
+    res_login = client.post("/auth/login", json={"username": "lightningspeed.flh@gmail.com", "password": "sydney@2026"})
     assert res_login.status_code == 200
     token = res_login.json()["access_token"]
 

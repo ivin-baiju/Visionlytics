@@ -284,7 +284,7 @@ export default function LoginPage() {
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="admin or user@domain.com or +1234567890"
+                  placeholder="user@domain.com or +1234567890"
                   className="vl-input"
                   style={{ paddingLeft: "38px" }}
                 />
@@ -507,21 +507,6 @@ export default function LoginPage() {
             </button>
           </form>
         )}
-
-        {/* Demo credentials callout */}
-        <div
-          style={{
-            marginTop: "2rem",
-            paddingTop: "1.25rem",
-            borderTop: "1px solid var(--border-subtle)",
-            fontSize: "0.82rem",
-            color: "var(--text-tertiary)",
-            textAlign: "center",
-          }}
-        >
-          <span>Admin Credentials: </span>
-          <strong>admin</strong> / <strong>Visionlytics@Admin2026!</strong>
-        </div>
       </div>
     </div>
   );

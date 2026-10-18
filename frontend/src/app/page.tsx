@@ -27,9 +27,23 @@ import { checkApiHealth } from "@/lib/api";
 
 export default function DashboardPage() {
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ username?: string; role?: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     checkApiHealth().then(setApiOnline);
+    try {
+      const stored = localStorage.getItem("visionlytics_user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        setCurrentUser(u);
+        if (u?.role === "admin") {
+          setIsAdmin(true);
+        }
+      }
+    } catch {
+      // ignore
+    }
   }, []);
 
   return (
@@ -55,9 +69,11 @@ export default function DashboardPage() {
           <Link href="/dataset" className="vl-sidebar-item">
             Dataset Explorer
           </Link>
-          <Link href="/admin" className="vl-sidebar-item" style={{ color: "var(--accent-teal)" }}>
-            Admin Portal
-          </Link>
+          {isAdmin && (
+            <Link href="/admin" className="vl-sidebar-item" style={{ color: "var(--accent-teal)" }}>
+              System Console
+            </Link>
+          )}
         </aside>
 
         {/* ── Main Content Area ────────────────────────────────────────────── */}
@@ -74,19 +90,21 @@ export default function DashboardPage() {
                 <User size={38} strokeWidth={1.75} />
               </div>
               <div className="vl-profile-meta">
-                <span className="vl-tag-pill">ACTIVE SESSION</span>
-                <h2 className="vl-profile-greeting">Welcome back!</h2>
-                <span className="vl-profile-id">Operator Account</span>
+                <span className="vl-tag-pill">{currentUser ? "ACTIVE SESSION" : "PUBLIC ACCESS"}</span>
+                <h2 className="vl-profile-greeting">{currentUser ? `Welcome back, ${currentUser.username || "Operator"}!` : "Welcome to Visionlytics"}</h2>
+                <span className="vl-profile-id">{currentUser ? (isAdmin ? "Administrator" : "Standard Operator") : "Guest User"}</span>
               </div>
             </div>
 
             <div style={{ display: "flex", gap: "10px" }}>
-              <Link href="/admin" className="vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                <span>Admin Portal</span>
-              </Link>
+              {isAdmin && (
+                <Link href="/admin" className="vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <span>System Console</span>
+                </Link>
+              )}
               <Link href="/login" className="vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <LogOut size={16} />
-                <span>Switch / Sign In</span>
+                <span>{currentUser ? "Switch / Sign Out" : "Sign In"}</span>
               </Link>
             </div>
           </section>

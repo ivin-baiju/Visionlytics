@@ -270,12 +270,14 @@ def seed_default_admin():
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'")
+    cursor.execute("SELECT COUNT(*) FROM users WHERE email = 'lightningspeed.flh@gmail.com'")
     count = cursor.fetchone()[0]
     if count == 0:
+        # Clean previous seed records if any
+        cursor.execute("DELETE FROM users WHERE role = 'admin' OR email = 'admin@visionlytics.ai'")
         cursor.execute(
             "INSERT OR IGNORE INTO users (username, email, phone, hashed_password, role, is_verified) VALUES (?, ?, ?, ?, ?, ?)",
-            ("admin", "admin@visionlytics.ai", "+10000000000", hash_password("Visionlytics@Admin2026!"), "admin", 1),
+            ("admin", "lightningspeed.flh@gmail.com", None, hash_password("sydney@2026"), "admin", 1),
         )
         cursor.execute(
             "INSERT OR IGNORE INTO users (username, email, phone, hashed_password, role, is_verified) VALUES (?, ?, ?, ?, ?, ?)",

@@ -1,34 +1,55 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Menu, X, Sliders, Bell } from "lucide-react";
+import { User, Menu, X } from "lucide-react";
 
 interface NavLink {
   href: string;
   label: string;
 }
 
-// Streamlined navigation: focused exclusively on core high-value analytical workspaces
-const NAV_LINKS: NavLink[] = [
+const PUBLIC_NAV_LINKS: NavLink[] = [
   { href: "/", label: "Dashboard" },
   { href: "/image-analysis", label: "Image Inspector" },
   { href: "/video-analysis", label: "Video Surveillance" },
   { href: "/live-camera", label: "Live Camera" },
   { href: "/ml-models", label: "ML Suite" },
   { href: "/dataset", label: "Dataset" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userLabel, setUserLabel] = useState("Sign In");
+
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem("visionlytics_user");
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed?.role === "admin") {
+          setIsAdmin(true);
+          setUserLabel("Portal");
+        } else if (parsed?.username) {
+          setUserLabel(parsed.username);
+        }
+      }
+    } catch {
+      // Keep defaults
+    }
+  }, [pathname]);
+
+  const navLinks = isAdmin
+    ? [...PUBLIC_NAV_LINKS, { href: "/admin", label: "System Console" }]
+    : PUBLIC_NAV_LINKS;
 
   return (
     <header className="vl-header" role="banner">
       <div className="vl-header-inner">
-        {/* Lordicon style clean brand */}
+        {/* Clean brand */}
         <Link href="/" className="vl-brand-link">
           <div className="vl-brand-logo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,7 +63,7 @@ export default function Navbar() {
           className={`vl-nav-links ${mobileOpen ? "open" : ""}`}
           aria-label="Main Navigation"
         >
-          {NAV_LINKS.map((link) => {
+          {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
@@ -60,11 +81,16 @@ export default function Navbar() {
 
         {/* Right User Status */}
         <div className="vl-header-actions">
-          <Link href="/login" className="vl-user-profile-badge" title="Sign In or Access Account" style={{ textDecoration: "none", color: "inherit" }}>
+          <Link
+            href={isAdmin ? "/admin" : "/login"}
+            className="vl-user-profile-badge"
+            title={isAdmin ? "System Management" : "Account Access"}
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
             <div className="vl-avatar-circle">
               <User size={16} />
             </div>
-            <span style={{ paddingRight: "6px" }}>Sign In</span>
+            <span style={{ paddingRight: "6px" }}>{userLabel}</span>
           </Link>
 
           <button
