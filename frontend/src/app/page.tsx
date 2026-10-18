@@ -55,6 +55,9 @@ export default function DashboardPage() {
           <Link href="/dataset" className="vl-sidebar-item">
             Dataset Explorer
           </Link>
+          <Link href="/admin" className="vl-sidebar-item" style={{ color: "var(--accent-teal)" }}>
+            Admin Portal
+          </Link>
         </aside>
 
         {/* ── Main Content Area ────────────────────────────────────────────── */}
@@ -64,27 +67,28 @@ export default function DashboardPage() {
             <p className="vl-page-subtitle">Real-time crowd intelligence, model health, and computer vision feeds.</p>
           </div>
 
-          {/* ── User Profile Card (Matched with Lordicon Screenshot) ─────────── */}
+          {/* ── User Profile Card ────────────────────────────────────────────── */}
           <section className="vl-profile-card">
             <div className="vl-profile-left">
               <div className="vl-profile-avatar-wrap">
                 <User size={38} strokeWidth={1.75} />
               </div>
               <div className="vl-profile-meta">
-                <span className="vl-tag-pill">STUDENT / RESEARCH</span>
-                <h2 className="vl-profile-greeting">Hi there!</h2>
-                <span className="vl-profile-id">analyst@visionlytics.ai</span>
+                <span className="vl-tag-pill">ACTIVE SESSION</span>
+                <h2 className="vl-profile-greeting">Welcome back!</h2>
+                <span className="vl-profile-id">Operator Account</span>
               </div>
             </div>
 
-            <button
-              type="button"
-              className="vl-btn-outline"
-              onClick={() => alert("Session active")}
-            >
-              <LogOut size={16} />
-              <span>Log out</span>
-            </button>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <Link href="/admin" className="vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <span>Admin Portal</span>
+              </Link>
+              <Link href="/login" className="vl-btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <LogOut size={16} />
+                <span>Switch / Sign In</span>
+              </Link>
+            </div>
           </section>
 
           {/* ── 3-Up KPI Stat Cards (Matching Lordicon layout) ───────────────── */}

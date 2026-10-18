@@ -72,7 +72,7 @@ export default function TermsAndConditionsPage() {
             5. Governing Law
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-            These Terms are governed by and construed in accordance with the laws of India and applicable international cyber security regulations. Disputes shall be resolved under the jurisdiction of competent courts in Kerala, India.
+            These Terms are governed by and construed in accordance with applicable cybersecurity standards and cloud governance regulations. Any disputes shall be resolved in accordance with standard arbitration and commercial cloud service standards.
           </p>
         </section>
       </div>

@@ -57,9 +57,9 @@ def test_admin_route_protection_unauthenticated(client):
     assert res.status_code == 401
 
 
-def test_admin_route_protection_forbidden_for_analyst(client):
-    # Log in as analyst
-    res_login = client.post("/auth/login", json={"username": "analyst", "password": "AnalystPass2026!"})
+def test_admin_route_protection_forbidden_for_standard_user(client):
+    # Log in as testuser (role='user')
+    res_login = client.post("/auth/login", json={"username": "testuser", "password": "UserPass2026!"})
     assert res_login.status_code == 200
     token = res_login.json()["access_token"]
 

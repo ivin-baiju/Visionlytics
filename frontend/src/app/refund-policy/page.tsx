@@ -49,7 +49,7 @@ export default function RefundPolicyPage() {
             3. How to Request a Refund
           </h2>
           <p style={{ color: "var(--text-secondary)" }}>
-            Send an email to <strong>billing@visionlytics.ai</strong> with:
+            Submit a request directly through your account dashboard or administrative support desk with:
           </p>
           <ul style={{ paddingLeft: "1.25rem", color: "var(--text-secondary)", marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
             <li>Your account email address and transaction reference number.</li>

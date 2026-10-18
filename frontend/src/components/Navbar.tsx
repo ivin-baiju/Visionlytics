@@ -18,6 +18,7 @@ const NAV_LINKS: NavLink[] = [
   { href: "/live-camera", label: "Live Camera" },
   { href: "/ml-models", label: "ML Suite" },
   { href: "/dataset", label: "Dataset" },
+  { href: "/admin", label: "Admin" },
 ];
 
 export default function Navbar() {
@@ -59,12 +60,12 @@ export default function Navbar() {
 
         {/* Right User Status */}
         <div className="vl-header-actions">
-          <div className="vl-user-profile-badge" title="Active Analyst Account">
+          <Link href="/login" className="vl-user-profile-badge" title="Sign In or Access Account" style={{ textDecoration: "none", color: "inherit" }}>
             <div className="vl-avatar-circle">
               <User size={16} />
             </div>
-            <span style={{ paddingRight: "6px" }}>Analyst</span>
-          </div>
+            <span style={{ paddingRight: "6px" }}>Sign In</span>
+          </Link>
 
           <button
             type="button"

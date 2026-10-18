@@ -101,13 +101,12 @@ export default function PrivacyPolicyPage() {
 
         <section style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1.5rem" }}>
           <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
-            6. Real Business & Compliance Contact
+            6. Business & Compliance Office
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-            <strong>Entity:</strong> Visionlytics Open Source Intelligence Labs<br />
-            <strong>Contact:</strong> compliance@visionlytics.ai • support@visionlytics.ai<br />
-            <strong>Physical Address:</strong> Tech Innovation Centre, Kerala Technology Park, India<br />
-            <strong>Data Protection Officer:</strong> Ivin Baiju (Lead Maintainer)
+            <strong>Entity:</strong> Visionlytics Core Intelligence Operations<br />
+            <strong>Contact:</strong> Direct administrative dashboard message desk<br />
+            <strong>Compliance Officer:</strong> Authorized Data Controller & System Security Operations
           </p>
         </section>
       </div>

@@ -60,8 +60,8 @@ export default function RootLayout({
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: "10px", borderTop: "1px solid var(--border-subtle)", paddingTop: "12px", fontSize: "0.82rem", color: "var(--text-tertiary)" }}>
-              <span>© {new Date().getFullYear()} Visionlytics Labs. Open Source Research. All rights reserved.</span>
-              <span>Contact: compliance@visionlytics.ai • Kerala, India</span>
+              <span>© {new Date().getFullYear()} Visionlytics Platform. All rights reserved.</span>
+              <span>Open Source Crowd Intelligence & Spatial Research</span>
             </div>
           </div>
         </footer>
