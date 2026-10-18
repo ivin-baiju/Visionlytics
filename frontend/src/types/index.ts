@@ -21,11 +21,11 @@ export interface SpatialFeatures {
   avg_person_area: number;
   avg_distance: number;
   min_distance: number;
-  std_distance: number;
+  spatial_spread: number;
   top_region_count: number;
   middle_region_count: number;
   bottom_region_count: number;
-  density_ratio: number;
+  frame_occupancy_density: number;
 }
 
 export interface FrameAnalysisResult {

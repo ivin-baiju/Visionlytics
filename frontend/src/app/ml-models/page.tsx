@@ -35,7 +35,7 @@ export default function MlModelsPage() {
   };
 
   return (
-    <div className="vl-main-content">
+    <div className="vl-container">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem" }}>
         <div>
           <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.85rem", fontWeight: 800 }}>

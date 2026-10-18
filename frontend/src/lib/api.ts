@@ -94,11 +94,11 @@ export function createSimulatedResult(confidence: number = 0.3): FrameAnalysisRe
       avg_person_area: 0.04,
       avg_distance: 0.35,
       min_distance: 0.12,
-      std_distance: 0.15,
+      spatial_spread: 0.15,
       top_region_count: Math.floor(count * 0.3),
       middle_region_count: Math.floor(count * 0.4),
       bottom_region_count: Math.ceil(count * 0.3),
-      density_ratio: 0.45,
+      frame_occupancy_density: 0.45,
     },
     model_name: "Random Forest (Champion Fallback)",
   };
