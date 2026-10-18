@@ -5,11 +5,19 @@ from contextlib import asynccontextmanager
 # Ensure backend root is on sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from api.routers import router
 from api.data_routers import router as data_router
+from api.auth_routers import router as auth_router
+
+# Rate limiter setup
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 
 
 @asynccontextmanager
@@ -32,16 +40,49 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# Turn off debug mode in production
+DEBUG_MODE = os.environ.get("VISIONLYTICS_DEBUG", "0").lower() in ("1", "true")
+
 app = FastAPI(
     title="Visionlytics API",
-    description="Backend Microservice for Crowd Analytics",
+    description="Enterprise Backend Microservice for Crowd Analytics & Intelligence",
     version="2.0.0",
     lifespan=lifespan,
+    docs_url="/docs" if DEBUG_MODE else None,
+    redoc_url="/redoc" if DEBUG_MODE else None,
+    openapi_url="/openapi.json" if DEBUG_MODE else None,
 )
 
-# Enable CORS for Next.js frontend running locally or on Vercel.
-# Overridable via ALLOWED_ORIGINS env (comma-separated). Vercel preview
-# deployments (*.vercel.app) are allowed by regex so every preview works.
+# Connect rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# ── Strict Security Headers Middleware ────────────────────────────────────────
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Enforce OWASP recommended security response headers."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "img-src 'self' data: blob: https:; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
+        "connect-src 'self' http://127.0.0.1:* http://localhost:* https://*.vercel.app https://*.supabase.co;"
+    )
+    return response
+
+
+# ── Explicit CORS Configuration ───────────────────────────────────────────────
+
 _allowed = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 if not _allowed:
     _allowed = [
@@ -49,17 +90,20 @@ if not _allowed:
         "http://127.0.0.1:3000",
         "https://visionlytics-alpha.vercel.app",
     ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed,
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
 )
 
 app.include_router(router)
 app.include_router(data_router)
+app.include_router(auth_router)
+
 
 @app.get("/health")
 def health_check():
@@ -88,7 +132,7 @@ def readiness_check():
 def root():
     return {
         "service": "Visionlytics API",
-        "docs": "/docs",
         "health": "/health",
         "ready": "/ready",
+        "debug": DEBUG_MODE,
     }

@@ -57,3 +57,10 @@ models/*.joblib
 
 # Firebase credentials
 firebase-adminsdk.json
+
+# Local databases
+*.db
+*.sqlite3
+backend/visionlytics_fallback.db
+.env*
+!.env.example

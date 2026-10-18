@@ -21,14 +21,18 @@ export default function SkeletonLoader({ rows = 4, title }: SkeletonLoaderProps)
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="vl-skeleton-row">
-            <div
-              className="vl-skeleton-bar"
-              style={{ width: `${60 + Math.random() * 35}%` }}
-            />
-          </div>
-        ))}
+        {Array.from({ length: rows }).map((_, i) => {
+          const widths = [75, 88, 65, 82, 70, 90];
+          const width = widths[i % widths.length];
+          return (
+            <div key={i} className="vl-skeleton-row">
+              <div
+                className="vl-skeleton-bar"
+                style={{ width: `${width}%` }}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

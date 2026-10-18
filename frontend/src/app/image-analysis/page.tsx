@@ -125,7 +125,7 @@ export default function ImageAnalysisPage() {
   const filteredDetections = useMemo(() => {
     if (!result?.detections) return [];
     return result.detections.filter((d) => d.confidence >= minConfidenceFilter);
-  }, [result?.detections, minConfidenceFilter]);
+  }, [result, minConfidenceFilter]);
 
   // Export JSON Report
   const exportJsonReport = () => {
