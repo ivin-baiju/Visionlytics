@@ -387,21 +387,25 @@ export default function AdminPortalPage() {
   }
 
   return (
-    <div className="vl-container">
-      {/* Top Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--accent-teal)", fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
-            <Server size={18} />
-            Database & Identity Console
+    <div className="vl-admin-scope">
+      <div className="vl-container" style={{ paddingTop: "2rem" }}>
+        {/* Top Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--accent-teal)", fontWeight: 700, fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>
+              <Server size={18} />
+              <span>Database & Identity Console</span>
+              <span style={{ backgroundColor: "rgba(13, 148, 136, 0.2)", border: "1px solid var(--accent-teal)", color: "#2DD4BF", fontSize: "0.72rem", padding: "2px 8px", borderRadius: "12px", letterSpacing: "0.05em" }}>
+                EXECUTIVE ADMIN
+              </span>
+            </div>
+            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "2rem", fontWeight: 800, color: "#FFFFFF" }}>
+              System Command Portal
+            </h1>
+            <p style={{ color: "#9CA3AF", fontSize: "0.92rem", marginTop: "4px" }}>
+              Secure management tier: Live Supabase engine, registered operators, and crowd perception audits.
+            </p>
           </div>
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "2rem", fontWeight: 800 }}>
-            System Portal
-          </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", marginTop: "4px" }}>
-            Full access to users registry, live Supabase tables, and crowd analytics records.
-          </p>
-        </div>
 
         <div style={{ display: "flex", gap: "10px" }}>
           <button
@@ -920,6 +924,7 @@ export default function AdminPortalPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

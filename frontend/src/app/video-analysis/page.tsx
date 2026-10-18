@@ -3,9 +3,12 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, Upload, Film, Activity, TrendingUp, AlertTriangle } from "lucide-react";
 import { analyzeFrameApi } from "@/lib/api";
+import { useGuestQuota } from "@/lib/useGuestQuota";
+import GuestLimitBanner from "@/components/GuestLimitBanner";
 import { FrameAnalysisResult } from "@/types";
 
 export default function VideoAnalysisPage() {
+  const { isGuest, remaining, limit, isLimitReached, incrementUsage } = useGuestQuota();
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [videoSrc, setVideoSrc] = useState<string>("/bg_video.mp4");
   const [currentCount, setCurrentCount] = useState<number>(0);
@@ -25,6 +28,11 @@ export default function VideoAnalysisPage() {
   const togglePlay = () => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
+      if (isLimitReached) {
+        setApiError("Guest limit reached! Register with your email/phone to enjoy unlimited video analysis.");
+        return;
+      }
+      incrementUsage();
       videoRef.current.play();
       setIsPlaying(true);
     } else {
@@ -34,8 +42,17 @@ export default function VideoAnalysisPage() {
   };
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isLimitReached) {
+      setApiError("Guest upload limit of 10 reached. Please log in or register for unlimited uploads.");
+      return;
+    }
     const file = e.target.files?.[0];
     if (file) {
+      const allowed = incrementUsage();
+      if (!allowed) {
+        setApiError("Guest limit reached! Register with your email or phone to enjoy unlimited video uploads.");
+        return;
+      }
       // Clean up previous object URL
       if (prevVideoUrl.current) {
         URL.revokeObjectURL(prevVideoUrl.current);
@@ -117,6 +134,16 @@ export default function VideoAnalysisPage() {
 
   return (
     <div className="vl-container">
+      {/* Guest Quota Banner */}
+      {isGuest && (
+        <GuestLimitBanner
+          remaining={remaining}
+          limit={limit}
+          isLimitReached={isLimitReached}
+          featureName="video surveillance uploads and inference"
+        />
+      )}
+
       <div style={{ marginBottom: "1.75rem" }}>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.85rem", fontWeight: 800 }}>
           Video Surveillance Analytics

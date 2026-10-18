@@ -18,7 +18,9 @@ import {
   FileJson,
 } from "lucide-react";
 import BoundingBoxCanvas from "@/components/BoundingBoxCanvas";
+import GuestLimitBanner from "@/components/GuestLimitBanner";
 import { analyzeFrameApi } from "@/lib/api";
+import { useGuestQuota } from "@/lib/useGuestQuota";
 import { FrameAnalysisResult, DensityLabel } from "@/types";
 
 const SAMPLES = [
@@ -37,6 +39,7 @@ const SAMPLES = [
 ];
 
 export default function ImageAnalysisPage() {
+  const { isGuest, remaining, limit, isLimitReached, incrementUsage } = useGuestQuota();
   const [selectedImage, setSelectedImage] = useState<string>(SAMPLES[0].url);
   const [confidence, setConfidence] = useState<number>(0.3);
   const [tracking, setTracking] = useState<boolean>(true);
@@ -76,6 +79,10 @@ export default function ImageAnalysisPage() {
   }, [revokePrevUrl]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isLimitReached) {
+      setApiError("Guest upload limit of 10 reached. Please log in or register for unlimited uploads.");
+      return;
+    }
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
@@ -89,6 +96,10 @@ export default function ImageAnalysisPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    if (isLimitReached) {
+      setApiError("Guest upload limit of 10 reached. Please log in or register for unlimited uploads.");
+      return;
+    }
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith("image/")) {
       const url = URL.createObjectURL(file);
@@ -98,6 +109,17 @@ export default function ImageAnalysisPage() {
   };
 
   const runAnalysis = async (fileOrBlob?: Blob) => {
+    if (isLimitReached) {
+      setApiError("Guest upload limit of 10 reached. Please log in or register for unlimited access.");
+      return;
+    }
+
+    const allowed = incrementUsage();
+    if (!allowed) {
+      setApiError("Guest limit reached! Register with your email/phone to enjoy unlimited access.");
+      return;
+    }
+
     setIsAnalyzing(true);
     setApiError(null);
     try {
@@ -160,6 +182,16 @@ export default function ImageAnalysisPage() {
 
   return (
     <div className="vl-container">
+      {/* Guest Quota Banner */}
+      {isGuest && (
+        <GuestLimitBanner
+          remaining={remaining}
+          limit={limit}
+          isLimitReached={isLimitReached}
+          featureName="image uploads and detections"
+        />
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
           <h1 className="vl-page-title">Image Inspector</h1>

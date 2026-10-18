@@ -3,9 +3,12 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Camera, CameraOff, Video, Activity, Sparkles, RefreshCw } from "lucide-react";
 import { analyzeFrameApi } from "@/lib/api";
+import { useGuestQuota } from "@/lib/useGuestQuota";
+import GuestLimitBanner from "@/components/GuestLimitBanner";
 import { FrameAnalysisResult } from "@/types";
 
 export default function LiveCameraPage() {
+  const { isGuest, remaining, limit, isLimitReached, incrementUsage } = useGuestQuota();
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [fps, setFps] = useState<number>(0);
@@ -35,6 +38,16 @@ export default function LiveCameraPage() {
 
   const startCamera = async () => {
     setErrorMsg(null);
+    if (isLimitReached) {
+      setErrorMsg("Guest limit reached! Register with your email/phone to enjoy unlimited live camera streaming.");
+      return;
+    }
+    const allowed = incrementUsage();
+    if (!allowed) {
+      setErrorMsg("Guest limit reached! Please register or sign in for unlimited camera sessions.");
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
@@ -153,6 +166,16 @@ export default function LiveCameraPage() {
 
   return (
     <div className="vl-container">
+      {/* Guest Quota Banner */}
+      {isGuest && (
+        <GuestLimitBanner
+          remaining={remaining}
+          limit={limit}
+          isLimitReached={isLimitReached}
+          featureName="live camera surveillance and real-time detection"
+        />
+      )}
+
       <div style={{ marginBottom: "1.75rem" }}>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "1.85rem", fontWeight: 800 }}>
           Real-Time Camera Surveillance

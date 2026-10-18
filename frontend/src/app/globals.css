@@ -814,3 +814,84 @@ html, body {
     gap: 1.25rem;
   }
 }
+
+/* ── Distinct Dark/Executive Theme for Admin Portal ────────────────────────── */
+.vl-admin-scope {
+  --admin-bg-base: #0B0F19;
+  --admin-bg-surface: #111827;
+  --admin-bg-surface-elevated: #1F2937;
+  --admin-border: #374151;
+  --admin-border-highlight: #4B5563;
+  --admin-accent-glow: rgba(13, 148, 136, 0.25);
+  background: radial-gradient(circle at top right, #131E32, #0B0F19 80%);
+  color: #F9FAFB;
+  min-height: calc(100vh - 72px);
+  padding-bottom: 4rem;
+}
+
+.vl-admin-scope .vl-card {
+  background-color: var(--admin-bg-surface);
+  border-color: var(--admin-border);
+  color: #F9FAFB;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.vl-admin-scope .vl-card:hover {
+  border-color: var(--admin-border-highlight);
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.5);
+}
+
+.vl-admin-scope .vl-card-header {
+  border-bottom-color: var(--admin-border);
+}
+
+.vl-admin-scope .vl-stat-box {
+  background: linear-gradient(135deg, #111827 0%, #1a2234 100%);
+  border: 1px solid var(--admin-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.vl-admin-scope .vl-stat-value {
+  color: #FFFFFF;
+}
+
+.vl-admin-scope .vl-stat-label {
+  color: #9CA3AF;
+}
+
+.vl-admin-scope .vl-table th {
+  background-color: #1F2937;
+  color: #9CA3AF;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.vl-admin-scope .vl-table td {
+  border-bottom: 1px solid #1F2937;
+  color: #E5E7EB;
+}
+
+.vl-admin-scope .vl-table tr:hover td {
+  background-color: rgba(31, 41, 55, 0.6);
+}
+
+.vl-admin-scope .vl-input {
+  background-color: #1F2937;
+  border-color: var(--admin-border);
+  color: #F9FAFB;
+}
+
+.vl-admin-scope .vl-input:focus {
+  border-color: var(--accent-teal);
+  box-shadow: 0 0 0 3px var(--admin-accent-glow);
+}
+
+.vl-admin-scope .vl-btn-outline {
+  background-color: #1F2937;
+  border-color: var(--admin-border);
+  color: #D1D5DB;
+}
+
+.vl-admin-scope .vl-btn-outline:hover {
+  background-color: #374151;
+  color: #FFFFFF;
+}
