@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" width="100%" height="280" role="img" aria-label="Foreground CIELAB & CIEDE2000 Garment Colour Extraction Algorithm">
+  <defs>
+    <style>
+      .mono { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-variant-numeric: tabular-nums; }
+      .sans { font-family: 'Cabinet Grotesk', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .scan-box { animation: scanY 3.2s ease-in-out infinite; }
+      .pulse-swatch { animation: swatchGlow 2.4s ease-in-out infinite; }
+      @keyframes scanY {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(72px); }
+      }
+      @keyframes swatchGlow {
+        0%, 100% { stroke-opacity: 0.4; }
+        50% { stroke-opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="280" fill="#0B0C0D"/>
+  <rect x="1" y="1" width="1198" height="278" fill="none" stroke="#262C32" stroke-width="2"/>
+
+  <text x="32" y="36" fill="#FFB21F" font-size="12" font-weight="600" letter-spacing="0.8" class="mono">FOREGROUND COLOUR PIPELINE · WHY RAW BOUNDING-BOX AVERAGING FAILS &amp; HOW VISIONLYTICS SOLVES IT</text>
+  <line x1="32" y1="48" x2="1168" y2="48" stroke="#242A30" stroke-width="1"/>
+
+  <!-- Box 1: Raw BBox Crop + Elliptical & Border Ring Mask -->
+  <g transform="translate(32, 68)">
+    <rect width="260" height="184" fill="#121518" stroke="#2A3138"/>
+    <text x="14" y="24" fill="#F2F4F3" font-size="13" font-weight="700" class="sans">1. Elliptical + Border-Ring Mask</text>
+    <!-- Simulated BBox with Asphalt Background + Subject Silhouette -->
+    <rect x="24" y="42" width="100" height="124" fill="#3A3F45" stroke="#FFB21F" stroke-width="1.5"/>
+    <!-- Outer 12% Border Ring (Rejected) -->
+    <rect x="28" y="46" width="92" height="116" fill="none" stroke="#FF5C5C" stroke-dasharray="3 3" stroke-width="1.5"/>
+    <!-- Inner Foreground Ellipse -->
+    <ellipse cx="74" cy="104" rx="32" ry="48" fill="#C8B496" fill-opacity="0.85" stroke="#5FD39A" stroke-width="1.5"/>
+    <!-- Upper / Lower split line -->
+    <line x1="24" y1="104" x2="124" y2="104" stroke="#FFB21F" stroke-dasharray="4 3" stroke-width="1.5"/>
+    <!-- Animated Scanner -->
+    <line x1="26" y1="64" x2="122" y2="64" stroke="#FFB21F" stroke-width="2" class="scan-box"/>
+    <text x="136" y="64" fill="#9AA3AB" font-size="11" class="mono">Rejects 12%</text>
+    <text x="136" y="80" fill="#9AA3AB" font-size="11" class="mono">outer ring</text>
+    <text x="136" y="104" fill="#5FD39A" font-size="11" class="mono">Splits Torso</text>
+    <text x="136" y="120" fill="#5FD39A" font-size="11" class="mono">[12%..54% H]</text>
+    <text x="136" y="144" fill="#FFB21F" font-size="11" class="mono">Splits Legs</text>
+    <text x="136" y="160" fill="#FFB21F" font-size="11" class="mono">[54%..92% H]</text>
+  </g>
+
+  <!-- Box 2: White Balance & Glare/Shadow Gate -->
+  <g transform="translate(316, 68)">
+    <rect width="268" height="184" fill="#121518" stroke="#2A3138"/>
+    <text x="14" y="24" fill="#F2F4F3" font-size="13" font-weight="700" class="sans">2. Gray-World WB &amp; L* Gate</text>
+    <text x="14" y="54" fill="#9AA3AB" font-size="11.5" class="sans">• Per-channel gain clamped</text>
+    <text x="24" y="72" fill="#F2F4F3" font-size="11" class="mono">g_c ∈ [0.75, 1.35]</text>
+    <text x="14" y="100" fill="#9AA3AB" font-size="11.5" class="sans">• Specular &amp; shadow filter</text>
+    <text x="24" y="118" fill="#5FD39A" font-size="11" class="mono">Keep 6.0 ≤ L* ≤ 96.5</text>
+    <text x="14" y="146" fill="#9AA3AB" font-size="11.5" class="sans">• Linear sRGB → CIE XYZ (D65)</text>
+    <text x="24" y="164" fill="#FFB21F" font-size="11" class="mono">→ CIE 1976 (L*, a*, b*)</text>
+  </g>
+
+  <!-- Box 3: Deterministic k-Means & CIEDE2000 -->
+  <g transform="translate(608, 68)">
+    <rect width="272" height="184" fill="#121518" stroke="#2A3138"/>
+    <text x="14" y="24" fill="#F2F4F3" font-size="13" font-weight="700" class="sans">3. Deterministic k-Means + ΔE00</text>
+    <text x="14" y="54" fill="#9AA3AB" font-size="11.5" class="sans">• Quantile-seeded centroids</text>
+    <text x="24" y="72" fill="#F2F4F3" font-size="11" class="mono">k ≤ 3 (100% reproducible)</text>
+    <text x="14" y="100" fill="#9AA3AB" font-size="11.5" class="sans">• Full CIEDE2000 perceptual</text>
+    <text x="24" y="118" fill="#FFB21F" font-size="11" class="mono">ΔE₀₀(L*₁a*₁b*₁, L*₂a*₂b*₂)</text>
+    <text x="14" y="146" fill="#9AA3AB" font-size="11.5" class="sans">• Chroma-rotation R_T term</text>
+    <text x="24" y="164" fill="#5FD39A" font-size="11" class="mono">Separates Navy vs Black</text>
+  </g>
+
+  <!-- Box 4: Resulting Swatch Output -->
+  <g transform="translate(904, 68)">
+    <rect width="264" height="184" fill="#121518" stroke="#FFB21F" stroke-width="1.5" class="pulse-swatch"/>
+    <text x="14" y="24" fill="#FFB21F" font-size="13" font-weight="700" class="sans">4. Per-Track Telemetry Output</text>
+
+    <rect x="14" y="42" width="236" height="36" fill="#0B0C0D" stroke="#262C32"/>
+    <rect x="22" y="50" width="20" height="20" fill="#C8AD8D" stroke="#F2F4F3" stroke-width="1"/>
+    <text x="52" y="64" fill="#F2F4F3" font-size="12" font-weight="600" class="mono">Top: Tan (64.2%)</text>
+
+    <rect x="14" y="88" width="236" height="36" fill="#0B0C0D" stroke="#262C32"/>
+    <rect x="22" y="96" width="20" height="20" fill="#1F2F46" stroke="#F2F4F3" stroke-width="1"/>
+    <text x="52" y="110" fill="#F2F4F3" font-size="12" font-weight="600" class="mono">Bottom: Navy (71.8%)</text>
+
+    <rect x="14" y="134" width="236" height="36" fill="#0B0C0D" stroke="#262C32"/>
+    <text x="22" y="156" fill="#5FD39A" font-size="11.5" font-weight="600" class="mono">ΔE₀₀ = 2.41 · 28-COLOUR LUT</text>
+  </g>
+</svg>

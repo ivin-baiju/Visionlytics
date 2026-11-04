@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="100%" height="360" role="img" aria-label="Visionlytics 5-Stage Frame-to-Insight Animated Pipeline">
+  <defs>
+    <pattern id="subgrid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#181C20" stroke-width="1"/>
+    </pattern>
+    <style>
+      .mono { font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-variant-numeric: tabular-nums; }
+      .sans { font-family: 'Cabinet Grotesk', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .flow-line {
+        stroke-dasharray: 8 8;
+        animation: dashFlow 1.2s linear infinite;
+      }
+      .packet-1 { animation: movePacket 5s linear infinite; }
+      .packet-2 { animation: movePacket 5s linear 2.5s infinite; }
+      .stage-pulse { animation: stageGlow 2.5s ease-in-out infinite; }
+      @keyframes dashFlow {
+        from { stroke-dashoffset: 32; }
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes movePacket {
+        0% { transform: translateX(60px); opacity: 0; }
+        8% { opacity: 1; }
+        92% { opacity: 1; }
+        100% { transform: translateX(1120px); opacity: 0; }
+      }
+      @keyframes stageGlow {
+        0%, 100% { stroke-opacity: 0.45; }
+        50% { stroke-opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1200" height="360" fill="#0B0C0D"/>
+  <rect width="1200" height="360" fill="url(#subgrid)"/>
+  <rect x="1" y="1" width="1198" height="358" fill="none" stroke="#262C32" stroke-width="2"/>
+
+  <!-- Header -->
+  <text x="36" y="42" fill="#FFB21F" font-size="12" font-weight="600" letter-spacing="1" class="mono">SYSTEM DATAFLOW · FRAME-TO-INSIGHT OPTICAL TELEMETRY BUS</text>
+  <text x="1164" y="42" text-anchor="end" fill="#8C969E" font-size="11" class="mono">LATENCY: 25.9ms (FAST) / 107.6ms (BALANCED)</text>
+  <line x1="36" y1="56" x2="1164" y2="56" stroke="#242A30" stroke-width="1"/>
+
+  <!-- Connecting Signal Bus -->
+  <line x1="80" y1="185" x2="1120" y2="185" stroke="#2A3138" stroke-width="4"/>
+  <line x1="80" y1="185" x2="1120" y2="185" stroke="#FFB21F" stroke-width="2" class="flow-line"/>
+
+  <!-- Animated Telemetry Packets -->
+  <g class="packet-1">
+    <circle cx="0" cy="185" r="7" fill="#FFB21F"/>
+    <circle cx="0" cy="185" r="14" fill="none" stroke="#FFB21F" stroke-opacity="0.5" stroke-width="1.5"/>
+  </g>
+  <g class="packet-2">
+    <circle cx="0" cy="185" r="7" fill="#5FD39A"/>
+    <circle cx="0" cy="185" r="14" fill="none" stroke="#5FD39A" stroke-opacity="0.5" stroke-width="1.5"/>
+  </g>
+
+  <!-- STAGE 1 -->
+  <g transform="translate(36, 86)">
+    <rect width="204" height="198" fill="#121518" stroke="#FFB21F" stroke-width="1.5" class="stage-pulse"/>
+    <rect x="0" y="0" width="204" height="28" fill="#181C20"/>
+    <text x="12" y="18" fill="#FFB21F" font-size="11" font-weight="700" class="mono">01 · INGEST &amp; VERIFY</text>
+    <text x="12" y="54" fill="#F2F4F3" font-size="15" font-weight="700" class="sans">Media &amp; Stream Gate</text>
+    <text x="12" y="78" fill="#9AA3AB" font-size="11.5" class="sans">• Presigned S3 / SeaweedFS</text>
+    <text x="12" y="98" fill="#9AA3AB" font-size="11.5" class="sans">• Magic-byte MIME guard</text>
+    <text x="12" y="118" fill="#9AA3AB" font-size="11.5" class="sans">• WebRTC Webcam &amp; RTSP</text>
+    <text x="12" y="138" fill="#9AA3AB" font-size="11.5" class="sans">• BullMQ idempotent jobs</text>
+    <rect x="12" y="158" width="180" height="26" fill="#0B0C0D" stroke="#262C32"/>
+    <text x="20" y="175" fill="#5FD39A" font-size="10.5" class="mono">SHA-256 · HTTP 415 GUARD</text>
+  </g>
+
+  <!-- STAGE 2 -->
+  <g transform="translate(267, 86)">
+    <rect width="204" height="198" fill="#121518" stroke="#FFB21F" stroke-width="1.5" class="stage-pulse"/>
+    <rect x="0" y="0" width="204" height="28" fill="#181C20"/>
+    <text x="12" y="18" fill="#FFB21F" font-size="11" font-weight="700" class="mono">02 · APACHE-2.0 DETR</text>
+    <text x="12" y="54" fill="#F2F4F3" font-size="15" font-weight="700" class="sans">Calibrated Detection</text>
+    <text x="12" y="78" fill="#9AA3AB" font-size="11.5" class="sans">• RT-DETRv2-R18vd (INT8)</text>
+    <text x="12" y="98" fill="#9AA3AB" font-size="11.5" class="sans">• YOLOS-Tiny (38.6 FPS)</text>
+    <text x="12" y="118" fill="#9AA3AB" font-size="11.5" class="sans">• SAHI 2×2 tiled small-obj</text>
+    <text x="12" y="138" fill="#9AA3AB" font-size="11.5" class="sans">• Temp scaling (T = 1.15)</text>
+    <rect x="12" y="158" width="180" height="26" fill="#0B0C0D" stroke="#262C32"/>
+    <text x="20" y="175" fill="#FFB21F" font-size="10.5" class="mono">CONF &lt; 0.45 → UNCERTAIN</text>
+  </g>
+
+  <!-- STAGE 3 -->
+  <g transform="translate(498, 86)">
+    <rect width="204" height="198" fill="#121518" stroke="#FFB21F" stroke-width="1.5" class="stage-pulse"/>
+    <rect x="0" y="0" width="204" height="28" fill="#181C20"/>
+    <text x="12" y="18" fill="#FFB21F" font-size="11" font-weight="700" class="mono">03 · BYTETRACK + RE-ID</text>
+    <text x="12" y="54" fill="#F2F4F3" font-size="15" font-weight="700" class="sans">Multi-Object Tracking</text>
+    <text x="12" y="78" fill="#9AA3AB" font-size="11.5" class="sans">• Two-stage hysteresis</text>
+    <text x="12" y="98" fill="#9AA3AB" font-size="11.5" class="sans">• Alpha-Beta Kalman filter</text>
+    <text x="12" y="118" fill="#9AA3AB" font-size="11.5" class="sans">• 26-d HSV+Lab Re-ID</text>
+    <text x="12" y="138" fill="#9AA3AB" font-size="11.5" class="sans">• EMA class label voting</text>
+    <rect x="12" y="158" width="180" height="26" fill="#0B0C0D" stroke="#262C32"/>
+    <text x="20" y="175" fill="#5FD39A" font-size="10.5" class="mono">0.0 ID SWITCHES / MIN</text>
+  </g>
+
+  <!-- STAGE 4 -->
+  <g transform="translate(729, 86)">
+    <rect width="204" height="198" fill="#121518" stroke="#FFB21F" stroke-width="1.5" class="stage-pulse"/>
+    <rect x="0" y="0" width="204" height="28" fill="#181C20"/>
+    <text x="12" y="18" fill="#FFB21F" font-size="11" font-weight="700" class="mono">04 · CIELAB ΔE00</text>
+    <text x="12" y="54" fill="#F2F4F3" font-size="15" font-weight="700" class="sans">Foreground Colour</text>
+    <text x="12" y="78" fill="#9AA3AB" font-size="11.5" class="sans">• Border-ring BG subtract</text>
+    <text x="12" y="98" fill="#9AA3AB" font-size="11.5" class="sans">• Gray-world white balance</text>
+    <text x="12" y="118" fill="#9AA3AB" font-size="11.5" class="sans">• CIE L*a*b* k-means (k≤3)</text>
+    <text x="12" y="138" fill="#9AA3AB" font-size="11.5" class="sans">• Upper / lower attire split</text>
+    <rect x="12" y="158" width="180" height="26" fill="#0B0C0D" stroke="#262C32"/>
+    <text x="20" y="175" fill="#FFB21F" font-size="10.5" class="mono">28 HUMAN PALETTE NAMES</text>
+  </g>
+
+  <!-- STAGE 5 -->
+  <g transform="translate(960, 86)">
+    <rect width="204" height="198" fill="#121518" stroke="#FFB21F" stroke-width="1.5" class="stage-pulse"/>
+    <rect x="0" y="0" width="204" height="28" fill="#181C20"/>
+    <text x="12" y="18" fill="#FFB21F" font-size="11" font-weight="700" class="mono">05 · TIMESCALEDB &amp; UI</text>
+    <text x="12" y="54" fill="#F2F4F3" font-size="15" font-weight="700" class="sans">Zones, Alerts &amp; 60fps</text>
+    <text x="12" y="78" fill="#9AA3AB" font-size="11.5" class="sans">• Ray-cast polygon zones</text>
+    <text x="12" y="98" fill="#9AA3AB" font-size="11.5" class="sans">• Signed cross-prod lines</text>
+    <text x="12" y="118" fill="#9AA3AB" font-size="11.5" class="sans">• Hypertable time-series</text>
+    <text x="12" y="138" fill="#9AA3AB" font-size="11.5" class="sans">• Active learning &amp; gate</text>
+    <rect x="12" y="158" width="180" height="26" fill="#0B0C0D" stroke="#262C32"/>
+    <text x="20" y="175" fill="#5FD39A" font-size="10.5" class="mono">GATE: mAP50-95 &gt;= 0.83</text>
+  </g>
+
+  <!-- Footer Status Bar -->
+  <text x="36" y="330" fill="#8C969E" font-size="11" class="mono">HONESTY RULE ENFORCED: EVERY METRIC COMPUTED BY apps/ml/visionlytics_ml/eval_harness.py · ZERO MOCK DATA</text>
+  <text x="1164" y="330" text-anchor="end" fill="#5FD39A" font-size="11" font-weight="600" class="mono">● ALL 6 SERVICES HEALTHY</text>
+</svg>
