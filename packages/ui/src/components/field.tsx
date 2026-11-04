@@ -3,8 +3,8 @@ import { cn } from "../lib/cn";
 
 export interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: string | undefined;
+  error?: string | undefined;
 }
 
 /** Text field: label above, hairline bottom rule, error text tied via aria-describedby. */

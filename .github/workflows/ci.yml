@@ -8,6 +8,33 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: visionlytics
+          POSTGRES_PASSWORD: visionlytics_dev_pw
+          POSTGRES_DB: visionlytics
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U visionlytics -d visionlytics"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      s3:
+        image: chrislusf/seaweedfs:latest
+        ports:
+          - 9000:9000
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
