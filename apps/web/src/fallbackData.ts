@@ -43,12 +43,12 @@ export const DEFAULT_BENCHMARKS = {
 
 export const DEFAULT_SAMPLES = [
   {
-    id: "bus_street",
+    id: "bus_street.jpg",
     title: "Scene: Urban street",
     dataUrl: "./samples/bus_street.jpg",
   },
   {
-    id: "zidane_people",
+    id: "zidane_people.jpg",
     title: "Scene: Close subjects",
     dataUrl: "./samples/zidane_people.jpg",
   },
