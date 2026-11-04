@@ -4,6 +4,9 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 COPY visionlytics_ml visionlytics_ml
+COPY weights weights
+COPY data data
+COPY triton triton
 RUN useradd -m ml && chown -R ml /app
 USER ml
 EXPOSE 8000

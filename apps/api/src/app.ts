@@ -694,6 +694,109 @@ export async function buildApp(env: Env): Promise<AppRuntime> {
     },
   );
 
+  // --- Phase 3/4: Live ML Inference, Benchmarks & TimescaleDB Frame Persistence ---
+  app.get(
+    "/v1/ml/benchmarks",
+    { schema: { tags: ["ML"], summary: "Fetch real measured evaluation metrics from the ML harness" } },
+    async (_req, reply) => {
+      const r = await fetch(`${env.ML_URL}/eval/metrics`);
+      if (!r.ok) return reply.code(502).send({ error: "ML evaluation metrics unavailable" });
+      return reply.send(await r.json());
+    },
+  );
+
+  app.get(
+    "/v1/ml/samples",
+    { schema: { tags: ["ML"], summary: "Fetch golden reference scenes for instant browser verification" } },
+    async (_req, reply) => {
+      const r = await fetch(`${env.ML_URL}/samples`);
+      if (!r.ok) return reply.code(502).send({ error: "ML samples unavailable" });
+      return reply.send(await r.json());
+    },
+  );
+
+  const InferFrameBody = z.object({
+    projectId: z.uuid().optional(),
+    analysisId: z.uuid().optional(),
+    imageBase64: z.string().min(16),
+    preset: z.enum(["fast", "balanced", "max_accuracy"]).default("balanced"),
+    minConfidence: z.number().min(0.05).max(0.99).default(0.28),
+    uncertainThreshold: z.number().min(0.10).max(0.99).default(0.50),
+    tiled: z.boolean().default(false),
+    openVocabQuery: z.string().optional(),
+    streamId: z.string().optional(),
+    frameIndex: z.number().int().nonnegative().default(0),
+  });
+
+  app.post(
+    "/v1/ml/infer-frame",
+    {
+      schema: {
+        tags: ["ML"],
+        summary:
+          "Run real-time ONNX detection, tracking, and CIELAB colour extraction on a frame and persist to TimescaleDB",
+      },
+    },
+    async (req, reply) => {
+      const ctx = await requireRole(db, "member")(req, reply);
+      if (!ctx) return;
+      const parsed = InferFrameBody.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: parsed.error.issues[0]?.message ?? "Invalid frame payload" });
+      }
+
+      const mlRes = await fetch(`${env.ML_URL}/infer/base64`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
+      if (!mlRes.ok) {
+        const text = await mlRes.text();
+        return reply.code(502).send({ error: `ML inference failed: ${text}` });
+      }
+
+      const result = (await mlRes.json()) as {
+        width: number;
+        height: number;
+        preset: string;
+        architecture: string;
+        latencyMs: number;
+        peopleCount: number;
+        uncertainCount: number;
+        detections: Array<{
+          trackId: number;
+          label: string;
+          confidence: number;
+          uncertain: boolean;
+          bbox: { x1: number; y1: number; x2: number; y2: number };
+          colours: Array<{ name: string; hex: string; share: number }>;
+        }>;
+      };
+
+      // Persist frame event to TimescaleDB hypertable if analysisId is supplied (or under a synthetic session UUID)
+      const analysisUuid =
+        parsed.data.analysisId ?? "00000000-0000-4000-8000-000000000001";
+      const trackIds = result.detections.map((d) => d.trackId);
+
+      await db.insert(schema.frameEvents).values({
+        observedAt: new Date(),
+        orgId: ctx.orgId,
+        analysisId: analysisUuid,
+        frameIndex: parsed.data.frameIndex,
+        peopleCount: result.peopleCount,
+        uniqueTrackIds: trackIds,
+        detections: result.detections,
+        zoneCounts: {},
+      });
+
+      return reply.send({
+        ...result,
+        analysisId: analysisUuid,
+        frameIndex: parsed.data.frameIndex,
+      });
+    },
+  );
+
   const close = async () => {
     await app.close();
     await Promise.allSettled([queues.close(), sql.end({ timeout: 5 }), redis.quit()]);

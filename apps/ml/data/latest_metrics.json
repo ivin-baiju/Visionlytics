@@ -1,0 +1,41 @@
+{
+  "evaluatedAt": "2026-11-04T18:00:16Z",
+  "hardware": {
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.12.13",
+    "onnxruntime": "1.31.1",
+    "providers": [
+      "CoreMLExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ]
+  },
+  "models": {
+    "balanced": {
+      "name": "RT-DETRv2-R18vd-INT8",
+      "licence": "Apache-2.0",
+      "sizeMb": 20.02,
+      "latencyP50Ms": 169.06,
+      "latencyP95Ms": 175.17,
+      "fpsP50": 5.92
+    },
+    "fast": {
+      "name": "YOLOS-Tiny-INT8 (416x416)",
+      "licence": "Apache-2.0",
+      "sizeMb": 6.46,
+      "latencyP50Ms": 98.14,
+      "latencyP95Ms": 100.74,
+      "fpsP50": 10.19
+    }
+  },
+  "metrics": {
+    "mAP50": 0.9143,
+    "mAP50_95": 0.8514,
+    "personCountMAE": 0.0,
+    "personExactMatchRate": 1.0,
+    "colourNamingAccuracy": 0.8571,
+    "trackIdSwitchesPerMin": 0.0,
+    "trackIdentityPreservation": 1.0
+  }
+}
