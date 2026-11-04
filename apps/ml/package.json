@@ -1,0 +1,10 @@
+{
+  "name": "@visionlytics/ml",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "uv run pytest -q",
+    "typecheck": "uv run python -m py_compile visionlytics_ml/app.py",
+    "lint": "uv run python -m py_compile visionlytics_ml/app.py"
+  }
+}

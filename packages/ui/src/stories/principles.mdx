@@ -1,0 +1,41 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="System/Principles" />
+
+# Visionlytics design system
+
+The product is a measuring instrument. Interfaces should feel calm, exact and slightly cinematic, like optics on a bench.
+
+## Colour
+
+| Token | Dark | Light | Use |
+|---|---|---|---|
+| `bg` | `#0B0C0D` | `#E6E9E8` | Page |
+| `surface` / `raised` | `#111315` / `#181B1E` | `#EFF1F0` / `#F8F9F8` | Panels, keys |
+| `hairline` | `#23272B` | `#C7CCCB` | 1px rules and bezels |
+| `fg` | `#EDE8DE` | `#14181A` | Text |
+| `muted` | `#A29D93` | `#4C5457` | Secondary text (≥7:1) |
+| `signal` | `#FFB21F` | `#A85D00` | Live state, primary action, the active measurement. Nothing else. |
+
+Amber was chosen over lime because it is the colour of instrument phosphor and aviation caution displays: it reads as "measuring", not "marketing".
+
+## Type
+
+- **Cabinet Grotesk** for display and headings: tight, engineered, slightly condensed.
+- **Geist** for interface text.
+- **Geist Mono** with tabular, slashed-zero numerals for every measured value.
+
+Scale: ratio 1.25 from a 15px body. Sentence case everywhere. No all-caps labels.
+
+## Shape
+
+Radius is hierarchical: panes are near-square (2px), keys are softer (6px), labels are hairline (1px). Frames use **crop-marks** at the corners instead of shadows.
+
+## Motion
+
+Durations 120 / 200 / 320 / 400 ms. Springs for physical controls, eased tweens for content. Every animation answers an action or reports a change in measurement; nothing loops for decoration. `prefers-reduced-motion` disables all of it.
+
+## Accessibility rules
+
+- State is never colour alone: the uncertain label uses a dashed outline and the word "uncertain"; switches show "on/off".
+- Focus is a 1px signal outline with 3px offset, always visible on keyboard focus.

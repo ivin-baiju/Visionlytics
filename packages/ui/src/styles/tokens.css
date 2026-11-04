@@ -1,0 +1,174 @@
+/*
+ * Visionlytics design tokens — "precision optics".
+ * Dark theme is the instrument at night; light theme is the same instrument
+ * under a bench lamp: cool optical grey paper, graphite ink, burnt-amber signal.
+ * The accent is amber phosphor and is reserved for: live state, the primary
+ * action on a screen, and the active measurement. Never decoration.
+ */
+@font-face {
+  font-family: "Cabinet Grotesk";
+  src: url("../fonts/CabinetGrotesk-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  /* Type */
+  --font-display: "Cabinet Grotesk", "Geist Variable", system-ui, sans-serif;
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+
+  /* Modular scale, ratio 1.25 from 15px body */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.171875rem;
+  --text-xl: 1.46484375rem;
+  --text-2xl: 1.8310546875rem;
+  --text-3xl: 2.288818359375rem;
+  --text-4xl: 2.86102294921875rem;
+  --text-5xl: 3.5762786865234375rem;
+  --text-6xl: 4.470348358154297rem;
+
+  /* Colour roles resolve to theme variables below */
+  --color-bg: var(--vl-bg);
+  --color-surface: var(--vl-surface);
+  --color-raised: var(--vl-raised);
+  --color-hairline: var(--vl-hairline);
+  --color-hairline-strong: var(--vl-hairline-strong);
+  --color-fg: var(--vl-fg);
+  --color-muted: var(--vl-muted);
+  --color-faint: var(--vl-faint);
+  --color-signal: var(--vl-signal);
+  --color-signal-ink: var(--vl-signal-ink);
+  --color-signal-wash: var(--vl-signal-wash);
+  --color-ok: var(--vl-ok);
+  --color-warn: var(--vl-warn);
+  --color-err: var(--vl-err);
+  --color-info: var(--vl-info);
+
+  /* Radius is hierarchical, not uniform: instruments have sharp bezels, soft keys */
+  --radius-hair: 1px;
+  --radius-key: 6px;
+  --radius-pane: 2px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap: cubic-bezier(0.2, 0, 0, 1);
+  --duration-instant: 120ms;
+  --duration-quick: 200ms;
+  --duration-base: 320ms;
+  --duration-slow: 400ms;
+}
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --vl-bg: #0b0c0d;
+  --vl-surface: #111315;
+  --vl-raised: #181b1e;
+  --vl-hairline: #23272b;
+  --vl-hairline-strong: #353a3f;
+  --vl-fg: #ede8de;
+  --vl-muted: #a29d93; /* 7.1:1 on bg */
+  --vl-faint: #6d6a64; /* decorative only, never body text */
+  --vl-signal: #ffb21f;
+  --vl-signal-ink: #1a1200;
+  --vl-signal-wash: rgb(255 178 31 / 0.1);
+  --vl-ok: #5fd39a;
+  --vl-warn: #f0c24b;
+  --vl-err: #ff6b62;
+  --vl-info: #7cb7ff;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --vl-bg: #e6e9e8;
+  --vl-surface: #eff1f0;
+  --vl-raised: #f8f9f8;
+  --vl-hairline: #c7cccb;
+  --vl-hairline-strong: #9aa19f;
+  --vl-fg: #14181a;
+  --vl-muted: #4c5457; /* 7.0:1 on bg */
+  --vl-faint: #8b9396;
+  --vl-signal: #a85d00; /* 4.9:1 on bg for text use */
+  --vl-signal-ink: #fffaf0;
+  --vl-signal-wash: rgb(168 93 0 / 0.1);
+  --vl-ok: #13774a;
+  --vl-warn: #8a6100;
+  --vl-err: #b4231b;
+  --vl-info: #1f5fae;
+}
+
+@layer base {
+  html {
+    background: var(--vl-bg);
+    color: var(--vl-fg);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-size: var(--text-base);
+    line-height: 1.55;
+  }
+  ::selection {
+    background: var(--vl-signal);
+    color: var(--vl-signal-ink);
+  }
+  :focus-visible {
+    outline: 1px solid var(--vl-signal);
+    outline-offset: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum", "zero";
+}
+
+/* Corner crop-marks: the recurring optical motif. Apply to any framed region. */
+@utility crop-marks {
+  position: relative;
+  --crop: 10px;
+  --crop-color: var(--vl-hairline-strong);
+  background-image:
+    linear-gradient(var(--crop-color), var(--crop-color)),
+    linear-gradient(var(--crop-color), var(--crop-color)),
+    linear-gradient(var(--crop-color), var(--crop-color)),
+    linear-gradient(var(--crop-color), var(--crop-color)),
+    linear-gradient(var(--crop-color), var(--crop-color)),
+    linear-gradient(var(--crop-color), var(--crop-color)),
+    linear-gradient(var(--crop-color), var(--crop-color)),
+    linear-gradient(var(--crop-color), var(--crop-color));
+  background-repeat: no-repeat;
+  background-size:
+    var(--crop) 1px, 1px var(--crop),
+    var(--crop) 1px, 1px var(--crop),
+    var(--crop) 1px, 1px var(--crop),
+    var(--crop) 1px, 1px var(--crop);
+  background-position:
+    top left, top left,
+    top right, top right,
+    bottom left, bottom left,
+    bottom right, bottom right;
+}
