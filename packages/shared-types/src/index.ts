@@ -41,3 +41,4 @@ export type ColourSwatch = z.infer<typeof ColourSwatchSchema>;
 export type DetectionEvent = z.infer<typeof DetectionEventSchema>;
 export type HealthCheck = z.infer<typeof HealthCheckSchema>;
 export type ReadyResponse = z.infer<typeof ReadyResponseSchema>;
+export { VisionlyticsClient, type VisionlyticsClientConfig, type InferFrameRequest, type InferFrameResponse } from "./sdk.ts";

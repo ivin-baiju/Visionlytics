@@ -194,6 +194,85 @@ test("OpenAPI 3.1 contract, RBAC, tenant isolation, presigned S3 upload, and ide
     const an2Body = an2.json() as { analysis: { id: string }; deduplicated: boolean };
     assert.equal(an2Body.deduplicated, true);
     assert.equal(an2Body.analysis.id, an1Body.analysis.id);
+
+    // 9. Phase 5: Polygon Zone, Alert Rule, Event Search, and CSV Report Export
+    const zoneRes = await app.inject({
+      method: "POST",
+      url: "/v1/zones",
+      headers: { authorization: `Bearer ${bodyA.token}` },
+      payload: {
+        projectId: projA.id,
+        name: "Boarding Zone A",
+        kind: "polygon",
+        points: [
+          { x: 0.05, y: 0.2 },
+          { x: 0.95, y: 0.2 },
+          { x: 0.95, y: 0.95 },
+          { x: 0.05, y: 0.95 },
+        ],
+      },
+    });
+    assert.equal(zoneRes.statusCode, 201);
+
+    const alertRes = await app.inject({
+      method: "POST",
+      url: "/v1/alerts",
+      headers: { authorization: `Bearer ${bodyA.token}` },
+      payload: {
+        projectId: projA.id,
+        name: "Crowd >= 2",
+        ruleType: "crowd_limit",
+        condition: { maxPeople: 2 },
+      },
+    });
+    assert.equal(alertRes.statusCode, 201);
+
+    const csvRes = await app.inject({
+      method: "GET",
+      url: "/v1/reports/export?format=csv",
+      headers: { authorization: `Bearer ${bodyA.token}` },
+    });
+    assert.equal(csvRes.statusCode, 200);
+    assert.match(csvRes.headers["content-type"] as string, /text\/csv/);
+
+    // 10. Phase 6: Dataset Creation, Training Run, and Model Promotion Gate
+    const dsRes = await app.inject({
+      method: "POST",
+      url: "/v1/datasets",
+      headers: { authorization: `Bearer ${bodyA.token}` },
+      payload: {
+        name: "Gate Crowd Dataset",
+        format: "coco",
+        classes: ["person", "bus"],
+        itemCount: 32,
+      },
+    });
+    assert.equal(dsRes.statusCode, 201);
+    const ds = dsRes.json() as { id: string };
+
+    const trRes = await app.inject({
+      method: "POST",
+      url: "/v1/training-runs",
+      headers: { authorization: `Bearer ${bodyA.token}` },
+      payload: {
+        datasetId: ds.id,
+        baseArchitecture: "rtdetr-v2-r18vd",
+        preset: "balanced",
+        epochs: 8,
+      },
+    });
+    assert.equal(trRes.statusCode, 201);
+    const { model: candModel } = trRes.json() as { model: { id: string } };
+
+    const promRes = await app.inject({
+      method: "POST",
+      url: `/v1/models/${candModel.id}/promote`,
+      headers: { authorization: `Bearer ${bodyA.token}` },
+    });
+    assert.equal(promRes.statusCode, 200);
+    const promBody = promRes.json() as { gatePassed: boolean; model: { stage: string } };
+    assert.equal(promBody.gatePassed, true);
+    assert.equal(promBody.model.stage, "production");
   } finally {
     await runtime.close();
   }
