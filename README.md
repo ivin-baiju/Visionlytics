@@ -1,8 +1,6 @@
+![Visionlytics — Precision Optical Telemetry & Computer Vision Platform](./docs/assets/visionlytics-logo.svg)
+
 <div align="center">
-
-<img src="./docs/assets/visionlytics-logo.svg" alt="Visionlytics — Precision Optical Telemetry & Computer Vision Platform" width="100%" />
-
-<br />
 
 [![Licence: Apache-2.0 Models](https://img.shields.io/badge/ML_Models-Apache--2.0_(Permissive)-5FD39A?style=flat-square&labelColor=121518)](./docs/model-selection.md)
 [![Golden mAP50: 91.43%](https://img.shields.io/badge/Golden_mAP50-91.43%25-FFB21F?style=flat-square&labelColor=121518)](./apps/ml/data/latest_metrics.json)
@@ -12,10 +10,8 @@
 [![TypeScript 7.0 Strict](https://img.shields.io/badge/TypeScript-7.0.2_Strict-F2F4F3?style=flat-square&labelColor=121518)](./tsconfig.base.json)
 [![Database: PostgreSQL 16 + TimescaleDB](https://img.shields.io/badge/TimescaleDB-PG16_Hypertable-FFB21F?style=flat-square&labelColor=121518)](./apps/api/src/db/schema.ts)
 
-<p align="center">
-  <strong>Production-grade, multi-tenant computer vision SaaS platform for images, video uploads, live webcams, and RTSP/IP camera streams.</strong><br />
-  Rebuilt from the ground up as a monorepo with <strong>React 19 + Vite 8 + WebGL2</strong>, <strong>Fastify 5 + TimescaleDB + BullMQ + S3</strong>, and <strong>FastAPI + ONNX Runtime</strong>.
-</p>
+**Production-grade, multi-tenant computer vision SaaS platform for images, video uploads, live webcams, and RTSP/IP camera streams.**  
+Rebuilt from the ground up as a monorepo with **React 19 + Vite 8 + WebGL2**, **Fastify 5 + TimescaleDB + BullMQ + S3**, and **FastAPI + ONNX Runtime**.
 
 </div>
 
@@ -23,17 +19,13 @@
 
 ## Live Animated Product Walkthrough
 
-<div align="center">
-  <img src="./docs/assets/visionlytics-walkthrough.gif" alt="Visionlytics 6-Surface Live Walkthrough" width="100%" />
-</div>
+![Visionlytics 6-Surface Live Walkthrough](./docs/assets/visionlytics-walkthrough.gif)
 
 ---
 
 ## Animated 5-Stage Frame-to-Insight Telemetry Pipeline
 
-<div align="center">
-  <img src="./docs/assets/visionlytics-pipeline-animated.svg" alt="Visionlytics Animated 5-Stage Pipeline" width="100%" />
-</div>
+![Visionlytics Animated 5-Stage Pipeline](./docs/assets/visionlytics-pipeline-animated.svg)
 
 ---
 
@@ -203,9 +195,7 @@ flowchart LR
 
 ### 4.3 Foreground CIELAB + CIEDE2000 ($\Delta E_{00}$) Colour & Attire Extraction
 
-<div align="center">
-  <img src="./docs/assets/visionlytics-colour-algorithm.svg" alt="Foreground CIELAB & CIEDE2000 Garment Colour Extraction Algorithm" width="100%" />
-</div>
+![Foreground CIELAB & CIEDE2000 Garment Colour Extraction Algorithm](./docs/assets/visionlytics-colour-algorithm.svg)
 
 Implemented in [`apps/ml/visionlytics_ml/colour.py`](./apps/ml/visionlytics_ml/colour.py):
 
@@ -319,9 +309,7 @@ erDiagram
 ![Model Registry Surface](./docs/assets/screenshots/phase6-model-registry-dark.png)
 
 ### 7.7 Mobile Responsive "Bench Lamp" Light Theme (`390×844`)
-<div align="center">
-  <img src="./docs/assets/screenshots/phase8-mobile-light.png" alt="Mobile Light Theme" width="360" />
-</div>
+![Mobile Light Theme](./docs/assets/screenshots/phase8-mobile-light.png)
 
 ---
 
