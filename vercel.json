@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @visionlytics/web build",
+  "outputDirectory": "apps/web/dist",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
