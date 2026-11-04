@@ -247,7 +247,7 @@ function App() {
     DEFAULT_BENCHMARKS as BenchmarkReport,
   );
   const [activeImageUrl, setActiveImageUrl] = useState<string | null>(
-    DEFAULT_SAMPLES[0]?.dataUrl ?? "/samples/bus_street.jpg",
+    DEFAULT_SAMPLES[0]?.dataUrl ?? "./samples/bus_street.jpg",
   );
   const [analysisResult, setAnalysisResult] = useState<FrameAnalysisResult | null>(() =>
     buildInitialBrowserFrame(
@@ -484,7 +484,7 @@ function App() {
     setInferStatus("loading");
     const nextFrameIdx = frameHistory.length;
     try {
-      if (session && !imgUrl.startsWith("/samples/")) {
+      if (session && !imgUrl.startsWith("/samples/") && !imgUrl.startsWith("./samples/")) {
         const r = await fetch("/api/v1/ml/infer-frame", {
           method: "POST",
           headers: {

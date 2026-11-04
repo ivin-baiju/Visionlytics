@@ -45,12 +45,12 @@ export const DEFAULT_SAMPLES = [
   {
     id: "bus_street",
     title: "Scene: Urban street",
-    dataUrl: "/samples/bus_street.jpg",
+    dataUrl: "./samples/bus_street.jpg",
   },
   {
     id: "zidane_people",
     title: "Scene: Close subjects",
-    dataUrl: "/samples/zidane_people.jpg",
+    dataUrl: "./samples/zidane_people.jpg",
   },
 ];
 
